@@ -1,0 +1,558 @@
+# WhatsApp
+
+## 状态
+
+**英文原文**: Status: production-ready via WhatsApp Web (Baileys). Gateway owns linked session(s).
+
+**中文翻译**: 状态：通过 WhatsApp Web（Baileys）已生产就绪。Gateway 拥有已链接会话的控制权。
+
+---
+
+## [展开] Install (on demand) / 按需安装
+
+**英文原文**: Onboarding (`openclaw onboard`) and `openclaw channels add --channel whatsapp` prompt to install the WhatsApp plugin the first time you select it.
+
+**中文翻译**: 初始化引导（`openclaw onboard`）和 `openclaw channels add --channel whatsapp` 会在你首次选择 WhatsApp 时提示安装插件。
+
+**英文原文**: `openclaw channels login --channel whatsapp` also offers the install flow when the plugin is not present yet.
+
+**中文翻译**: 当插件尚未安装时，`openclaw channels login --channel whatsapp` 也会引导安装流程。
+
+**英文原文**: Dev channel + git checkout: defaults to the local plugin path.
+
+**中文翻译**: 开发频道 + git checkout：默认使用本地插件路径。
+
+**英文原文**: Stable/Beta: uses the npm package `@openclaw/whatsapp` on the current official release tag.
+
+**中文翻译**: Stable/Beta 版本：使用当前官方发布标签对应的 npm 包 `@openclaw/whatsapp`。
+
+**英文原文**: Manual install stays available: `openclaw plugins install @openclaw/whatsapp`
+
+**中文翻译**: 手动安装方式始终可用：`openclaw plugins install @openclaw/whatsapp`
+
+**英文原文**: Use the bare package to follow the current official release tag. Pin an exact version only when you need a reproducible install.
+
+**中文翻译**: 使用裸包名会跟随当前官方发布标签。仅在需要可复现安装时才锁定具体版本。
+
+**英文原文**: On Windows, the WhatsApp plugin needs Git on `PATH` during npm install because one of its Baileys/libsignal dependencies is fetched from a git URL. Install Git for Windows, then restart the shell and rerun the install. Portable Git also works if its `bin` directory is on `PATH`.
+
+**中文翻译**: 在 Windows 上，WhatsApp 插件在 npm 安装时需要 Git 在 `PATH` 中，因为其 Baileys/libsignal 依赖之一是从 git URL 拉取的。先安装 Git for Windows，再重启 Shell 后重新运行安装。Portable Git 也可以，只要它的 `bin` 目录在 `PATH` 中。
+
+---
+
+## Quick setup / 快速设置
+
+### Step 1 — Configure WhatsApp access policy
+
+**英文原文**: Configure WhatsApp access policy
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      dmPolicy: "pairing",
+      allowFrom: ["+15551234567"],
+      groupPolicy: "allowlist",
+      groupAllowFrom: ["+15551234567"],
+    },
+  },
+}
+```
+
+**中文翻译**: 配置 WhatsApp 访问策略（配置代码保持不变）
+
+### Step 2 — Link WhatsApp (QR)
+
+**英文原文**: Link WhatsApp (QR)
+
+```bash
+openclaw channels login --channel whatsapp
+```
+
+For a specific account:
+
+```bash
+openclaw channels login --channel whatsapp --account work
+```
+
+To attach an existing/custom WhatsApp Web auth directory before login:
+
+```bash
+openclaw channels add --channel whatsapp --account work --auth-dir /path/to/wa-auth
+openclaw channels login --channel whatsapp --account work
+```
+
+**中文翻译**: 链接 WhatsApp（扫码）
+
+```bash
+openclaw channels login --channel whatsapp
+```
+
+指定账号：
+
+```bash
+openclaw channels login --channel whatsapp --account work
+```
+
+登录前绑定已有的/自定义 WhatsApp Web 认证目录：
+
+```bash
+openclaw channels add --channel whatsapp --account work --auth-dir /path/to/wa-auth
+openclaw channels login --channel whatsapp --account work
+```
+
+### Step 3 — Start the gateway
+
+**英文原文**: Start the gateway
+
+```bash
+openclaw gateway
+```
+
+**中文翻译**: 启动 Gateway
+
+```bash
+openclaw gateway
+```
+
+### Step 4 — Approve first pairing request
+
+**英文原文**: Approve first pairing request (if using pairing mode)
+
+```bash
+openclaw pairing list whatsapp
+openclaw pairing approve whatsapp <CODE>
+```
+
+Pairing requests expire after 1 hour. Pending requests are capped at 3 per channel.
+
+**中文翻译**: 批准首次配对请求（如果使用配对模式）
+
+```bash
+openclaw pairing list whatsapp
+openclaw pairing approve whatsapp <CODE>
+```
+
+配对请求 1 小时后过期。每个频道最多等待 3 个请求。
+
+> **英文原文**: OpenClaw recommends running WhatsApp on a separate number when possible. (The channel metadata and setup flow are optimized for that setup, but personal-number setups are also supported.)
+>
+> **中文翻译**: OpenClaw 建议尽可能使用独立号码运行 WhatsApp。（频道元数据和设置流程针对此场景优化，但也支持个人号码设置。）
+
+---
+
+## [展开] Deployment patterns / 部署模式
+
+### [展开] Dedicated number (recommended) / 独立号码（推荐）
+
+**英文原文**: This is the cleanest operational mode:
+
+- separate WhatsApp identity for OpenClaw
+- clearer DM allowlists and routing boundaries
+- lower chance of self-chat confusion
+
+Minimal policy pattern:
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      dmPolicy: "allowlist",
+      allowFrom: ["+15551234567"],
+    },
+  },
+}
+```
+
+**中文翻译**: 这是最干净的运行模式：
+
+- OpenClaw 拥有独立的 WhatsApp 身份
+- 更清晰的私聊白名单和路由边界
+- 降低自我对话混淆的概率
+
+最小策略配置：
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      dmPolicy: "allowlist",
+      allowFrom: ["+15551234567"],
+    },
+  },
+}
+```
+
+### [展开] Personal-number fallback / 个人号码备选
+
+**英文原文**: Onboarding supports personal-number mode and writes a self-chat-friendly baseline:
+
+- `dmPolicy: "allowlist"`
+- `allowFrom` includes your personal number
+- `selfChatMode: true`
+
+In runtime, self-chat protections key off the linked self number and `allowFrom`.
+
+**中文翻译**: 初始化引导支持个人号码模式，并写入对自我对话友好的基础配置：
+
+- `dmPolicy: "allowlist"`
+- `allowFrom` 包含你的个人号码
+- `selfChatMode: true`
+
+运行时，自我对话保护基于已链接的自身号码和 `allowFrom` 生效。
+
+### [展开] WhatsApp Web-only channel scope / 仅限 WhatsApp Web 的频道范围
+
+**英文原文**: The messaging platform channel is WhatsApp Web-based (`Baileys`) in current OpenClaw channel architecture. There is no separate Twilio WhatsApp messaging channel in the built-in chat-channel registry.
+
+**中文翻译**: 当前 OpenClaw 频道架构中，消息平台频道基于 WhatsApp Web（`Baileys`）。内置聊天频道注册表中没有独立的 Twilio WhatsApp 消息频道。
+
+---
+
+## Runtime model / 运行时模型
+
+**英文原文**: Gateway owns the WhatsApp socket and reconnect loop.
+
+**中文翻译**: Gateway 拥有 WhatsApp 套接字和重连循环的控制权。
+
+**英文原文**: The reconnect watchdog uses WhatsApp Web transport activity, not only inbound app-message volume, so a quiet linked-device session is not restarted solely because nobody has sent a message recently. A longer application-silence cap still forces a reconnect if transport frames keep arriving but no application messages are handled for the watchdog window; after a transient reconnect for a recently active session, that application-silence check uses the normal message timeout for the first recovery window.
+
+**中文翻译**: 重连看门狗基于 WhatsApp Web 传输活动（而非仅入站应用消息量）来判断，因此不会因为近期没人发消息就重启安静的已链接设备会话。如果传输帧持续到达但窗口期内没有应用消息被处理，较长的应用静默上限仍会强制重连；在对近期活跃会话的短暂重连后，该静默检查使用正常消息超时作为首个恢复窗口。
+
+**英文原文**: Baileys socket timings are explicit under `web.whatsapp.*`: `keepAliveIntervalMs` controls WhatsApp Web application pings, `connectTimeoutMs` controls the opening handshake timeout, and `defaultQueryTimeoutMs` controls Baileys query timeouts.
+
+**中文翻译**: Baileys 套接字计时参数在 `web.whatsapp.*` 下显式配置：`keepAliveIntervalMs` 控制应用心跳，`connectTimeoutMs` 控制握手超时，`defaultQueryTimeoutMs` 控制 Baileys 查询超时。
+
+**英文原文**: Outbound sends require an active WhatsApp listener for the target account.
+
+**中文翻译**: 出站发送需要目标账号有活跃的 WhatsApp 监听器。
+
+**英文原文**: Group sends attach native mention metadata for `@+<digits>` and `@<digits>` tokens in text and media captions when the token matches current WhatsApp participant metadata, including LID-backed groups.
+
+**中文翻译**: 群组发送时，当文本和媒体说明中的 `@+<数字>` 和 `@<数字>` 标记匹配当前 WhatsApp 参与者元数据（包括基于 LID 的群组）时，会附加原生 @提及 元数据。
+
+**英文原文**: Status and broadcast chats are ignored (`@status`, `@broadcast`).
+
+**中文翻译**: 状态和广播聊天会被忽略（`@status`、`@broadcast`）。
+
+**英文原文**: The reconnect watchdog follows WhatsApp Web transport activity, not only inbound app-message volume: quiet linked-device sessions stay up while transport frames continue, but a transport stall forces reconnect well before the later remote disconnect path.
+
+**中文翻译**: 重连看门狗跟踪传输活动（而非仅消息量）：只要传输帧持续到达，安静的会话就保持在线；但传输停滞会在远端断开之前强制重连。
+
+**英文原文**: Direct chats use DM session rules (`session.dmScope`; default `main` collapses DMs to the agent main session).
+
+**中文翻译**: 私聊使用 DM 会话规则（`session.dmScope`；默认 `main` 将所有私聊合并到 agent 主会话）。
+
+**英文原文**: Group sessions are isolated (`agent:<agentId>:whatsapp:group:<jid>`).
+
+**中文翻译**: 群组会话相互隔离（`agent:<agentId>:whatsapp:group:<jid>`）。
+
+**英文原文**: WhatsApp Channels/Newsletters can be explicit outbound targets with their native `@newsletter` JID. Outbound newsletter sends use channel session metadata (`agent:<agentId>:whatsapp:channel:<jid>`) rather than DM session semantics.
+
+**中文翻译**: WhatsApp 频道/通讯可以使用原生 `@newsletter` JID 作为明确的出站目标。出站通讯发送使用频道会话元数据而非私聊会话语义。
+
+**英文原文**: WhatsApp Web transport honors standard proxy environment variables on the gateway host (`HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` / lowercase variants). Prefer host-level proxy config over channel-specific WhatsApp proxy settings.
+
+**中文翻译**: WhatsApp Web 传输遵循 Gateway 主机上的标准代理环境变量（`HTTPS_PROXY`、`HTTP_PROXY`、`NO_PROXY` 或其小写变体）。优先使用主机级代理配置而非频道特定的 WhatsApp 代理设置。
+
+**英文原文**: When `messages.removeAckAfterReply` is enabled, OpenClaw clears the WhatsApp ack reaction after a visible reply is delivered.
+
+**中文翻译**: 启用 `messages.removeAckAfterReply` 后，OpenClaw 在可见回复送达后清除 WhatsApp 的确认反应（ack reaction）。
+
+---
+
+## Plugin hooks and privacy / 插件钩子与隐私
+
+**英文原文**: WhatsApp inbound messages can contain personal message content, phone numbers, group identifiers, sender names, and session correlation fields. For that reason, WhatsApp does not broadcast inbound `message_received` hook payloads to plugins unless you explicitly opt in.
+
+**中文翻译**: WhatsApp 入站消息可能包含个人消息内容、电话号码、群组标识、发送者名称和会话关联字段。因此，除非你明确启用，WhatsApp 不会向插件广播入站 `message_received` 钩子载荷。
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      pluginHooks: {
+        messageReceived: true,
+      },
+    },
+  },
+}
+```
+
+**英文原文**: You can scope the opt-in to one account.
+
+**中文翻译**: 你可以将启用范围限定到单个账号。
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      accounts: {
+        work: {
+          pluginHooks: {
+            messageReceived: true,
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+**英文原文**: Only enable this for plugins you trust to receive inbound WhatsApp message content and identifiers.
+
+**中文翻译**: 仅对你信任能接收 WhatsApp 入站消息内容和标识的插件启用此功能。
+
+---
+
+## [标签页] Access control and activation / 访问控制与激活
+
+### [标签页: DM policy] 私聊策略
+
+**英文原文**: `channels.whatsapp.dmPolicy` controls direct chat access:
+
+- `pairing` (default)
+- `allowlist`
+- `open` (requires `allowFrom` to include `"*"`)
+- `disabled`
+
+`allowFrom` accepts E.164-style numbers (normalized internally).
+
+`allowFrom` is a DM sender access-control list. It does not gate explicit outbound sends to WhatsApp group JIDs or `@newsletter` channel JIDs.
+
+Multi-account override: `channels.whatsapp.accounts.<id>.dmPolicy` (and `allowFrom`) take precedence over channel-level defaults for that account.
+
+Runtime behavior details:
+
+- pairings are persisted in channel allow-store and merged with configured `allowFrom`
+- scheduled automation and heartbeat recipient fallback use explicit delivery targets or configured `allowFrom`; DM pairing approvals are not implicit cron or heartbeat recipients
+- if no allowlist is configured, the linked self number is allowed by default
+- OpenClaw never auto-pairs outbound `fromMe` DMs (messages you send to yourself from the linked device)
+
+**中文翻译**: `channels.whatsapp.dmPolicy` 控制私聊访问：
+
+- `pairing`（默认，配对模式）
+- `allowlist`（白名单）
+- `open`（开放，需要 `allowFrom` 包含 `"*"`）
+- `disabled`（禁用）
+
+`allowFrom` 接受 E.164 格式的号码（内部自动规范化）。
+
+`allowFrom` 是私聊发送者访问控制列表。它不限制向 WhatsApp 群组 JID 或 `@newsletter` 频道 JID 的明确出站发送。
+
+多账号覆盖：`channels.whatsapp.accounts.<id>.dmPolicy`（和 `allowFrom`）优先于频道级默认值。
+
+运行时行为细节：
+
+- 配对持久化在频道 allow-store 中并与配置的 `allowFrom` 合并
+- 定时自动化和心跳接收者回退使用明确的投递目标或配置的 `allowFrom`；私聊配对批准不会隐式成为定时任务或心跳接收者
+- 如果未配置白名单，默认允许已链接的自身号码
+- OpenClaw 永远不会自动配对出站 `fromMe` 私聊（你从已链接设备发给自己的消息）
+
+### [标签页: Group policy + allowlists] 群组策略与白名单
+
+**英文原文**: Group access has two layers:
+
+1. **Group membership allowlist** (`channels.whatsapp.groups`)
+   - if `groups` is omitted, all groups are eligible
+   - if `groups` is present, it acts as a group allowlist (`"*"` allowed)
+
+2. **Group sender policy** (`channels.whatsapp.groupPolicy` + `groupAllowFrom`)
+   - `open`: sender allowlist bypassed
+   - `allowlist`: sender must match `groupAllowFrom` (or `*`)
+   - `disabled`: block all group inbound
+
+Sender allowlist fallback:
+
+- if `groupAllowFrom` is unset, runtime falls back to `allowFrom` when available
+- sender allowlists are evaluated before mention/reply activation
+
+Note: if no `channels.whatsapp` block exists at all, runtime group-policy fallback is `allowlist` (with a warning log), even if `channels.defaults.groupPolicy` is set.
+
+**中文翻译**: 群组访问有两层控制：
+
+1. **群组成员白名单**（`channels.whatsapp.groups`）
+   - 如果省略 `groups`，所有群组都可访问
+   - 如果设置了 `groups`，它作为群组白名单（允许 `"*"`）
+
+2. **群组发送者策略**（`channels.whatsapp.groupPolicy` + `groupAllowFrom`）
+   - `open`：绕过发送者白名单
+   - `allowlist`：发送者必须匹配 `groupAllowFrom`（或 `*`）
+   - `disabled`：阻止所有群组入站
+
+发送者白名单回退：
+
+- 如果 `groupAllowFrom` 未设置，运行时回退到 `allowFrom`
+- 发送者白名单在 @提及/回复激活之前评估
+
+注意：如果完全没有 `channels.whatsapp` 配置块，运行时群组策略回退为 `allowlist`（并产生警告日志），即使设置了 `channels.defaults.groupPolicy`。
+
+### [标签页: Mentions + /activation] @提及与 / 激活
+
+**英文原文**: Group replies require mention by default.
+
+Mention detection includes:
+
+- explicit WhatsApp mentions of the bot identity
+- configured mention regex patterns (`agents.list[].groupChat.mentionPatterns`, fallback `messages.groupChat.mentionPatterns`)
+- inbound voice-note transcripts for authorized group messages
+- implicit reply-to-bot detection (reply sender matches bot identity)
+
+Activation syntax in groups: `/` prefix triggers the agent.
+
+**中文翻译**: 默认情况下，群组回复需要被 @提及。
+
+@提及检测包括：
+
+- 明确的 WhatsApp @提及机器人身份
+- 配置的 @提及正则表达式模式（`agents.list[].groupChat.mentionPatterns`，回退到 `messages.groupChat.mentionPatterns`）
+- 已授权群组消息的入站语音笔记转录
+- 隐式回复机器人检测（回复发送者匹配机器人身份）
+
+群组中的激活语法：`/` 前缀触发 agent。
+
+---
+
+## [展开] Message format and media / 消息格式与媒体
+
+**英文原文**: Outbound messages convert Markdown to WhatsApp formatting. WhatsApp supports bold, italic, strikethrough, monospace, and inline code. Lists, tables, and headings are converted to plain text.
+
+**中文翻译**: 出站消息将 Markdown 转换为 WhatsApp 格式。WhatsApp 支持粗体、斜体、删除线、等宽字体和行内代码。列表、表格和标题转换为纯文本。
+
+**英文原文**: Media limits:
+
+- inbound media save cap: `channels.whatsapp.mediaMaxMb` (default `50`)
+- outbound media send cap: `channels.whatsapp.mediaMaxMb` (default `50`)
+- per-account overrides use `channels.whatsapp.accounts.<accountId>.mediaMaxMb`
+- images are auto-optimized (resize/quality sweep) to fit limits
+- on media send failure, first-item fallback sends text warning instead of dropping the response silently
+
+**中文翻译**: 媒体限制：
+
+- 入站媒体保存上限：`channels.whatsapp.mediaMaxMb`（默认 50MB）
+- 出站媒体发送上限：`channels.whatsapp.mediaMaxMb`（默认 50MB）
+- 每个账号的覆盖使用 `channels.whatsapp.accounts.<accountId>.mediaMaxMb`
+- 图片会自动优化（调整大小/质量扫描）以适应限制
+- 媒体发送失败时，第一条回退消息会发送文本警告，而不是静默丢弃回复
+
+---
+
+## [展开] Message streaming and chunking / 消息流式传输与分块
+
+**英文原文**: WhatsApp does not support native streaming. OpenClaw chunks agent replies into sequential messages. Chunk boundaries are at sentence breaks when possible. Chunk size and interval are configurable. A trailing chunk is sent when the stream ends if it has content.
+
+**中文翻译**: WhatsApp 不支持原生流式传输。OpenClaw 将 agent 回复分块为顺序消息。分块边界尽可能落在句子断点处。分块大小和间隔可配置。流结束时如果有内容会发送尾部分块。
+
+---
+
+## [展开] Typing indicators / 输入指示器
+
+**英文原文**: `channels.whatsapp.typingIndicator` controls whether the agent shows a typing indicator before replying.
+
+| Value | Behavior |
+|---|---|
+| `"off"` | No typing indicator |
+| `"auto"` | Show during generation, hide before sending |
+| `"always"` | Show continuously until the reply is fully sent |
+
+Default: `"auto"`.
+
+**中文翻译**: `channels.whatsapp.typingIndicator` 控制 agent 回复前是否显示输入中指示器。
+
+| 值 | 行为 |
+|---|---|
+| `"off"` | 不显示输入指示器 |
+| `"auto"` | 生成期间显示，发送前隐藏 |
+| `"always"` | 持续显示直到回复完全发送 |
+
+默认：`"auto"`。
+
+---
+
+## Reply quoting / 回复引用
+
+**英文原文**: WhatsApp supports native reply quoting, where outbound replies visibly quote the inbound message. Control it with `channels.whatsapp.replyToMode`.
+
+| Value | Behavior |
+|---|---|
+| `"off"` | Never quote; send as a plain message |
+| `"first"` | Quote only the first outbound reply chunk |
+| `"all"` | Quote every outbound reply chunk |
+| `"batched"` | Quote queued batched replies while leaving immediate replies unquoted |
+
+Default is `"off"`. Per-account overrides use `channels.whatsapp.accounts.<id>.replyToMode`.
+
+**中文翻译**: WhatsApp 支持原生回复引用，出站回复会 visibly 引用入站消息。通过 `channels.whatsapp.replyToMode` 控制。
+
+| 值 | 行为 |
+|---|---|
+| `"off"` | 从不引用，作为普通消息发送 |
+| `"first"` | 仅引用第一个出站回复分块 |
+| `"all"` | 引用每个出站回复分块 |
+| `"batched"` | 引用排队的批量回复，即时回复不被引用 |
+
+默认 `"off"`。每个账号的覆盖使用 `channels.whatsapp.accounts.<id>.replyToMode`。
+
+---
+
+## Reaction level / 反应级别
+
+**英文原文**: `channels.whatsapp.reactionLevel` controls how broadly the agent uses emoji reactions on WhatsApp.
+
+| Level | Ack reactions | Agent-initiated reactions | Description |
+|---|---|---|---|
+| `"off"` | No | No | No reactions at all |
+| `"ack"` | Yes | No | Ack reactions only (pre-reply receipt) |
+| `"minimal"` | Yes | Yes (conservative) | Ack + agent reactions with conservative guidance |
+| `"extensive"` | Yes | Yes (encouraged) | Ack + agent reactions with encouraged guidance |
+
+Default: `"minimal"`.
+
+**中文翻译**: `channels.whatsapp.reactionLevel` 控制 agent 在 WhatsApp 上使用 emoji 反应的广泛程度。
+
+| 级别 | 确认反应 | Agent 主动反应 | 说明 |
+|---|---|---|---|
+| `"off"` | 否 | 否 | 完全不使用反应 |
+| `"ack"` | 是 | 否 | 仅确认反应（回复前收据） |
+| `"minimal"` | 是 | 是（保守） | 确认 + agent 反应，保守引导 |
+| `"extensive"` | 是 | 是（鼓励） | 确认 + agent 反应，鼓励引导 |
+
+默认：`"minimal"`。
+
+---
+
+## Acknowledgment reactions / 确认反应
+
+**英文原文**: WhatsApp supports immediate ack reactions on inbound receipt via `channels.whatsapp.ackReaction`. Ack reactions are gated by `reactionLevel` — they are suppressed when `reactionLevel` is `"off"`.
+
+**中文翻译**: WhatsApp 支持通过 `channels.whatsapp.ackReaction` 在入站接收时立即发送确认反应。确认反应受 `reactionLevel` 限制 — 当 `reactionLevel` 为 `"off"` 时被抑制。
+
+**英文原文**: Behavior notes:
+
+- sent immediately after inbound is accepted (pre-reply)
+- failures are logged but do not block normal reply delivery
+- group mode `mentions` reacts on mention-triggered turns; group activation `always` acts as bypass for this check
+- WhatsApp uses `channels.whatsapp.ackReaction` (legacy `messages.ackReaction` is not used here)
+
+**中文翻译**: 行为说明：
+
+- 入站接受后立即发送（回复前）
+- 失败会记录日志但不阻塞正常回复发送
+- 群组模式 `mentions` 在 @提及触发的回合中反应；群组激活 `always` 作为此检查的绕过
+- WhatsApp 使用 `channels.whatsapp.ackReaction`（旧版 `messages.ackReaction` 在此不使用）
+
+---
+
+## [展开] Multi-account and credentials / 多账号与凭证
+
+### Account selection and defaults / 账号选择与默认
+
+**英文原文**: Account ids come from `channels.whatsapp.accounts`. Default account selection: `default` if present, otherwise first configured account id (sorted). Account ids are normalized internally for lookup.
+
+**中文翻译**: 账号 ID 来自 `channels.whatsapp.accounts`。默认账号选择：如果存在 `default` 则使用，否则使用第一个配置的账号 ID（排序后）。账号 ID 在内部规范化用于查找。
+
+### Credential paths and legacy compatibility / 凭证路径与旧版兼容
+
+**英文原文**: Current auth path: `~/.openclaw/credentials/whatsapp/<accountId>/creds.json`. Backup file: `creds.json.bak`. Legacy default credentials may still be imported from older paths.
+
+**中文翻译**: 当前认证路径：`~/.openclaw/credentials/whatsapp/<accountId>/creds.json`。备份文件：`creds.json.bak`。旧版默认凭证仍可能从旧路径导入。
