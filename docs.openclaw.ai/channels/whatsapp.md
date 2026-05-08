@@ -738,3 +738,163 @@ WhatsApp 支持通过 `channels.whatsapp.ackReaction` 在入站接收时立即�
 | `channels.whatsapp.mediaMaxMb` | 媒体大小限制 | `50` |
 | `channels.whatsapp.selfChatMode` | 启用自我对话保护 | `false` |
 | `channels.whatsapp.web.*` | WebSocket 计时设置 | 见文档 |
+
+---
+
+> ## [展开] Tools, actions, and config writes / 工具、操作与配置写入
+
+## [展开] Tools, actions, and config writes / 工具、操作与配置写入
+
+> * Agent tool support includes WhatsApp reaction action (`react`).
+> * Action gates:
+>   * `channels.whatsapp.actions.reactions`
+>   *channels.whatsapp.actions.polls`
+> * Channel-initiated config writes are enabled by default (disable via `channels.whatsapp.configWrites=false`).
+
+* Agent 工具支持包含 WhatsApp 表情反应操作（`react`）。
+* 操作权限门：
+  * `channels.whatsapp.actions.reactions`
+  * `channels.whatsapp.actions.polls`
+* 频道发起的配置写入默认启用（通过 `channels.whatsapp.configWrites=false` 禁用）。
+
+---
+
+> ## [展开] Troubleshooting / 故障排除（补充）
+
+## [展开] Troubleshooting / 故障排除（补充）
+
+> ### Not linked (QR required)
+> Symptom: channel status reports not linked.
+> Fix: `openclaw channels login --channel whatsapp` then `openclaw channels status`
+
+### 未链接（需要扫码）
+症状：频道状态显示未链接。
+修复：运行 `openclaw channels login --channel whatsapp` 然后 `openclaw channels status`
+
+> ### Linked but disconnected / reconnect loop
+> Symptom: linked account with repeated disconnects or reconnect attempts.
+> Quiet accounts can stay connected past the normal message timeout; the watchdog restarts when WhatsApp Web transport activity stops, the socket closes, or application-level activity stays silent beyond the longer safety window.
+> If logs show repeated `status=408 Request Time-out Connection was lost`, tune Baileys socket timings under `web.whatsapp`.
+
+### 已链接但断开/重连循环
+症状：已链接的账号反复断开或尝试重连。
+安静的账号可以超过正常消息超时保持连接；看门狗在 WhatsApp Web 传输活动停止、套接字关闭或应用级活动超过更长安全窗口保持静默时重启。
+如果日志显示重复的 `status=408 Request Time-out Connection was lost`，调整 `web.whatsapp` 下的 Baileys 套接字计时。
+
+> ### QR login times out behind a proxy
+> Symptom: `openclaw channels login --channel whatsapp` fails before showing a usable QR code with `status=408 Request Time-out` or a TLS socket disconnect.
+> WhatsApp Web login uses the gateway host's standard proxy environment (`HTTPS_PROXY`, `HTTP_PROXY`, lowercase variants, and `NO_PROXY`). Verify the gateway process inherits the proxy env and that `NO_PROXY` does not match `mmg.whatsapp.net`.
+
+### 代理后 QR 登录超时
+症状：`openclaw channels login --channel whatsapp` 在显示可用二维码之前因 `status=408 Request Time-out` 或 TLS 套接字断开而失败。
+WhatsApp Web 登录使用网关主机的标准代理环境变量。确认网关进程继承了代理环境变量，且 `NO_PROXY` 不匹配 `mmg.whatsapp.net`。
+
+> ### No active listener when sending
+> Outbound sends fail fast when no active gateway listener exists for the target account.
+
+### 发送时无活跃监听器
+当目标账号没有活跃的网关监听器时，出站发送会快速失败。
+
+> ### Reply appears in transcript but not in WhatsApp
+> Transcript rows record what the agent generated. WhatsApp delivery is checked separately: OpenClaw only treats an auto-reply as sent after Baileys returns an outbound message id for at least one visible text or media send.
+
+### 回复出现在转录中但不在 WhatsApp 中
+转录行记录 agent 生成的内容。WhatsApp 投递单独检查：OpenClaw 仅在 Baileys 返回至少一个可见文本或媒体发送的出站消息 ID 后才将自动回复视为已发送。
+
+> ### Group messages unexpectedly ignored
+> Check in this order: `groupPolicy` → `groupAllowFrom` / `allowFrom` → `groups` allowlist entries → mention gating → duplicate keys in `openclaw.json`
+
+### 群消息被意外忽略
+按此顺序检查：`groupPolicy` → `groupAllowFrom` / `allowFrom` → `groups` 白名单条目 → @提及门控 → `openclaw.json` 中的重复键
+
+> ### Bun runtime warning
+> WhatsApp gateway runtime should use Node. Bun is flagged as incompatible for stable WhatsApp/Telegram gateway operation.
+
+### Bun 运行时警告
+WhatsApp 网关运行时应该使用 Node。Bun 被标记为不兼容稳定的 WhatsApp/Telegram 网关操作。
+
+---
+
+> ## System prompts / 系统提示词
+
+## System prompts / 系统提示词
+
+> WhatsApp supports Telegram-style system prompts for groups and direct chats via the `groups` and `direct` maps.
+
+WhatsApp 支持通过 `groups` 和 `direct` 映射为群聊和私聊设置 Telegram 风格的系统提示词。
+
+> ### Resolution hierarchy for group messages:
+> 1. **Group-specific system prompt** (`groups["<groupId>"].systemPrompt`): used when the specific group entry exists in the map **and** its `systemPrompt` key is defined. If `systemPrompt` is an empty string (`""`), the wildcard is suppressed and no system prompt is applied.
+> 2. **Group wildcard system prompt** (`groups["*"].systemPrompt`): used when the specific group entry is absent from the map entirely, or when it exists but defines no `systemPrompt` key.
+
+### 群聊消息的解析层级：
+1. **群特定系统提示词**（`groups["<groupId>"].systemPrompt`）：当映射中存在该群的条目**且**其 `systemPrompt` 键已定义时使用。如果 `systemPrompt` 为空字符串（`""`），则通配符被抑制，不应用系统提示词。
+2. **群通配符系统提示词**（`groups["*"].systemPrompt`）：当映射中完全不存在该群的条目，或存在但未定义 `systemPrompt` 键时使用。
+
+> ### Resolution hierarchy for direct messages:
+> 1. **Direct-specific system prompt** (`direct["<peerId>"].systemPrompt`): used when the specific peer entry exists in the map **and** its `systemPrompt` key is defined. If `systemPrompt` is an empty string (`""`), the wildcard is suppressed and no system prompt is applied.
+> 2. **Direct wildcard system prompt** (`direct["*"].systemPrompt`): used when the specific peer entry is absent from the map entirely, or when it exists but defines no `systemPrompt` key.
+
+### 私聊消息的解析层级：
+1. **私聊特定系统提示词**（`direct["<peerId>"].systemPrompt`）：当映射中存在该对等方的条目**且**其 `systemPrompt` 键已定义时使用。如果 `systemPrompt` 为空字符串（`""`），则通配符被抑制，不应用系统提示词。
+2. **私聊通配符系统提示词**（`direct["*"].systemPrompt`）：当映射中完全不存在该对等方的条目，或存在但未定义 `systemPrompt` 键时使用。
+
+> **Difference from Telegram multi-account behavior:** In Telegram, root `groups` is intentionally suppressed for all accounts in a multi-account setup. WhatsApp does not apply this guard: root `groups` and root `direct` are always inherited by accounts that define no account-level override.
+
+> **与 Telegram 多账号行为的区别：** 在 Telegram 中，多账号设置下根 `groups` 会被有意抑制。WhatsApp 不应用此防护：根 `groups` 和根 `direct` 始终被没有账号级别覆盖的账号继承。
+
+> Important behavior:
+> * `channels.whatsapp.groups` is both a per-group config map and the chat-level group allowlist. At either the root or account scope, `groups["*"]` means "all groups are admitted" for that scope.
+> * Only add a wildcard group `systemPrompt` when you already want that scope to admit all groups.
+> * `channels.whatsapp.direct` does not have the same side effect for DMs. `direct["*"]` only provides a default direct-chat config after a DM is already admitted by `dmPolicy` plus `allowFrom` or pairing-store rules.
+
+重要行为：
+* `channels.whatsapp.groups` 既是每群配置映射，也是聊天级别的群白名单。在根或账号作用域下，`groups["*"]` 表示"该作用域下所有群都被允许"。
+* 仅当你希望该作用域允许所有群时，才添加通配符群 `systemPrompt`。
+* `channels.whatsapp.direct` 对私聊没有相同的副作用。`direct["*"]` 仅在私聊已被 `dmPolicy` 加上 `allowFrom` 或配对存储规则允许后，提供默认私聊配置。
+
+---
+
+> ## Configuration reference pointers / 配置参考指针
+
+## Configuration reference pointers / 配置参考指针
+
+> Primary reference: [Configuration reference - WhatsApp](/gateway/config-channels#whatsapp)
+
+主要参考：[配置参考 - WhatsApp](/gateway/config-channels#whatsapp)
+
+> High-signal WhatsApp fields:
+> * access: `dmPolicy`, `allowFrom`, `groupPolicy`, `groupAllowFrom`, `groups`
+> * delivery: `textChunkLimit`, `chunkMode`, `mediaMaxMb`, `sendReadReceipts`, `ackReaction`, `reactionLevel`
+> * multi-account: `accounts.<id>.enabled`, `accounts.<id>.authDir`, account-level overrides
+> * operations: `configWrites`, `debounceMs`, `web.enabled`, `web.heartbeatSeconds`, `web.reconnect.*`, `web.whatsapp.*`
+> * session behavior: `session.dmScope`, `historyLimit`, `dmHistoryLimit`, `dms.<id>.historyLimit`
+> * prompts: `groups.<id>.systemPrompt`, `groups["*"].systemPrompt`, `direct.<id>.systemPrompt`, `direct["*"].systemPrompt`
+
+高信号 WhatsApp 字段：
+* 访问控制：`dmPolicy`, `allowFrom`, `groupPolicy`, `groupAllowFrom`, `groups`
+* 投递：`textChunkLimit`, `chunkMode`, `mediaMaxMb`, `sendReadReceipts`, `ackReaction`, `reactionLevel`
+* 多账号：`accounts.<id>.enabled`, `accounts.<id>.authDir`, 账号级别覆盖
+* 运营：`configWrites`, `debounceMs`, `web.enabled`, `web.heartbeatSeconds`, `web.reconnect.*`, `web.whatsapp.*`
+* 会话行为：`session.dmScope`, `historyLimit`, `dmHistoryLimit`, `dms.<id>.historyLimit`
+* 提示词：`groups.<id>.systemPrompt`, `groups["*"].systemPrompt`, `direct.<id>.systemPrompt`, `direct["*"].systemPrompt`
+
+---
+
+> ## Related / 相关
+
+## Related / 相关
+
+> * [Pairing](/channels/pairing)
+> * [Groups](/channels/groups)
+> * [Security](/gateway/security)
+> * [Channel routing](/channels/channel-routing)
+> * [Multi-agent routing](/concepts/multi-agent)
+> * [Troubleshooting](/channels/troubleshooting)
+
+* [配对](/channels/pairing)
+* [群组](/channels/groups)
+* [安全](/gateway/security)
+* [频道路由](/channels/channel-routing)
+* [多 Agent 路由](/concepts/multi-agent)
+* [故障排除](/channels/troubleshooting)
