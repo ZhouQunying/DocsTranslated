@@ -514,3 +514,227 @@ WhatsApp 支持通过 `channels.whatsapp.ackReaction` 在入站接收时立即�
 ### 凭证路径与旧版兼容
 
 当前认证路径：`~/.openclaw/credentials/whatsapp/<accountId>/creds.json`。备份文件：`creds.json.bak`。旧版默认凭证仍可能从旧路径导入。
+
+---
+
+> ## [展开] Message streaming and chunking / 消息流式传输与分块
+
+## [展开] Message streaming and chunking / 消息流式传输与分块
+
+> WhatsApp does not support native streaming. OpenClaw chunks agent replies into sequential messages. Chunk boundaries are at sentence breaks when possible. Chunk size and interval are configurable. A trailing chunk is sent when the stream ends if it has content.
+
+WhatsApp 不支持原生流式传输。OpenClaw 将 agent 回复分块为顺序消息。分块边界尽可能落在句子断点处。分块大小和间隔可配置。流结束时如果有内容会发送尾部分块。
+
+> `channels.whatsapp.chunkChars` — outbound text chunk size in characters. `channels.whatsapp.chunkIntervalMs` — time interval between chunks in milliseconds.
+
+`channels.whatsapp.chunkChars` — 出站文本分块大小（字符数）。`channels.whatsapp.chunkIntervalMs` — 分块间隔时间（毫秒）。
+
+---
+
+> ## [展开] Typing indicators / 输入指示器
+
+## [展开] Typing indicators / 输入指示器
+
+> `channels.whatsapp.typingIndicator` controls whether the agent shows a typing indicator before replying.
+
+`channels.whatsapp.typingIndicator` 控制 agent 回复前是否显示输入中指示器。
+
+> | Value | Behavior |
+> |---|---|
+> | `"off"` | No typing indicator |
+> | `"auto"` | Show during generation, hide before sending |
+> | `"always"` | Show continuously until the reply is fully sent |
+>
+> Default: `"auto"`.
+
+| 值 | 行为 |
+|---|---|
+| `"off"` | 不显示输入指示器 |
+| `"auto"` | 生成期间显示，发送前隐藏 |
+| `"always"` | 持续显示直到回复完全发送 |
+
+默认：`"auto"`。
+
+---
+
+> ## [展开] Reaction level / 反应级别
+
+## [展开] Reaction level / 反应级别
+
+> `channels.whatsapp.reactionLevel` controls how broadly the agent uses emoji reactions on WhatsApp.
+
+`channels.whatsapp.reactionLevel` 控制 agent 在 WhatsApp 上使用 emoji 反应的广泛程度。
+
+> | Level | Ack reactions | Agent-initiated reactions | Description |
+> |---|---|---|---|
+> | `"off"` | No | No | No reactions at all |
+> | `"ack"` | Yes | No | Ack reactions only (pre-reply receipt) |
+> | `"minimal"` | Yes | Yes (conservative) | Ack + agent reactions with conservative guidance |
+> | `"extensive"` | Yes | Yes (encouraged) | Ack + agent reactions with encouraged guidance |
+>
+> Default: `"minimal"`. Per-account overrides use `channels.whatsapp.accounts.<id>.reactionLevel`.
+
+| 级别 | 确认反应 | Agent 主动反应 | 说明 |
+|---|---|---|---|
+| `"off"` | 否 | 否 | 完全不使用反应 |
+| `"ack"` | 是 | 否 | 仅确认反应（回复前收据） |
+| `"minimal"` | 是 | 是（保守） | 确认 + agent 反应，保守引导 |
+| `"extensive"` | 是 | 是（鼓励） | 确认 + agent 反应，鼓励引导 |
+
+默认：`"minimal"`。每个账号的覆盖使用 `channels.whatsapp.accounts.<id>.reactionLevel`。
+
+---
+
+> ## [展开] Acknowledgment reactions / 确认反应
+
+## [展开] Acknowledgment reactions / 确认反应
+
+> WhatsApp supports immediate ack reactions on inbound receipt via `channels.whatsapp.ackReaction`. Ack reactions are gated by `reactionLevel` — they are suppressed when `reactionLevel` is `"off"`.
+
+WhatsApp 支持通过 `channels.whatsapp.ackReaction` 在入站接收时立即发送确认反应。确认反应受 `reactionLevel` 限制 — 当 `reactionLevel` 为 `"off"` 时被抑制。
+
+> ```json5
+> {
+>   channels: {
+>     whatsapp: {
+>       ackReaction: {
+>         emoji: "👀",
+>         direct: true,
+>         group: "mentions",
+>       },
+>     },
+>   },
+> }
+> ```
+>
+> Behavior notes:
+> - sent immediately after inbound is accepted (pre-reply)
+> - failures are logged but do not block normal reply delivery
+> - group mode `mentions` reacts on mention-triggered turns; group activation `always` acts as bypass for this check
+> - WhatsApp uses `channels.whatsapp.ackReaction` (legacy `messages.ackReaction` is not used here)
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      ackReaction: {
+        emoji: "👀",
+        direct: true,
+        group: "mentions", // always | mentions | never
+      },
+    },
+  },
+}
+```
+
+行为说明：
+- 入站接受后立即发送（回复前）
+- 失败会记录日志但不阻塞正常回复发送
+- 群组模式 `mentions` 在 @提及触发的回合中反应；群组激活 `always` 作为此检查的绕过
+- WhatsApp 使用 `channels.whatsapp.ackReaction`（旧版 `messages.ackReaction` 在此不使用）
+
+---
+
+> ## [展开] Multi-account and credentials / 多账号与凭证
+
+## [展开] Multi-account and credentials / 多账号与凭证
+
+> ### Account selection and defaults
+> - account ids come from `channels.whatsapp.accounts`
+> - default account selection: `default` if present, otherwise first configured account id (sorted)
+> - account ids are normalized internally for lookup
+
+### 账号选择与默认
+
+- 账号 ID 来自 `channels.whatsapp.accounts`
+- 默认账号选择：如果存在 `default` 则使用，否则使用第一个配置的账号 ID（排序后）
+- 账号 ID 在内部规范化用于查找
+
+> ### Credential paths and legacy compatibility
+> - current auth path: `~/.openclaw/credentials/whatsapp/<accountId>/creds.json`
+> - backup file: `creds.json.bak`
+> - legacy default credentials stored in `~/.openclaw/credentials/whatsapp/creds.json` (no account id segment)
+> - if both exist, the account-scoped file wins
+
+### 凭证路径与旧版兼容
+
+- 当前认证路径：`~/.openclaw/credentials/whatsapp/<accountId>/creds.json`
+- 备份文件：`creds.json.bak`
+- 旧版默认凭证存储在 `~/.openclaw/credentials/whatsapp/creds.json`（无账号 ID 分段）
+- 如果两者都存在，以账号级别的文件为准
+
+---
+
+> ## [展开] Troubleshooting / 故障排除
+
+## [展开] Troubleshooting / 故障排除
+
+> ### WhatsApp Web connection lost
+> If WhatsApp disconnects with "logged in elsewhere", you need to re-scan the QR code.
+> Run `openclaw channels login --channel whatsapp` to restart the QR flow.
+> After a successful scan, the new credentials are saved.
+
+### WhatsApp Web 连接丢失
+
+如果 WhatsApp 提示"已在其他地方登录"，需要重新扫码。运行 `openclaw channels login --channel whatsapp` 重新扫码流程。扫码成功后，新凭证会被保存。
+
+> ### QR code not showing in terminal
+> If your terminal does not support QR code rendering, the login command falls back to printing the QR code as text.
+> Scan the text QR code from your terminal or open the Control UI to see a rendered QR code.
+
+### 终端不显示二维码
+
+如果你的终端不支持二维码渲染，登录命令会回退为打印文本形式的二维码。可以从终端扫描文
+
+本二维码，或在 Control UI 中查看渲染后的二维码。
+
+> ### WhatsApp plugin not loading after install
+> Confirm the plugin is enabled: `openclaw config get plugins.entries.openclaw-weixin.enabled`
+> If false: `openclaw config set plugins.entries.openclaw-weixin.enabled true`
+> Then restart the Gateway: `openclaw gateway restart`
+
+### WhatsApp 插件安装后未加载
+
+确认插件已启用：`openclaw config get plugins.entries.openclaw-weixin.enabled`
+如果为 false：`openclaw config set plugins.entries.openclaw-weixin.enabled true`
+然后重启 Gateway：`openclaw gateway restart`
+
+---
+
+> ## [展开] Configuration reference / 配置参考
+
+## [展开] Configuration reference / 配置参考
+
+> | Setting | Description | Default |
+> |---|---|---|
+> | `channels.whatsapp.dmPolicy` | Direct message policy | `"pairing"` |
+> | `channels.whatsapp.allowFrom` | DM sender allowlist (phone numbers) | `[]` |
+> | `channels.whatsapp.groupPolicy` | Group message policy | `"allowlist"` |
+> | `channels.whatsapp.groupAllowFrom` | Group sender allowlist | `[]` |
+> | `channels.whatsapp.groups` | Per-group overrides | `{}` |
+> | `channels.whatsapp.chunkChars` | Outbound text chunk size | `1000` |
+> | `channels.whatsapp.chunkIntervalMs` | Time between chunks | `3000` |
+> | `channels.whatsapp.typingIndicator` | Show typing indicator | `"auto"` |
+> | `channels.whatsapp.replyToMode` | Reply quoting mode | `"off"` |
+> | `channels.whatsapp.reactionLevel` | Emoji reaction breadth | `"minimal"` |
+> | `channels.whatsapp.ackReaction` | Ack reaction config | `null` |
+> | `channels.whatsapp.mediaMaxMb` | Media size limit | `50` |
+> | `channels.whatsapp.selfChatMode` | Enable self-chat protections | `false` |
+> | `channels.whatsapp.web.*` | WebSocket timing settings | see docs |
+
+| 设置 | 说明 | 默认值 |
+|---|---|---|
+| `channels.whatsapp.dmPolicy` | 私聊策略 | `"pairing"` |
+| `channels.whatsapp.allowFrom` | 私聊发送者白名单（电话号码） | `[]` |
+| `channels.whatsapp.groupPolicy` | 群聊策略 | `"allowlist"` |
+| `channels.whatsapp.groupAllowFrom` | 群聊发送者白名单 | `[]` |
+| `channels.whatsapp.groups` | 每群覆盖 | `{}` |
+| `channels.whatsapp.chunkChars` | 出站文本分块大小 | `1000` |
+| `channels.whatsapp.chunkIntervalMs` | 分块间隔 | `3000` |
+| `channels.whatsapp.typingIndicator` | 显示输入中指示器 | `"auto"` |
+| `channels.whatsapp.replyToMode` | 回复引用模式 | `"off"` |
+| `channels.whatsapp.reactionLevel` | emoji 反应范围 | `"minimal"` |
+| `channels.whatsapp.ackReaction` | 确认反应配置 | `null` |
+| `channels.whatsapp.mediaMaxMb` | 媒体大小限制 | `50` |
+| `channels.whatsapp.selfChatMode` | 启用自我对话保护 | `false` |
+| `channels.whatsapp.web.*` | WebSocket 计时设置 | 见文档 |
