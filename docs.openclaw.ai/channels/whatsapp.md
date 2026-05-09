@@ -883,6 +883,226 @@ WhatsApp 支持通过 `groups` 和 `direct` 映射为群聊和私聊设置 Teleg
 
 > ## Related / 相关
 
+
+---
+
+> ## Personal-number and self-chat behavior / 个人号码与自我对话行为
+
+## Personal-number and self-chat behavior / 个人号码与自我对话行为
+
+> When the linked self number is also present in `allowFrom`, WhatsApp self-chat safeguards activate:
+> 
+> * skip read receipts for self-chat turns
+> * ignore mention-JID auto-trigger behavior that would otherwise ping yourself
+> * if `messages.responsePrefix` is unset, self-chat replies default to `[{identity.name}]` or `[openclaw]`
+
+当已链接的自身号码也在 `allowFrom` 中时，WhatsApp 自我对话保护机制会激活：
+
+* 自我对话回合跳过已读回执
+* 忽略会触发 @自己的 mention-JID 自动触发行为
+* 如果 `messages.responsePrefix` 未设置，自我对话回复默认为 `[{identity.name}]` 或 `[openclaw]`
+
+---
+
+> ## [展开] Message normalization and context / 消息规范化与上下文
+
+## [展开] Message normalization and context / 消息规范化与上下文
+
+> ### [展开: Inbound envelope + reply context]
+> Incoming WhatsApp messages are wrapped in the shared inbound envelope.
+> 
+> If a quoted reply exists, context is appended in this form:
+> ```text
+> [Replying to <sender> id:<stanzaId>]
+> <quoted body or media placeholder>
+> [/Replying]
+> ```
+> 
+> Reply metadata fields are also populated when available (`ReplyToId`, `ReplyToBody`, `ReplyToSender`, sender JID/E.164).
+> When the quoted reply target is downloadable media, OpenClaw saves it through the normal inbound media store and exposes it as `MediaPath`/`MediaType` so the agent can inspect the referenced image instead of only seeing `<media:image>`.
+
+### [展开: 入站信封 + 回复上下文]
+
+入站 WhatsApp 消息被包装在共享的入站信封中。
+
+如果存在引用回复，上下文会以此形式附加：
+```text
+[Replying to <sender> id:<stanzaId>]
+<quoted body or media placeholder>
+[/Replying]
+```
+
+回复元数据字段也会在可用时填充（`ReplyToId`、`ReplyToBody`、`ReplyToSender`、发送者 JID/E.164）。
+当引用回复目标是可下载的媒体时，OpenClaw 通过正常入站媒体存储保存它，并暴露为 `MediaPath`/`MediaType`，使 agent 可以检查引用的图片，而不仅仅看到 `<media:image>`。
+
+> ### [展开: Media placeholders and location/contact extraction]
+> Media-only inbound messages are normalized with placeholders such as:
+> * `<media:image>`
+> * `<media:video>`
+> * `<media:audio>`
+> * `<media:document>`
+> * `<media:sticker>`
+> 
+> Authorized group voice notes are transcribed before mention gating when the body is only `<media:audio>`, so saying the bot mention in the voice note can trigger the reply. If the transcript still does not mention the bot, the transcript is kept in pending group history instead of the raw placeholder.
+> 
+> Location bodies use terse coordinate text. Location labels/comments and contact/vCard details are rendered as fenced untrusted metadata, not inline prompt text.
+
+### [展开: 媒体占位符与位置/联系人提取]
+
+仅媒体的入站消息被规范化为占位符，如：
+* `<media:image>`
+* `<media:video>`
+* `<media:audio>`
+* `<media:document>`
+* `<media:sticker>`
+
+授权群语音笔记在 @提及门控之前会被转写（当内容仅为 `<media:audio>` 时），因此在语音笔记中说机器人 @提及 可以触发回复。如果转写后仍未 @提及 机器人，转写内容会保留在待处理群历史记录中，而非原始占位符。
+
+位置内容使用简洁的坐标文本。位置标签/注释和联系人/vCard 详细信息呈现为围栏非信任元数据，而非内联提示文本。
+
+> ### [展开: Pending group history injection]
+> For groups, unprocessed messages can be buffered and injected as context when the bot is finally triggered.
+> 
+> * default limit: `50`
+> * config: `channels.whatsapp.historyLimit`
+> * fallback: `messages.groupChat.historyLimit`
+> * `0` disables
+> 
+> Injection markers:
+> * `[Chat messages since your last reply - for context]`
+> * `[Current message - respond to this]`
+
+### [展开: 待处理群历史注入]
+
+对于群组，未处理的消息可以被缓冲，并在机器人最终被触发时作为上下文注入。
+
+* 默认限制：`50`
+* 配置：`channels.whatsapp.historyLimit`
+* 回退：`messages.groupChat.historyLimit`
+* `0` 禁用
+
+注入标记：
+* `[Chat messages since your last reply - for context]`
+* `[Current message - respond to this]`
+
+> ### [展开: Read receipts]
+> Read receipts are enabled by default for accepted inbound WhatsApp messages.
+> 
+> Disable globally:
+> ```json5
+> {
+>   channels: {
+>     whatsapp: {
+>       sendReadReceipts: false,
+>     },
+>   },
+> }
+> ```
+> 
+> Per-account override:
+> ```json5
+> {
+>   channels: {
+>     whatsapp: {
+>       accounts: {
+>         work: {
+>           sendReadReceipts: false,
+>         },
+>       },
+>     },
+>   },
+> }
+> ```
+> 
+> Self-chat turns skip read receipts even when globally enabled.
+
+### [展开: 已读回执]
+
+默认情况下，对已接受的入站 WhatsApp 消息启用已读回执。
+
+全局禁用：
+```json5
+{
+  channels: {
+    whatsapp: {
+      sendReadReceipts: false,
+    },
+  },
+}
+```
+
+按账号覆盖：
+```json5
+{
+  channels: {
+    whatsapp: {
+      accounts: {
+        work: {
+          sendReadReceipts: false,
+        },
+      },
+    },
+  },
+}
+```
+
+即使全局启用，自我对话回合也会跳过已读回执。
+
+---
+
+> ## [展开] Delivery, chunking, and media / 投递、分块与媒体
+
+## [展开] Delivery, chunking, and media / 投递、分块与媒体
+
+> ### [展开: Text chunking]
+> * default chunk limit: `channels.whatsapp.textChunkLimit = 4000`
+> * `channels.whatsapp.chunkMode = "length" | "newline"`
+> * `newline` mode prefers paragraph boundaries (blank lines), then falls back to length-safe chunking
+
+### [展开: 文本分块]
+
+* 默认分块限制：`channels.whatsapp.textChunkLimit = 4000`
+* `channels.whatsapp.chunkMode = "length" | "newline"`
+* `newline` 模式优先段落边界（空行），然后回退到长度安全的分块
+
+> ### [展开: Outbound media behavior]
+> * supports image, video, audio (PTT voice-note), and document payloads
+> * audio media is sent through the Baileys `audio` payload with `ptt: true`, so WhatsApp clients render it as a push-to-talk voice note
+> * reply payloads preserve `audioAsVoice`; TTS voice-note output for WhatsApp stays on this PTT path even when the provider returns MP3 or WebM
+> * native Ogg/Opus audio is sent as `audio/ogg; codecs=opus` for voice-note compatibility
+> * non-Ogg audio, including Microsoft Edge TTS MP3/WebM output, is transcoded with `ffmpeg` to 48 kHz mono Ogg/Opus before PTT delivery
+> * `/tts latest` sends the latest assistant reply as one voice note and suppresses repeat sends for the same reply; `/tts chat on|off|default` controls auto-TTS for the current WhatsApp chat
+> * animated GIF playback is supported via `gifPlayback: true` on video sends
+> * captions are applied to the first media item when sending multi-media reply payloads, except PTT voice notes send the audio first and visible text separately because WhatsApp clients do not render voice-note captions consistently
+> * media source can be HTTP(S), `file://`, or local paths
+
+### [展开: 出站媒体行为]
+
+* 支持图片、视频、音频（PTT 语音笔记）和文档载荷
+* 音频媒体通过 Baileys `audio` 载荷发送，`ptt: true`，因此 WhatsApp 客户端将其渲染为按住说话语音笔记
+* 回复载荷保留 `audioAsVoice`；WhatsApp 的 TTS 语音笔记输出保持在此 PTT 路径上，即使提供商返回 MP3 或 WebM
+* 原生 Ogg/Opus 音频作为 `audio/ogg; codecs=opus` 发送以实现语音笔记兼容性
+* 非 Ogg 音频（包括 Microsoft Edge TTS MP3/WebM 输出）在 PTT 投递前通过 `ffmpeg` 转码为 48 kHz 单声道 Ogg/Opus
+* `/tts latest` 将最新的助手回复作为一条语音笔记发送，并抑制同一回复的重复发送；`/tts chat on|off|default` 控制当前 WhatsApp 聊天的自动 TTS
+* 动画 GIF 播放通过视频发送时的 `gifPlayback: true` 支持
+* 发送多媒体回复载荷时，字幕应用于第一个媒体项，但 PTT 语音笔记先发送音频，可见文本单独发送，因为 WhatsApp 客户端对语音笔记字幕的渲染不一致
+* 媒体来源可以是 HTTP(S)、`file://` 或本地路径
+
+> ### [展开: Media size limits and fallback behavior]
+> * inbound media save cap: `channels.whatsapp.mediaMaxMb` (default `50`)
+> * outbound media send cap: `channels.whatsapp.mediaMaxMb` (default `50`)
+> * per-account overrides use `channels.whatsapp.accounts.<accountId>.mediaMaxMb`
+> * images are auto-optimized (resize/quality sweep) to fit limits
+> * on media send failure, first-item fallback sends text warning instead of dropping the response silently
+
+### [展开: 媒体大小限制与回退行为]
+
+* 入站媒体保存上限：`channels.whatsapp.mediaMaxMb`（默认 `50`）
+* 出站媒体发送上限：`channels.whatsapp.mediaMaxMb`（默认 `50`）
+* 按账号覆盖使用 `channels.whatsapp.accounts.<accountId>.mediaMaxMb`
+* 图片自动优化（调整大小/质量扫描）以适应限制
+* 媒体发送失败时，第一项回退发送文本警告而非静默丢弃回复
+
 ## Related / 相关
 
 > * [Pairing](/channels/pairing)
