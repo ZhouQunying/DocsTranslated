@@ -253,13 +253,69 @@ WhatsApp Web 传输遵循 Gateway 主机上的标准代理环境变量（`HTTPS_
 
 ## Plugin hooks and privacy / 插件钩子与隐私
 
-> WhatsApp inbound messages can contain personal message content, phone numbers, group identifiers, sender names, and session correlation fields. For that reason, WhatsApp does not broadcast inbound `message_received` hook payloads to plugins unless you explicitly opt in.
+> WhatsApp inbound messages can contain personal message content, phone numbers, group identifiers, sender names, and session correlation fields. For that reason, WhatsApp does not broadcast inbound `message_received` hook payloads to plugins unless you explicitly opt in:
+>
+> ```json5
+> {
+>   channels: {
+>     whatsapp: {
+>       pluginHooks: {
+>         messageReceived: true,
+>       },
+>     },
+>   },
+> }
+> ```
+>
+> You can scope the opt-in to one account:
+>
+> ```json5
+> {
+>   channels: {
+>     whatsapp: {
+>       accounts: {
+>         work: {
+>           pluginHooks: {
+>             messageReceived: true,
+>           },
+>         },
+>       },
+>     },
+>   },
+> }
+> ```
 
 WhatsApp 入站消息可能包含个人消息内容、电话号码、群组标识、发送者名称和会话关联字段。因此，除非你明确启用，WhatsApp 不会向插件广播入站 `message_received` 钩子载荷。
 
-> You can scope the opt-in to one account.
+```json5
+{
+  channels: {
+    whatsapp: {
+      pluginHooks: {
+        messageReceived: true,
+      },
+    },
+  },
+}
+```
 
 你可以将启用范围限定到单个账号。
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      accounts: {
+        work: {
+          pluginHooks: {
+            messageReceived: true,
+          },
+        },
+      },
+    },
+  },
+}
+```
 
 > Only enable this for plugins you trust to receive inbound WhatsApp message content and identifiers.
 
