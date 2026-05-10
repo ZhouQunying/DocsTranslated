@@ -42,6 +42,10 @@ openclaw plugins install @openclaw/whatsapp
 
 ---
 
+> ## Quick setup
+
+## Quick setup / 快速设置
+
 > ### Configure WhatsApp access policy
 
 ### 配置 WhatsApp 访问策略
