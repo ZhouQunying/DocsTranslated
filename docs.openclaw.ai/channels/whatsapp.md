@@ -415,6 +415,26 @@ WhatsApp 入站消息可能包含个人消息内容、电话号码、群组标�
 
 群组中的激活语法：`/` 前缀触发 agent。
 
+> Security note:
+> - quote/reply only satisfies mention gating; it does not grant sender authorization
+> - with `groupPolicy: "allowlist"`, non-allowlisted senders are still blocked even if they reply to an allowlisted user's message
+
+安全提示：
+- 引用/回复仅满足 @提及门控，不授予发送者授权
+- 在 `groupPolicy: "allowlist"` 模式下，非白名单发送者即使回复了白名单用户的消息仍被阻止
+
+> Session-level activation command:
+> - `/activation mention`
+> - `/activation always`
+>
+> `activation` updates session state (not global config). It is owner-gated.
+
+会话级激活命令：
+- `/activation mention`
+- `/activation always`
+
+`activation` 更新会话状态（非全局配置），需所有者授权。
+
 ---
 
 > ## [展开] Message format and media / 消息格式与媒体
@@ -723,6 +743,21 @@ WhatsApp 支持通过 `channels.whatsapp.ackReaction` 在入站接收时立即�
 - 旧版默认凭证存储在 `~/.openclaw/credentials/whatsapp/creds.json`（无账号 ID 分段）
 - 如果两者都存在，以账号级别的文件为准
 
+> ### [展开: Logout behavior]
+> `openclaw channels logout --channel whatsapp [--account <id>]` clears WhatsApp auth state for that account.
+>
+> When a Gateway is reachable, logout first stops the live WhatsApp listener for the selected account so the linked session does not keep receiving messages until the next restart. `openclaw channels remove --channel whatsapp` also stops the live listener before disabling or deleting account config.
+>
+> In legacy auth directories, `oauth.json` is preserved while Baileys auth files are removed.
+
+### [展开: 登出行为]
+
+`openclaw channels logout --channel whatsapp [--account <id>]` 清除该账号的 WhatsApp 认证状态。
+
+当 Gateway 可达时，登出会先停止所选账号的实时 WhatsApp 监听器，使已链接会话在下次重启前不再接收消息。`openclaw channels remove --channel whatsapp` 也会在禁用或删除账号配置前停止实时监听器。
+
+在旧版认证目录中，`oauth.json` 会被保留，而 Baileys 认证文件会被移除。
+
 ---
 
 > ## [展开] Troubleshooting / 故障排除
@@ -841,6 +876,10 @@ WhatsApp 支持通过 `channels.whatsapp.ackReaction` 在入站接收时立即�
 安静的账号可以超过正常消息超时保持连接；看门狗在 WhatsApp Web 传输活动停止、套接字关闭或应用级活动超过更长安全窗口保持静默时重启。
 如果日志显示重复的 `status=408 Request Time-out Connection was lost`，调整 `web.whatsapp` 下的 Baileys 套接字计时。
 
+> If `~/.openclaw/logs/whatsapp-health.log` says `Gateway inactive` but `openclaw gateway status` and `openclaw channels status --probe` show the gateway and WhatsApp are healthy, run `openclaw doctor`. On Linux, doctor warns about legacy crontab entries that still invoke `~/.openclaw/bin/ensure-whatsapp.sh`; remove those stale entries with `crontab -e` because cron can lack the systemd user-bus environment and make that old script misreport gateway health.
+
+如果 `~/.openclaw/logs/whatsapp-health.log` 显示 `Gateway inactive` 但 `openclaw gateway status` 和 `openclaw channels status --probe` 显示 Gateway 和 WhatsApp 都健康，运行 `openclaw doctor`。在 Linux 上，doctor 会警告仍调用 `~/.openclaw/bin/ensure-whatsapp.sh` 的旧版 crontab 条目；用 `crontab -e` 移除这些过期条目，因为 cron 可能缺少 systemd user-bus 环境，导致该旧脚本误报 Gateway 健康状态。
+
 > ### QR login times out behind a proxy
 > Symptom: `openclaw channels login --channel whatsapp` fails before showing a usable QR code with `status=408 Request Time-out` or a TLS socket disconnect.
 > WhatsApp Web login uses the gateway host's standard proxy environment (`HTTPS_PROXY`, `HTTP_PROXY`, lowercase variants, and `NO_PROXY`). Verify the gateway process inherits the proxy env and that `NO_PROXY` does not match `mmg.whatsapp.net`.
@@ -860,6 +899,14 @@ WhatsApp Web 登录使用网关主机的标准代理环境变量。确认网关�
 
 ### 回复出现在转录中但不在 WhatsApp 中
 转录行记录 agent 生成的内容。WhatsApp 投递单独检查：OpenClaw 仅在 Baileys 返回至少一个可见文本或媒体发送的出站消息 ID 后才将自动回复视为已发送。
+
+> Ack reactions are independent pre-reply receipts. A successful reaction does not prove that the later text or media reply was accepted by WhatsApp.
+>
+> Check gateway logs for `auto-reply delivery failed` or `auto-reply was not accepted by WhatsApp provider`.
+
+确认反应是独立的回复前收据。成功的确认反应不能证明后续的文本或媒体回复已被 WhatsApp 接受。
+
+检查 Gateway 日志中的 `auto-reply delivery failed` 或 `auto-reply was not accepted by WhatsApp provider`。
 
 > ### Group messages unexpectedly ignored
 > Check in this order: `groupPolicy` → `groupAllowFrom` / `allowFrom` → `groups` allowlist entries → mention gating → duplicate keys in `openclaw.json`
@@ -899,9 +946,9 @@ WhatsApp 支持通过 `groups` 和 `direct` 映射为群聊和私聊设置 Teleg
 1. **私聊特定系统提示词**（`direct["<peerId>"].systemPrompt`）：当映射中存在该对等方的条目**且**其 `systemPrompt` 键已定义时使用。如果 `systemPrompt` 为空字符串（`""`），则通配符被抑制，不应用系统提示词。
 2. **私聊通配符系统提示词**（`direct["*"].systemPrompt`）：当映射中完全不存在该对等方的条目，或存在但未定义 `systemPrompt` 键时使用。
 
-> **Difference from Telegram multi-account behavior:** In Telegram, root `groups` is intentionally suppressed for all accounts in a multi-account setup. WhatsApp does not apply this guard: root `groups` and root `direct` are always inherited by accounts that define no account-level override.
+> **Difference from Telegram multi-account behavior:** In Telegram, root `groups` is intentionally suppressed for all accounts in a multi-account setup. WhatsApp does not apply this guard: root `groups` and root `direct` are always inherited by accounts that define no account-level override, regardless of how many accounts are configured. In a multi-account WhatsApp setup, if you want per-account group or direct prompts, define the full map under each account explicitly rather than relying on root-level defaults.
 
-> **与 Telegram 多账号行为的区别：** 在 Telegram 中，多账号设置下根 `groups` 会被有意抑制。WhatsApp 不应用此防护：根 `groups` 和根 `direct` 始终被没有账号级别覆盖的账号继承。
+> **与 Telegram 多账号行为的区别：** 在 Telegram 中，多账号设置下根 `groups` 会被有意抑制，以防止机器人收到不属于它的群消息。WhatsApp 不应用此防护：根 `groups` 和根 `direct` 始终被没有账号级别覆盖的账号继承，无论配置了多少个账号。在多账号 WhatsApp 设置中，如果你想要每账号的群或私聊提示词，在每个账号下明确定义完整映射，而不是依赖根级默认值。
 
 > Important behavior:
 > * `channels.whatsapp.groups` is both a per-group config map and the chat-level group allowlist. At either the root or account scope, `groups["*"]` means "all groups are admitted" for that scope.
