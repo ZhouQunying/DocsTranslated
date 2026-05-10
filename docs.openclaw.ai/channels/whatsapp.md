@@ -22,9 +22,9 @@
 
 > Manual install stays available:
 >
-> ```bash
-> openclaw plugins install @openclaw/whatsapp
-> ```
+```bash
+openclaw plugins install @openclaw/whatsapp
+```
 
 手动安装方式始终可用：
 
@@ -50,18 +50,18 @@ openclaw plugins install @openclaw/whatsapp
 
 ### 配置 WhatsApp 访问策略
 
-> ```json5
-> {
->   channels: {
->     whatsapp: {
->       dmPolicy: "pairing",
->       allowFrom: ["+15551234567"],
->       groupPolicy: "allowlist",
->       groupAllowFrom: ["+15551234567"],
->     },
->   },
-> }
-> ```
+```json5
+{
+  channels: {
+    whatsapp: {
+      dmPolicy: "pairing",
+      allowFrom: ["+15551234567"],
+      groupPolicy: "allowlist",
+      groupAllowFrom: ["+15551234567"],
+    },
+  },
+}
+```
 
 （配置代码保持不变）
 
@@ -69,22 +69,22 @@ openclaw plugins install @openclaw/whatsapp
 
 ### 链接 WhatsApp（扫码）
 
-> ```bash
-> openclaw channels login --channel whatsapp
-> ```
+```bash
+openclaw channels login --channel whatsapp
+```
 >
 > For a specific account:
 >
-> ```bash
-> openclaw channels login --channel whatsapp --account work
-> ```
+```bash
+openclaw channels login --channel whatsapp --account work
+```
 >
 > To attach an existing/custom WhatsApp Web auth directory before login:
 >
-> ```bash
-> openclaw channels add --channel whatsapp --account work --auth-dir /path/to/wa-auth
-> openclaw channels login --channel whatsapp --account work
-> ```
+```bash
+openclaw channels add --channel whatsapp --account work --auth-dir /path/to/wa-auth
+openclaw channels login --channel whatsapp --account work
+```
 
 ```bash
 openclaw channels login --channel whatsapp
@@ -107,9 +107,9 @@ openclaw channels login --channel whatsapp --account work
 
 ### 启动 Gateway
 
-> ```bash
-> openclaw gateway
-> ```
+```bash
+openclaw gateway
+```
 
 ```bash
 openclaw gateway
@@ -117,10 +117,10 @@ openclaw gateway
 
 > ### Approve first pairing request (if using pairing mode)
 >
-> ```bash
-> openclaw pairing list whatsapp
-> openclaw pairing approve whatsapp <CODE>
-> ```
+```bash
+openclaw pairing list whatsapp
+openclaw pairing approve whatsapp <CODE>
+```
 >
 > Pairing requests expire after 1 hour. Pending requests are capped at 3 per channel.
 
@@ -151,9 +151,9 @@ OpenClaw 建议尽可能使用独立号码运行 WhatsApp。（频道元数据�
 > - lower chance of self-chat confusion
 >
 > Minimal policy pattern:
-> ```json5
-> { channels: { whatsapp: { dmPolicy: "allowlist", allowFrom: ["+15551234567"] } } }
-> ```
+```json5
+{ channels: { whatsapp: { dmPolicy: "allowlist", allowFrom: ["+15551234567"] } } }
+```
 
 ### 独立号码（推荐）
 
@@ -597,19 +597,19 @@ WhatsApp 不支持原生流式传输。OpenClaw 将 agent 回复分块为顺序�
 
 WhatsApp 支持通过 `channels.whatsapp.ackReaction` 在入站接收时立即发送确认反应。确认反应受 `reactionLevel` 限制 — 当 `reactionLevel` 为 `"off"` 时被抑制。
 
-> ```json5
-> {
->   channels: {
->     whatsapp: {
->       ackReaction: {
->         emoji: "👀",
->         direct: true,
->         group: "mentions",
->       },
->     },
->   },
-> }
-> ```
+```json5
+{
+  channels: {
+    whatsapp: {
+      ackReaction: {
+        emoji: "👀",
+        direct: true,
+        group: "mentions",
+      },
+    },
+  },
+}
+```
 >
 > Behavior notes:
 > - sent immediately after inbound is accepted (pre-reply)
@@ -916,11 +916,11 @@ WhatsApp 支持通过 `groups` 和 `direct` 映射为群聊和私聊设置 Teleg
 > Incoming WhatsApp messages are wrapped in the shared inbound envelope.
 > 
 > If a quoted reply exists, context is appended in this form:
-> ```text
-> [Replying to <sender> id:<stanzaId>]
-> <quoted body or media placeholder>
-> [/Replying]
-> ```
+```text
+[Replying to <sender> id:<stanzaId>]
+<quoted body or media placeholder>
+[/Replying]
+```
 > 
 > Reply metadata fields are also populated when available (`ReplyToId`, `ReplyToBody`, `ReplyToSender`, sender JID/E.164).
 > When the quoted reply target is downloadable media, OpenClaw saves it through the normal inbound media store and exposes it as `MediaPath`/`MediaType` so the agent can inspect the referenced image instead of only seeing `<media:image>`.
@@ -993,30 +993,30 @@ WhatsApp 支持通过 `groups` 和 `direct` 映射为群聊和私聊设置 Teleg
 > Read receipts are enabled by default for accepted inbound WhatsApp messages.
 > 
 > Disable globally:
-> ```json5
-> {
->   channels: {
->     whatsapp: {
->       sendReadReceipts: false,
->     },
->   },
-> }
-> ```
+```json5
+{
+  channels: {
+    whatsapp: {
+      sendReadReceipts: false,
+    },
+  },
+}
+```
 > 
 > Per-account override:
-> ```json5
-> {
->   channels: {
->     whatsapp: {
->       accounts: {
->         work: {
->           sendReadReceipts: false,
->         },
->       },
->     },
->   },
-> }
-> ```
+```json5
+{
+  channels: {
+    whatsapp: {
+      accounts: {
+        work: {
+          sendReadReceipts: false,
+        },
+      },
+    },
+  },
+}
+```
 > 
 > Self-chat turns skip read receipts even when globally enabled.
 
