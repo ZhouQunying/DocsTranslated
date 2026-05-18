@@ -8,12 +8,12 @@ OpenClaw 概念文档的中英对照翻译索引。文件名按英文标题 slug
 | [agent-loop.md](agent-loop.md) | Agent loop | Agent 循环 |
 | [agent-runtimes.md](agent-runtimes.md) | Agent runtimes | Agent 运行时类型 |
 | [agent-workspace.md](agent-workspace.md) | Agent workspace | Agent 工作区 |
-| [channel-docking.md](channel-docking.md) | Channel docking | 通道 dock |
+| [channel-docking.md](channel-docking.md) | Channel docking | 通道对接 |
 | [command-queue.md](command-queue.md) | Command queue | 命令队列 |
-| [compaction.md](compaction.md) | Compaction | 压缩 |
+| [compaction.md](compaction.md) | Compaction | 上下文压缩 |
 | [context.md](context.md) | Context | 上下文 |
 | [context-engine.md](context-engine.md) | Context engine | 上下文引擎 |
-| [delegate-architecture.md](delegate-architecture.md) | Delegate architecture | 代理人架构 |
+| [delegate-architecture.md](delegate-architecture.md) | Delegate architecture | 委派架构 |
 | [experimental-features.md](experimental-features.md) | Experimental features | 实验性功能 |
 | [gateway-architecture.md](gateway-architecture.md) | Gateway architecture | 网关架构 |
 | [matrix-qa.md](matrix-qa.md) | Matrix QA | Matrix QA |
@@ -22,15 +22,15 @@ OpenClaw 概念文档的中英对照翻译索引。文件名按英文标题 slug
 | [messages.md](messages.md) | Messages | 消息 |
 | [multi-agent-routing.md](multi-agent-routing.md) | Multi-agent routing | 多 Agent 路由 |
 | [oauth.md](oauth.md) | OAuth | OAuth |
-| [parallel-specialist-队列.md](parallel-specialist-lanes.md) | Parallel specialist 队列 | 并行专家通道 |
+| [parallel-specialist-lanes.md](parallel-specialist-lanes.md) | Specialist lanes | 专家通道 |
 | [presence.md](presence.md) | Presence | 在线状态 |
-| [progress-草稿.md](progress-drafts.md) | Progress 草稿 | 进度草稿 |
+| [progress-drafts.md](progress-drafts.md) | Progress drafts | 进度草稿 |
 | [qa-overview.md](qa-overview.md) | QA overview | QA 总览 |
 | [retry-policy.md](retry-policy.md) | Retry policy | 重试策略 |
 | [session-management.md](session-management.md) | Session management | 会话管理 |
 | [session-pruning.md](session-pruning.md) | Session pruning | 会话裁剪 |
 | [session-tools.md](session-tools.md) | Session tools | 会话工具 |
-| [soul-personality-guide.md](soul-personality-guide.md) | SOUL.md personality guide | SOUL.md 人格指南 |
+| [soul-personality-guide.md](soul-personality-guide.md) | SOUL.md personality guide | SOUL.md 人设指南 |
 | [steering-queue.md](steering-queue.md) | Steering queue | 转向队列 |
 | [streaming-and-chunking.md](streaming-and-chunking.md) | Streaming and chunking | 流式与分片 |
 | [system-prompt.md](system-prompt.md) | System prompt | 系统提示词 |
