@@ -310,7 +310,7 @@ curl "https://api.telegram.org/bot<bot_token>/getUpdates"
 配对只管私聊。群里要么设 `groupAllowFrom`，要么按群 / 按话题设 `allowFrom`。
 `groupAllowFrom` 没设时 Telegram 回退到配置里的 `allowFrom`，不是配对存储。
 单所有者机器人的实用模式：把你的 user ID 写在 `channels.telegram.allowFrom`，`groupAllowFrom` 留空，目标群在 `channels.telegram.groups` 下放行。
-运行时注意：`channels.telegram` 整段缺失时，运行时回退到 fail-closed 的 `groupPolicy="allowlist"`，除非显式设了 `channels.defaults.groupPolicy`。
+运行时注意：`channels.telegram` 整段缺失时，运行时回退到默认拒绝的 `groupPolicy="allowlist"`，除非显式设了 `channels.defaults.groupPolicy`。
 
 > Owner-only group setup:
 >
@@ -854,7 +854,7 @@ Telegram 命令菜单的注册在启动时通过 `setMyCommands` 完成。
 
 1. `/pair` 生成配置码。
 2. 把配置码粘进 iOS App。
-3. `/pair pending` 列出待处理请求（含 role / scopes）。
+3. `/pair pending` 列出待处理请求（含 role / 作用域）。
 4. 批准请求：
    - `/pair approve <requestId>` 显式批准；
    - 只有一条待处理时直接 `/pair approve`；
@@ -866,7 +866,7 @@ Telegram 命令菜单的注册在启动时通过 `setMyCommands` 完成。
 
 > If a device retries with changed auth details (for example role/scopes/public key), the previous pending request is superseded and the new request uses a different `requestId`. Re-run `/pair pending` before approving.
 
-同一设备如果换了认证细节（比如改 role / scopes / 公钥）再来一次，之前那条待处理请求会被替换，新请求用一个不同的 `requestId`。批准前重新跑 `/pair pending` 看一下。
+同一设备如果换了认证细节（比如改 role / 作用域 / 公钥）再来一次，之前那条待处理请求会被替换，新请求用一个不同的 `requestId`。批准前重新跑 `/pair pending` 看一下。
 
 > More details: [Pairing](/channels/pairing#pair-via-telegram-recommended-for-ios).
 
@@ -1204,11 +1204,11 @@ topic 继承：topic 条目继承群设置，除非显式覆盖（`requireMentio
 
 > **Persistent ACP topic binding**: Forum topics can pin ACP harness sessions through top-level typed ACP bindings (`bindings[]` with `type: "acp"` and `match.channel: "telegram"`, `peer.kind: "group"`, and a topic-qualified id like `-1001234567890:topic:42`). Currently scoped to forum topics in groups/supergroups. See [ACP Agents](/tools/acp-agents).
 
-**持久化 ACP topic 绑定**：通过顶层带类型的 ACP binding（`bindings[]` 里 `type: "acp"`、`match.channel: "telegram"`、`peer.kind: "group"`、id 带 topic 限定如 `-1001234567890:topic:42`），Forum topic 可以钉住 ACP harness 会话。当前只对群 / supergroup 里的 forum topic 生效。见 [ACP Agents](/tools/acp-agents)。
+**持久化 ACP topic 绑定**：通过顶层带类型的 ACP 绑定（`bindings[]` 里 `type: "acp"`、`match.channel: "telegram"`、`peer.kind: "group"`、id 带 topic 限定如 `-1001234567890:topic:42`），Forum topic 可以钉住 ACP harness 会话。当前只对群 / supergroup 里的 forum topic 生效。见 [ACP Agents](/tools/acp-agents)。
 
 > **Thread-bound ACP spawn from chat**: `/acp spawn <agent> --thread here|auto` binds the current topic to a new ACP session; follow-ups route there directly. OpenClaw pins the spawn confirmation in-topic. Requires `channels.telegram.threadBindings.spawnSessions` to remain enabled (default: `true`).
 
-**在聊天里启动线程绑定的 ACP**：`/acp spawn <agent> --thread here|auto` 把当前 topic 绑到一个新建的 ACP 会话；后续消息直接路由过去。OpenClaw 在 topic 里钉住 spawn 确认消息。要求 `channels.telegram.threadBindings.spawnSessions` 保持开启（默认 `true`）。
+**在聊天里启动线程绑定的 ACP**：`/acp spawn <agent> --thread here|auto` 把当前 topic 绑到一个新建的 ACP 会话；后续消息直接路由过去。OpenClaw 在 topic 里钉住派生确认消息。要求 `channels.telegram.threadBindings.spawnSessions` 保持开启（默认 `true`）。
 
 > Template context exposes `MessageThreadId` and `IsForum`. DM chats with `message_thread_id` keep DM routing and reply metadata on flat sessions by default; they only use thread-aware session keys when configured with `threadReplies: "inbound"`, `threadReplies: "always"`, `requireTopic: true`, or a matching topic config. Use top-level `channels.telegram.dm.threadReplies` for the account default, or `direct.<chatId>.threadReplies` for one DM.
 
@@ -1486,7 +1486,7 @@ polling / webhook 的 `allowed_updates` 自动包含 `message_reaction`。
 说明：
 
 - Telegram 要求 unicode emoji（比如 "👀"）。
-- 用 `""` 关掉某个通道或账号的 ack 表情。
+- 用 `""` 关掉某个通道或账号的确认表情。
 
 > [展开: Config writes from Telegram events and commands]
 >
@@ -1550,7 +1550,7 @@ long polling 模式下，OpenClaw 只在 update 派发成功后才持久化重�
 > OpenClaw then processes the update asynchronously through the same per-chat/per-topic bot lanes used by long polling, so slow agent turns do not hold Telegram's delivery ACK.
 
 webhook 模式会校验请求护栏、Telegram secret token 和 JSON body，然后才给 Telegram 返回 `200`。
-之后 OpenClaw 异步处理 update，走和 long polling 一样的按 chat / topic 区分的 bot lane，所以慢的 agent 轮次不会卡住 Telegram 的投递 ACK。
+之后 OpenClaw 异步处理 update，走和 long polling 一样的按 chat / topic 区分的 bot 队列，所以慢的 agent 轮次不会卡住 Telegram 的投递 ACK。
 
 > [展开: Limits, retry, and CLI targets]
 >

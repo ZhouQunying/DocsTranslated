@@ -28,9 +28,9 @@
 > * When verbose logging is enabled, queued runs emit a short notice if they waited more than \~2s before starting.
 > * Typing indicators still fire immediately on enqueue (when supported by the channel) so user experience is unchanged while we wait our turn.
 
-- 一个感知 lane 的 FIFO 队列按可配置并发上限分别消费每条 lane（未配置的 lane 默认 1；main 默认 4，subagent 默认 8）。
-- `runEmbeddedPiAgent` 按**会话 key** 入队（lane `session:<key>`），保证每会话同时只有一个活跃运行。
-- 然后会话运行排进**全局 lane**（默认 `main`），整体并行受 `agents.defaults.maxConcurrent` 限制。
+- 一个感知队列的 FIFO 队列按可配置并发上限分别消费每条队列（未配置的队列默认 1；main 默认 4，subagent 默认 8）。
+- `runEmbeddedPiAgent` 按**会话 key** 入队（队列 `session:<key>`），保证每会话同时只有一个活跃运行。
+- 然后会话运行排进**全局队列**（默认 `main`），整体并行受 `agents.defaults.maxConcurrent` 限制。
 - 启用 verbose 日志后，排队运行如果等了超过 \~2 秒才开始，会发一条简短通知。
 - 入队时仍然立即发输入中状态（通道支持的话），等待时用户体验不变。
 
@@ -191,9 +191,9 @@
 > * No external dependencies or background worker threads; pure TypeScript + promises.
 
 - 适用于走 Gateway 回复流水线的所有接收通道（WhatsApp web、Telegram、Slack、Discord、Signal、iMessage、webchat 等）的自动回复 agent 运行。
-- 默认 lane（`main`）是进程级的，给接收 + 主心跳用；设 `agents.defaults.maxConcurrent` 允许多会话并行。
-- 还可能有其他 lane（`cron`、`cron-nested`、`nested`、`subagent`），让后台任务能并行跑而不挡住接收回复。隔离的 cron agent 轮次占一个 `cron` slot，它内部 agent 执行用 `cron-nested`；两者都用 `cron.maxConcurrentRuns`。共享的非 cron `nested` 流保持自己的 lane 行为。这些脱离的运行作为 [后台任务](/automation/tasks) 追踪。
-- 按会话 lane 保证给定会话同时只有一个 agent 运行触碰它。
+- 默认队列（`main`）是进程级的，给接收 + 主心跳用；设 `agents.defaults.maxConcurrent` 允许多会话并行。
+- 还可能有其他队列（`cron`、`cron-nested`、`nested`、`subagent`），让后台任务能并行跑而不挡住接收回复。隔离的 cron agent 轮次占一个 `cron` slot，它内部 agent 执行用 `cron-nested`；两者都用 `cron.maxConcurrentRuns`。共享的非 cron `nested` 流保持自己的队列行为。这些脱离的运行作为 [后台任务](/automation/tasks) 追踪。
+- 按会话队列保证给定会话同时只有一个 agent 运行触碰它。
 - 没有外部依赖或后台 worker 线程；纯 TypeScript + Promise。
 
 ---
@@ -209,8 +209,8 @@
 
 - 命令好像卡住时，开 verbose 日志，看 "queued for ...ms" 行确认队列在消费。
 - 想看队列深度，开 verbose 日志，留意队列时序行。
-- Codex app-server 运行接受了一个 turn 然后停止发出进度时，Codex 适配器会中断它，让活跃会话 lane 能释放，而不是等外层运行超时。
-- 启用诊断后，超过 `diagnostics.stuckSessionWarnMs` 仍处于 `processing` 且没观察到回复、工具、状态、block 或 ACP 进度的会话，按当前活动分类。活跃工作记 `session.long_running`；活跃但近期无进展的记 `session.stalled`；`session.stuck` 留给"没活在干、记账还在 processing"的过期账目，只有这条路径能释放受影响的会话 lane 让排队工作消费。会话没变时，重复出现的 `session.stuck` 诊断会逐步退避。
+- Codex app-server 运行接受了一个 turn 然后停止发出进度时，Codex 适配器会中断它，让活跃会话队列能释放，而不是等外层运行超时。
+- 启用诊断后，超过 `diagnostics.stuckSessionWarnMs` 仍处于 `processing` 且没观察到回复、工具、状态、block 或 ACP 进度的会话，按当前活动分类。活跃工作记 `session.long_running`；活跃但近期无进展的记 `session.stalled`；`session.stuck` 留给"没活在干、记账还在 processing"的过期账目，只有这条路径能释放受影响的会话队列让排队工作消费。会话没变时，重复出现的 `session.stuck` 诊断会逐步退避。
 
 ---
 

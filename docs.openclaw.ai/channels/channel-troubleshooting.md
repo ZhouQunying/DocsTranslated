@@ -155,7 +155,7 @@ openclaw status --all
 
 | 现象                                       | 最快确认                                                                  | 修法                                                                                                                                       |
 | ------------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 机器人在线但 guild 里没回复                | `openclaw channels status --probe`                                        | 放行 guild / 频道，并确认 message content intent。                                                                                         |
+| 机器人在线但 guild 里没回复                | `openclaw channels status --probe`                                        | 放行 guild / 频道，并确认 message content 意图。                                                                                         |
 | 群消息被忽略                               | 看日志里有没有 @ 触发被丢弃                                               | @ 一下机器人；或者把 guild / 频道的 `requireMention` 设成 `false`。                                                                        |
 | 看到 typing / token 消耗但 Discord 没消息 | 会话日志显示 assistant 有文本，但 `didSendViaMessagingTool: false`        | 模型私下回复了，没调消息工具。换一个调工具靠谱的模型；或把 `messages.groupChat.visibleReplies` 设成 `"automatic"` 让它自动可见回复。       |
 | 私聊没回复                                 | `openclaw pairing list discord`                                           | 批准 DM 配对；或调 DM 策略。                                                                                                               |
@@ -182,7 +182,7 @@ openclaw status --all
 
 | 现象                              | 最快确认                                | 修法                                                                                                                                             |
 | --------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Socket mode 连上但没响应          | `openclaw channels status --probe`      | 检查 app token + bot token 和需要的 scope；用 SecretRef 时留意 `botTokenStatus` / `appTokenStatus = configured_unavailable`。                    |
+| Socket mode 连上但没响应          | `openclaw channels status --probe`      | 检查 app token + bot token 和需要的作用域；用 SecretRef 时留意 `botTokenStatus` / `appTokenStatus = configured_unavailable`。                    |
 | 私聊被拦                          | `openclaw pairing list slack`           | 批准配对；或放宽 DM 策略。                                                                                                                       |
 | 频道消息被忽略                    | 检查 `groupPolicy` 和频道白名单         | 把频道加进白名单；或者把策略改成 `open`。                                                                                                        |
 

@@ -560,7 +560,7 @@ OpenClaw 默认偏向"按正常聊天行为来"，上下文基本按接收时的
 - 群里的私聊另有控制（`channels.discord.dm.*`、`channels.slack.dm.*`）。
 - Telegram 白名单可以匹配 user ID（`"123456789"`、`"telegram:123456789"`、`"tg:123456789"`）或 username（`"@alice"` 或 `"alice"`）；前缀不区分大小写。
 - 默认 `groupPolicy: "allowlist"`；群白名单为空时，所有群消息都被拦。
-- 运行时安全：某个 provider 块完全缺失时（`channels.<provider>` 不存在），群策略会回退到 fail-closed 模式（通常是 `allowlist`），不会去继承 `channels.defaults.groupPolicy`。
+- 运行时安全：某个 provider 块完全缺失时（`channels.<provider>` 不存在），群策略会回退到默认拒绝模式（通常是 `allowlist`），不会去继承 `channels.defaults.groupPolicy`。
 
 > Quick mental model (evaluation order for group messages):
 

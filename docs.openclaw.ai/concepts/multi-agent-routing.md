@@ -2,11 +2,11 @@
 
 > Run multiple *isolated* agents — each with its own workspace, state directory (`agentDir`), and session history — plus multiple channel accounts (e.g. two WhatsApps) in one running Gateway. Inbound messages are routed to the right agent through bindings.
 
-在一个 Gateway 里跑多个*隔离的* agent —— 每个有自己的工作区、状态目录（`agentDir`）和会话历史 —— 并支持多个通道账号（比如两个 WhatsApp）。接收消息通过 bindings 路由到对应的 agent。
+在一个 Gateway 里跑多个*隔离的* agent —— 每个有自己的工作区、状态目录（`agentDir`）和会话历史 —— 并支持多个通道账号（比如两个 WhatsApp）。接收消息通过绑定路由到对应的 agent。
 
 > An **agent** here is the full per-persona scope: workspace files, auth profiles, model registry, and session store. `agentDir` is the on-disk state directory that holds this per-agent config at `~/.openclaw/agents/<agentId>/`. A **binding** maps a channel account (e.g. a Slack workspace or a WhatsApp number) to one of those agents.
 
-这里的 **agent** 是按 persona 划分的完整范围：工作区文件、认证 profile、模型注册表、会话存储。`agentDir` 是磁盘上保存这份 per-agent 配置的状态目录，在 `~/.openclaw/agents/<agentId>/`。**binding** 把一个通道账号（比如 Slack 工作区或 WhatsApp 号）映射到其中一个 agent。
+这里的 **agent** 是按 persona 划分的完整范围：工作区文件、认证 profile、模型注册表、会话存储。`agentDir` 是磁盘上保存这份 per-agent 配置的状态目录，在 `~/.openclaw/agents/<agentId>/`。**绑定** 把一个通道账号（比如 Slack 工作区或 WhatsApp 号）映射到其中一个 agent。
 
 ---
 
@@ -194,7 +194,7 @@ openclaw channels login --channel whatsapp --account work
 >
 > Add agents under `agents.list`, channel accounts under `channels.<channel>.accounts`, and connect them with `bindings` (examples below).
 
-[步骤 3：添加 agent、账号和 binding]
+[步骤 3：添加 agent、账号和绑定]
 
 agent 加到 `agents.list` 下，通道账号加到 `channels.<channel>.accounts` 下，用 `bindings` 把它们连起来（下面有例子）。
 
@@ -404,7 +404,7 @@ openclaw channels status --probe
 
 > Bindings are **deterministic** and **most-specific wins**:
 
-binding 是**确定性**的，**越具体越优先**：
+绑定是**确定性**的，**越具体越优先**：
 
 > [步骤 1: peer match] Exact DM/group/channel id.
 
@@ -445,8 +445,8 @@ binding 是**确定性**的，**越具体越优先**：
 
 [展开：平局规则和 AND 语义]
 
-- 同一层有多条 binding 命中时，配置顺序里的第一条胜出。
-- binding 设了多个 match 字段时（比如 `peer` + `guildId`），所有指定字段都必须命中（`AND` 语义）。
+- 同一层有多条绑定命中时，配置顺序里的第一条胜出。
+- 绑定设了多个 match 字段时（比如 `peer` + `guildId`），所有指定字段都必须命中（`AND` 语义）。
 
 > [展开: Account-scope detail]
 >
@@ -456,9 +456,9 @@ binding 是**确定性**的，**越具体越优先**：
 
 [展开：账号作用域细节]
 
-- 没设 `accountId` 的 binding 只匹配默认账号。
+- 没设 `accountId` 的绑定只匹配默认账号。
 - 通道范围、跨所有账号的回退用 `accountId: "*"`。
-- 之后给同一 agent 加同样 binding 但带显式 account id 时，OpenClaw 把现有的"只通道级" binding 升级成"账号级"，不重复。
+- 之后给同一 agent 加同样绑定但带显式 account id 时，OpenClaw 把现有的"只通道级" 绑定升级成"账号级"，不重复。
 
 ---
 
@@ -891,8 +891,8 @@ openclaw channels login --channel whatsapp --account biz
 
 说明：
 
-- 一个通道有多个账号时，binding 里加 `accountId`（比如 `{ channel: "whatsapp", accountId: "personal" }`）。
-- 想把某一个 DM / 群路由到 Opus、其他还留在 chat 上，给那个 peer 加一条 `match.peer` binding；peer 匹配始终优先于通道级规则。
+- 一个通道有多个账号时，绑定里加 `accountId`（比如 `{ channel: "whatsapp", accountId: "personal" }`）。
+- 想把某一个 DM / 群路由到 Opus、其他还留在 chat 上，给那个 peer 加一条 `match.peer` 绑定；peer 匹配始终优先于通道级规则。
 
 > [标签页: Same channel, one peer to Opus]
 >
@@ -960,7 +960,7 @@ WhatsApp 留在快速 agent 上，但把某一个 DM 路由到 Opus：
 
 > Peer bindings always win, so keep them above the channel-wide rule.
 
-peer binding 一定胜出，所以放在通道级规则上面。
+peer 绑定一定胜出，所以放在通道级规则上面。
 
 > [标签页: Family agent bound to a WhatsApp group]
 >
@@ -1186,4 +1186,4 @@ peer binding 一定胜出，所以放在通道级规则上面。
 - [通道路由](/channels/channel-routing)：消息怎么路由到 agent
 - [Presence](/concepts/presence)：agent 在线 / 可用状态
 - [会话](/concepts/session)：会话隔离与路由
-- [Sub-agents](/tools/subagents)：spawn 后台 agent 运行
+- [Sub-agents](/tools/subagents)：派生后台 agent 运行

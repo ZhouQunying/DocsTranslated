@@ -152,7 +152,7 @@ OpenClaw 把回复送**回消息进来的那个通道**。模型不挑通道；�
 
 > When a binding includes multiple match fields (`peer`, `guildId`, `teamId`, `roles`), **all provided fields must match** for that binding to apply.
 
-一条 binding 同时写了多个匹配字段（`peer`、`guildId`、`teamId`、`roles`）时，**所有提供的字段都必须匹配**，这条 binding 才生效。
+一条绑定同时写了多个匹配字段（`peer`、`guildId`、`teamId`、`roles`）时，**所有提供的字段都必须匹配**，这条绑定才生效。
 
 > The matched agent determines which workspace and session store are used.
 

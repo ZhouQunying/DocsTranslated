@@ -194,7 +194,7 @@ openclaw pairing approve telegram <CODE>
 2. 机器人会回两条消息：一条说明，一条单独的**配置码**消息（方便在 Telegram 里直接复制粘贴）。
 3. 在手机上打开 OpenClaw iOS App → 设置 → Gateway。
 4. 扫描二维码或粘贴配置码，连接。
-5. 回到 Telegram：`/pair pending`（查看请求 ID、role、scopes），然后批准。
+5. 回到 Telegram：`/pair pending`（查看请求 ID、role、作用域），然后批准。
 
 > The setup code is a base64-encoded JSON payload that contains:
 >
@@ -220,7 +220,7 @@ openclaw pairing approve telegram <CODE>
 - 批准之后下发的 `node` token 仍然是 `scopes: []`
 - 内置的配置码流程不会下发 `operator` token
 - 要拿到 operator 权限，得走另一条专门批准过的 operator 配对或 token 流程
-- 后续的 token 轮换 / 吊销会同时受设备已批准的角色约束和调用方会话的 operator scopes 限制
+- 后续的 token 轮换 / 吊销会同时受设备已批准的角色约束和调用方会话的 operator 作用域限制
 
 > Treat the setup code like a password while it is valid.
 
@@ -254,7 +254,7 @@ openclaw devices reject <requestId>
 
 > If the same device retries with different auth details (for example different role/scopes/public key), the previous pending request is superseded and a new `requestId` is created.
 
-同一设备如果换了认证信息（比如改了 role / scopes / 公钥）再来一次，先前那条待处理请求会被替换掉，生成新的 `requestId`。
+同一设备如果换了认证信息（比如改了 role / 作用域 / 公钥）再来一次，先前那条待处理请求会被替换掉，生成新的 `requestId`。
 
 > <Note>
 >   An already paired device does not get broader access silently. If it reconnects asking for more scopes or a broader role, OpenClaw keeps the existing approval as-is and creates a fresh pending upgrade request. Use `openclaw devices list` to compare the currently approved access with the newly requested access before you approve.
@@ -298,7 +298,7 @@ openclaw devices reject <requestId>
 
 > This only applies to fresh `role: node` pairing requests with no requested scopes. Operator, browser, Control UI, and WebChat clients still require manual approval. Role, scope, metadata, and public-key changes still require manual approval.
 
-这个只对全新的、没有申请额外 scopes 的 `role: node` 配对请求生效。Operator、浏览器、Control UI 和 WebChat 客户端仍然要人工批准。改 role、scope、metadata、公钥也仍然要人工批准。
+这个只对全新的、没有申请额外作用域的 `role: node` 配对请求生效。Operator、浏览器、Control UI 和 WebChat 客户端仍然要人工批准。改 role、作用域、metadata、公钥也仍然要人工批准。
 
 ---
 

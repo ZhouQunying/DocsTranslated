@@ -328,7 +328,7 @@ agent 按顺序处理（后一个等前一个跑完）：
 
 [步骤 4：不在广播列表里]
 
-走普通路由（命中的第一条 binding）。
+走普通路由（命中的第一条绑定）。
 
 > <Note>
 >   Broadcast groups do not bypass channel allowlists or group activation rules (mentions/commands/etc). They only change *which agents run* when a message is eligible for processing.
@@ -668,7 +668,7 @@ tail -f ~/.openclaw/logs/gateway.log | grep broadcast
 
 **原因**：peer ID 可能在 `bindings` 里、但没在 `broadcast` 里。
 
-**修法**：要么加到 broadcast 配置里，要么从 bindings 里去掉。
+**修法**：要么加到 broadcast 配置里，要么从绑定里去掉。
 
 > [展开: Performance issues]
 >

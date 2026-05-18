@@ -22,9 +22,9 @@ OpenClaw 概念文档的中英对照翻译索引。文件名按英文标题 slug
 | [messages.md](messages.md) | Messages | 消息 |
 | [multi-agent-routing.md](multi-agent-routing.md) | Multi-agent routing | 多 Agent 路由 |
 | [oauth.md](oauth.md) | OAuth | OAuth |
-| [parallel-specialist-lanes.md](parallel-specialist-lanes.md) | Parallel specialist lanes | 并行专家通道 |
+| [parallel-specialist-队列.md](parallel-specialist-lanes.md) | Parallel specialist 队列 | 并行专家通道 |
 | [presence.md](presence.md) | Presence | 在线状态 |
-| [progress-drafts.md](progress-drafts.md) | Progress drafts | 进度草稿 |
+| [progress-草稿.md](progress-drafts.md) | Progress 草稿 | 进度草稿 |
 | [qa-overview.md](qa-overview.md) | QA overview | QA 总览 |
 | [retry-policy.md](retry-policy.md) | Retry policy | 重试策略 |
 | [session-management.md](session-management.md) | Session management | 会话管理 |

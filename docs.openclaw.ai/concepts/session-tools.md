@@ -25,14 +25,14 @@ OpenClaw 给 agent 提供跨会话工作、查看状态、调度 sub-agent 的�
 | `sessions_list`    | 列出会话，可按 kind、label、agent、近期程度、预览过滤                         |
 | `sessions_history` | 读某个会话的 transcript                                                       |
 | `sessions_send`    | 给另一个会话发消息，可选等待                                                  |
-| `sessions_spawn`   | 为后台工作 spawn 一个隔离的 sub-agent 会话                                    |
+| `sessions_spawn`   | 为后台工作派生一个隔离的 sub-agent 会话                                    |
 | `sessions_yield`   | 结束当前轮次，等 sub-agent 后续结果                                           |
-| `subagents`        | 列出、引导或杀掉本会话 spawn 出的 sub-agent                                   |
+| `subagents`        | 列出、引导或杀掉本会话派生出的 sub-agent                                   |
 | `session_status`   | 显示一张 `/status` 风格的卡片，可选设置按会话的模型覆盖                       |
 
 > These tools are still subject to the active tool profile and allow/deny policy. `tools.profile: "coding"` includes the full session orchestration set, including `sessions_spawn`, `sessions_yield`, and `subagents`. `tools.profile: "messaging"` includes cross-session messaging tools (`sessions_list`, `sessions_history`, `sessions_send`, `session_status`) but does not include sub-agent spawning. To keep a messaging profile and still allow native delegation, add:
 
-这些工具仍受当前工具 profile 和 allow/deny 策略约束。`tools.profile: "coding"` 包含完整的会话编排集，含 `sessions_spawn`、`sessions_yield`、`subagents`。`tools.profile: "messaging"` 包含跨会话消息工具（`sessions_list`、`sessions_history`、`sessions_send`、`session_status`），但不含 sub-agent spawn。要保留 messaging profile 同时允许原生委派：
+这些工具仍受当前工具 profile 和 allow/deny 策略约束。`tools.profile: "coding"` 包含完整的会话编排集，含 `sessions_spawn`、`sessions_yield`、`subagents`。`tools.profile: "messaging"` 包含跨会话消息工具（`sessions_list`、`sessions_history`、`sessions_send`、`session_status`），但不含 sub-agent 派生。要保留 messaging profile 同时允许原生委派：
 
 > ```json5
 > {
@@ -142,7 +142,7 @@ OpenClaw 给 agent 提供跨会话工作、查看状态、调度 sub-agent 的�
 
 > `sessions_yield` intentionally ends the current turn so the next message can be the follow-up event you are waiting for. Use it after spawning sub-agents when you want completion results to arrive as the next message instead of building poll loops.
 
-`sessions_yield` 刻意结束当前轮次，让下一条消息成为你等的那个后续事件。spawn 完 sub-agent 后，想让完成结果作为下一条消息送达、不用搭轮询循环时用它。
+`sessions_yield` 刻意结束当前轮次，让下一条消息成为你等的那个后续事件。派生完 sub-agent 后，想让完成结果作为下一条消息送达、不用搭轮询循环时用它。
 
 > `subagents` is the control-plane helper for already spawned OpenClaw sub-agents. It supports:
 >
@@ -150,7 +150,7 @@ OpenClaw 给 agent 提供跨会话工作、查看状态、调度 sub-agent 的�
 > * `action: "steer"` to send follow-up guidance to a running child
 > * `action: "kill"` to stop one child or `all`
 
-`subagents` 是已经 spawn 出的 OpenClaw sub-agent 的控制面助手。支持：
+`subagents` 是已经派生出的 OpenClaw sub-agent 的控制面助手。支持：
 
 - `action: "list"`：查看活跃 / 近期运行
 - `action: "steer"`：给运行中的子 agent 发后续指引
@@ -178,7 +178,7 @@ OpenClaw 给 agent 提供跨会话工作、查看状态、调度 sub-agent 的�
 
 - `runtime: "subagent"`（默认）或 `"acp"`（外部 harness agent）。
 - 子会话的 `model` 和 `thinking` 覆盖。
-- `thread: true` 把 spawn 绑到聊天 thread（Discord、Slack 等）。
+- `thread: true` 把派生绑到聊天 thread（Discord、Slack 等）。
 - `sandbox: "require"` 强制子会话进沙盒。
 - 原生 sub-agent 时，子需要当前请求者的 transcript 就用 `context: "fork"`；省略或写 `context: "isolated"` 让子会话干净。绑定 thread 的原生 sub-agent 默认 `context: "fork"`，除非 `threadBindings.defaultSpawnContext` 改了。
 
@@ -214,7 +214,7 @@ ACP 专属行为见 [ACP Agents](/tools/acp-agents)。
 | 等级    | 作用域                                  |
 | ------- | --------------------------------------- |
 | `self`  | 仅当前会话                              |
-| `tree`  | 当前会话 + spawn 出的 sub-agent         |
+| `tree`  | 当前会话 + 派生出的 sub-agent         |
 | `agent` | 该 agent 的所有会话                     |
 | `all`   | 所有会话（如配置允许跨 agent）          |
 
@@ -234,7 +234,7 @@ ACP 专属行为见 [ACP Agents](/tools/acp-agents)。
 > * [Gateway Configuration](/gateway/configuration) -- session tool config knobs
 
 - [会话管理](/concepts/session)：路由、生命周期、维护
-- [ACP Agents](/tools/acp-agents)：外部 harness spawn
+- [ACP Agents](/tools/acp-agents)：外部 harness 派生
 - [多 agent](/concepts/multi-agent)：多 agent 架构
 - [Gateway 配置](/gateway/configuration)：会话工具配置开关
 

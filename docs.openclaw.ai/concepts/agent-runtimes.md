@@ -202,7 +202,7 @@ OpenClaw 在解析完 provider 和 model 之后挑选嵌入式 runtime：
 
 > Explicit provider/model plugin runtimes fail closed. For example, `agentRuntime.id: "codex"` on a provider or model means Codex or a clear selection/runtime error; it is never silently routed back to PI.
 
-显式的 provider/model 插件 runtime 是 fail-closed 的。比如在 provider 或 model 上写 `agentRuntime.id: "codex"`，要么走 Codex，要么报清晰的选择 / runtime 错误，绝不会悄悄回退到 PI。
+显式的 provider/model 插件 runtime 是默认拒绝的。比如在 provider 或 model 上写 `agentRuntime.id: "codex"`，要么走 Codex，要么报清晰的选择 / runtime 错误，绝不会悄悄回退到 PI。
 
 > CLI backend aliases are different from embedded harness ids. The preferred Claude CLI form is:
 >

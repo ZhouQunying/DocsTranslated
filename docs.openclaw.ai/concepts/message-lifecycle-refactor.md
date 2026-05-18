@@ -2,7 +2,7 @@
 
 > This page is the target design for replacing scattered channel turn, reply dispatch, preview streaming, and outbound delivery helpers with one durable message lifecycle.
 
-本页是一份目标设计：把散乱的 channel turn、reply dispatch、preview streaming、outbound delivery helper 替换成一套持久化的消息生命周期。
+本页是一份目标设计：把散乱的 channel turn、reply dispatch、预览 streaming、outbound delivery helper 替换成一套持久化的消息生命周期。
 
 > The short version:
 >
@@ -18,8 +18,8 @@
 - 核心原语应该是 **receive** 和 **send**，不是 **reply**。
 - reply 只是发送消息上的一种关系。
 - turn 是接收处理的便捷封装，不是投递的所有者。
-- 发送必须基于上下文：`begin`、render、preview 或 stream、final send、commit、fail。
-- 接收也必须基于上下文：normalize、dedupe、route、record、dispatch、平台 ack、fail。
+- 发送必须基于上下文：`begin`、渲染、预览或 stream、final send、commit、fail。
+- 接收也必须基于上下文：归一化、去重、route、record、dispatch、平台确认、fail。
 - 公共插件 SDK 应该收敛到一个小的 channel-message 面。
 
 ---
@@ -72,7 +72,7 @@ Telegram polling 已 ack
 
 > That is the end state for this refactor, not a description of every current path. During migration, existing outbound helpers can still fall through to a direct send when best-effort queue writes fail. The refactor is complete only when durable final sends fail closed or explicitly opt out with a documented non-durable policy.
 
-这是这次重构的终态，不是现状每条路径的描述。迁移期间，现有 outbound 助手仍可以在 best-effort 队列写入失败时降级到直接 send。只有当持久化的最终 send 在失败时 fail-closed、或显式带有文档化的非持久策略时，重构才算完成。
+这是这次重构的终态，不是现状每条路径的描述。迁移期间，现有 outbound 助手仍可以在 best-effort 队列写入失败时降级到直接 send。只有当持久化的最终 send 在失败时默认拒绝、或显式带有文档化的非持久策略时，重构才算完成。
 
 ---
 
@@ -92,12 +92,12 @@ Telegram polling 已 ack
 
 - 所有通道消息 receive 和 send 路径走一套核心生命周期。
 - 在新消息生命周期里，适配器声明 replay-safe 后，默认走持久化的最终 send。
-- 共享 preview、edit、stream、finalization、retry、recovery、receipt 语义。
+- 共享预览、edit、stream、finalization、retry、recovery、回执语义。
 - 一个小的插件 SDK 面，第三方插件能学得会、维护得动。
 - 迁移期间对现有 `channel.turn` 调用者保持兼容。
 - 给新的通道能力留清晰的扩展点。
 - 核心里不要平台专属分支。
-- 不发 token-delta 的通道消息。通道流式保留为消息 preview、edit、append、或完成块投递。
+- 不发 token-delta 的通道消息。通道流式保留为消息预览、edit、append、或完成块投递。
 - 给运维 / 系统输出加上结构化的 OpenClaw 来源元数据，避免可见的 Gateway 失败作为新 prompt 重新进入开了 bot 的共享房间。
 
 ---
@@ -140,7 +140,7 @@ Vercel Chat 有一份不错的公开心智模型：
 - `Channel`
 - `Message`
 - 适配器方法，如 `postMessage`、`editMessage`、`deleteMessage`、`stream`、`startTyping` 和历史拉取
-- 一个 state 适配器，负责 dedupe、锁、队列、持久化
+- 一个 state 适配器，负责去重、锁、队列、持久化
 
 > OpenClaw should borrow the vocabulary, not copy the surface.
 
@@ -159,8 +159,8 @@ OpenClaw 借用这套术语，不抄表面。
 
 - 在直接传输调用之前持久化的发送意图。
 - 带 begin / commit / fail 的显式 send 上下文。
-- 知道平台 ack 策略的 receive 上下文。
-- 重启后存活的 receipt，能驱动编辑、删除、恢复和重复抑制。
+- 知道平台确认策略的 receive 上下文。
+- 重启后存活的回执，能驱动编辑、删除、恢复和重复抑制。
 - 更小的公共 SDK。内置插件可以用内部 runtime 助手，但第三方插件应该看到一个连贯的 message API。
 - agent 专属行为：会话、transcript、block streaming、工具进度、批准、媒体指令、静默回复、群 @ 历史。
 
@@ -210,7 +210,7 @@ core.messages.state(...)
 
 `live` 拥有预览、编辑、进度、流式状态。
 
-`state` 拥有持久化意图存储、receipt、幂等、恢复、锁、dedupe。
+`state` 拥有持久化意图存储、回执、幂等、恢复、锁、去重。
 
 ---
 
@@ -378,7 +378,7 @@ type MessageRelation =
 
 > Origin describes who produced a message and how OpenClaw should treat echoes of that message. It is separate from relation: a message can be a reply to a user and still be OpenClaw-originated operational output.
 
-origin 描述消息是谁产生的、OpenClaw 应该怎么对待它的回声。它和 relation 是两码事：一条消息可以既是对用户的回复，又是 OpenClaw 来源的运维输出。
+origin 描述消息是谁产生的、OpenClaw 应该怎么对待它的回声。它和关系是两码事：一条消息可以既是对用户的回复，又是 OpenClaw 来源的运维输出。
 
 > ```typescript
 > type MessageOrigin =
@@ -422,7 +422,7 @@ type MessageOrigin =
 
 > Receipts are first-class:
 
-receipt 是一等公民：
+回执是一等公民：
 
 > ```typescript
 > type MessageReceipt = {
@@ -480,11 +480,11 @@ type MessageReceiptPart = {
 
 > Receipts are the bridge from durable intent to future edit, delete, preview finalization, duplicate suppression, and recovery.
 
-receipt 是从持久化意图到将来 edit、delete、preview finalization、重复抑制、恢复之间的桥。
+回执是从持久化意图到将来 edit、delete、预览 finalization、重复抑制、恢复之间的桥。
 
 > A receipt can describe one platform message or a multi-part delivery. Chunked text, media plus text, voice plus text, and card fallbacks must preserve all platform ids while still exposing a primary id for threading and later edits.
 
-一份 receipt 可以描述一条平台消息，也可以描述多部分投递。分片文本、媒体加文本、语音加文本、card 降级都必须保留所有平台 id，同时提供一个主 id 给 threading 和后续 edit 用。
+一份回执可以描述一条平台消息，也可以描述多部分投递。分片文本、媒体加文本、语音加文本、card 降级都必须保留所有平台 id，同时提供一个主 id 给 threading 和后续 edit 用。
 
 ---
 
@@ -494,7 +494,7 @@ receipt 是从持久化意图到将来 edit、delete、preview finalization、�
 
 > Receiving should not be a bare helper call. The core needs a context that knows dedupe, routing, session recording, and platform ack policy.
 
-接收不该是一个裸的助手调用。核心需要一个上下文，懂 dedupe、路由、会话记录和平台 ack 策略。
+接收不该是一个裸的助手调用。核心需要一个上下文，懂去重、路由、会话记录和平台确认策略。
 
 > ```typescript
 > type MessageReceiveContext = {
@@ -575,16 +575,16 @@ type MessageReceiveContext = {
 > * **Inbound record ack:** confirms OpenClaw persisted enough inbound metadata to dedupe and route a redelivery.
 > * **User-visible receipt:** optional read/status/typing behavior; never a durability boundary.
 
-ack 不是一回事。receive 契约必须把这几种信号分开：
+确认不是一回事。receive 契约必须把这几种信号分开：
 
-- **传输 ack**：告诉平台 webhook 或 socket：OpenClaw 接受了事件信封。有些平台要求在派发之前先 ack。
-- **polling offset ack**：往前推游标，让同一个事件不会被再拉一次。它不能越过那些还没法恢复的工作。
-- **接收记录 ack**：确认 OpenClaw 已经把够 dedupe 和路由重投的接收元数据持久化了。
-- **用户可见 receipt**：可选的已读 / 状态 / 输入中行为；永远不是持久化边界。
+- **传输确认**：告诉平台 webhook 或 socket：OpenClaw 接受了事件信封。有些平台要求在派发之前先确认。
+- **polling offset 确认**：往前推游标，让同一个事件不会被再拉一次。它不能越过那些还没法恢复的工作。
+- **接收记录确认**：确认 OpenClaw 已经把够去重和路由重投的接收元数据持久化了。
+- **用户可见回执**：可选的已读 / 状态 / 输入中行为；永远不是持久化边界。
 
 > `ReceiveAckPolicy` controls transport or polling acknowledgement only. It must not be reused for read receipts or status reactions.
 
-`ReceiveAckPolicy` 只控制传输或 polling 的 ack。不要复用到已读回执或状态反应上。
+`ReceiveAckPolicy` 只控制传输或 polling 的确认。不要复用到已读回执或状态反应上。
 
 > Before bot authorization, receive must apply the shared OpenClaw echo policy when the channel can decode message origin metadata:
 
@@ -636,7 +636,7 @@ function shouldDropOpenClawEcho(params: {
 >   | { kind: "manual" };
 > ```
 
-ack 策略是显式的：
+确认策略是显式的：
 
 ```typescript
 type ReceiveAckPolicy =
@@ -648,7 +648,7 @@ type ReceiveAckPolicy =
 
 > Telegram polling now uses the receive-context ack policy for its persisted restart watermark. The tracker still observes grammY updates as they enter the middleware chain, but OpenClaw persists only the safe completed update id after successful dispatch, leaving failed or lower pending updates replayable after a restart. Telegram's upstream `getUpdates` fetch offset is still controlled by the polling library, so the remaining deeper cut is a fully durable polling source if we need platform-level redelivery beyond OpenClaw's restart watermark. Webhook platforms may need immediate HTTP ack, but they still need inbound dedupe and durable outbound send intents because webhooks can redeliver.
 
-Telegram polling 现在用 receive 上下文 ack 策略来维护其持久化的重启水位。tracker 仍然观察 grammY update 进入 middleware 链，但 OpenClaw 只在派发成功后持久化"安全已完成"的 update id，让失败或更低的 pending update 在重启后仍可重放。Telegram 上游的 `getUpdates` 拉取偏移仍由 polling 库控制，所以更深层的切口是一个完全持久化的 polling 源 —— 当我们需要超越 OpenClaw 重启水位的平台级重投时再做。webhook 平台可能需要立即 HTTP ack，但仍然需要接收 dedupe 和持久化发送意图，因为 webhook 也会重投。
+Telegram polling 现在用 receive 上下文确认策略来维护其持久化的重启水位。tracker 仍然观察 grammY update 进入 middleware 链，但 OpenClaw 只在派发成功后持久化"安全已完成"的 update id，让失败或更低的 pending update 在重启后仍可重放。Telegram 上游的 `getUpdates` 拉取偏移仍由 polling 库控制，所以更深层的切口是一个完全持久化的 polling 源 —— 当我们需要超越 OpenClaw 重启水位的平台级重投时再做。webhook 平台可能需要立即 HTTP 确认，但仍然需要接收去重和持久化发送意图，因为 webhook 也会重投。
 
 ---
 
@@ -768,7 +768,7 @@ await core.messages.withSendContext(message, async (ctx) => {
 
 > The dangerous boundary is after platform success and before receipt commit. If a process dies there, OpenClaw cannot know whether the platform message exists unless the adapter provides native idempotency or a receipt reconciliation path. Those attempts must resume in `unknown_after_send`, not blindly replay. Channels without reconciliation may choose at-least-once replay only if duplicate visible messages are an acceptable, documented tradeoff for that channel and relation. The current SDK reconciliation bridge requires the adapter to declare `reconcileUnknownSend`, then asks `durableFinal.reconcileUnknownSend` to classify an unknown entry as `sent`, `not_sent`, or `unresolved`; only `not_sent` permits replay, and unresolved entries stay terminal or retry only the reconciliation check.
 
-危险边界是平台成功之后、receipt 提交之前。进程在那里挂掉，OpenClaw 没法知道平台消息是否存在 —— 除非适配器提供原生幂等或 receipt 对账路径。这些尝试必须以 `unknown_after_send` 状态恢复，而不是盲目重放。没有对账机制的通道，只有当"重复可见消息"是该通道和该 relation 可接受、有文档的取舍时，才能选择"至少一次"重放。当前 SDK 的对账桥要求适配器声明 `reconcileUnknownSend`，然后让 `durableFinal.reconcileUnknownSend` 把一条未知条目分成 `sent`、`not_sent` 或 `unresolved`；只有 `not_sent` 允许重放，`unresolved` 条目终止或仅重试对账检查。
+危险边界是平台成功之后、回执提交之前。进程在那里挂掉，OpenClaw 没法知道平台消息是否存在 —— 除非适配器提供原生幂等或回执对账路径。这些尝试必须以 `unknown_after_send` 状态恢复，而不是盲目重放。没有对账机制的通道，只有当"重复可见消息"是该通道和该关系可接受、有文档的取舍时，才能选择"至少一次"重放。当前 SDK 的对账桥要求适配器声明 `reconcileUnknownSend`，然后让 `durableFinal.reconcileUnknownSend` 把一条未知条目分成 `sent`、`not_sent` 或 `unresolved`；只有 `not_sent` 允许重放，`unresolved` 条目终止或仅重试对账检查。
 
 > Durability policy must be explicit:
 >
@@ -784,15 +784,15 @@ type MessageDurabilityPolicy = "required" | "best_effort" | "disabled";
 
 > `required` means core must fail closed when it cannot write the durable intent. `best_effort` can fall through when persistence is unavailable. `disabled` keeps the old direct send behavior. During migration, legacy wrappers and public compatibility helpers default to `disabled`; they must not infer `required` from the fact that a channel has a generic outbound adapter.
 
-`required` 表示核心写不进持久化意图时必须 fail-closed。`best_effort` 在持久化不可用时可以降级直发。`disabled` 保持旧版直接 send 行为。迁移期间，旧版包装和公共兼容助手默认 `disabled`；它们不能因为某个通道有通用 outbound 适配器就推断成 `required`。
+`required` 表示核心写不进持久化意图时必须默认拒绝。`best_effort` 在持久化不可用时可以降级直发。`disabled` 保持旧版直接 send 行为。迁移期间，旧版包装和公共兼容助手默认 `disabled`；它们不能因为某个通道有通用 outbound 适配器就推断成 `required`。
 
 > Send contexts also own channel-local post-send effects. A migration is not safe if durable delivery bypasses local behavior that was previously attached to the channel's direct send path. Examples include self-echo suppression caches, thread participation markers, native edit anchors, model-signature rendering, and platform-specific duplicate guards. Those effects must either move into the send adapter, the render adapter, or a named send-context hook before that channel can enable durable generic final delivery.
 
-send 上下文也拥有通道本地的 post-send 副作用。如果持久化投递绕开了之前附在通道直接 send 路径上的本地行为，迁移就不安全。例子包括：自回声抑制缓存、thread 参与标记、原生 edit 锚点、模型签名渲染、平台专属重复护栏。这些副作用必须先挪到 send 适配器、render 适配器或一个命名的 send 上下文 hook 里，该通道才能启用持久化的通用最终投递。
+send 上下文也拥有通道本地的 post-send 副作用。如果持久化投递绕开了之前附在通道直接 send 路径上的本地行为，迁移就不安全。例子包括：自回声抑制缓存、thread 参与标记、原生 edit 锚点、模型签名渲染、平台专属重复护栏。这些副作用必须先挪到 send 适配器、渲染适配器或一个命名的 send 上下文 hook 里，该通道才能启用持久化的通用最终投递。
 
 > Send helpers must return receipts all the way back to their caller. Durable wrappers cannot swallow message ids or replace a channel delivery result with `undefined`; buffered dispatchers use those ids for thread anchors, later edits, preview finalization, and duplicate suppression.
 
-send helper 必须把 receipt 一路返回给调用方。持久化包装不能吞掉消息 id，也不能把通道投递结果替换成 `undefined`；缓冲 dispatcher 用这些 id 来做 thread 锚点、后续 edit、preview 收尾和重复抑制。
+send helper 必须把回执一路返回给调用方。持久化包装不能吞掉消息 id，也不能把通道投递结果替换成 `undefined`；缓冲 dispatcher 用这些 id 来做 thread 锚点、后续 edit、预览收尾和重复抑制。
 
 > Fallback sends operate on batches, not single payloads. Silent-reply rewrites, media fallback, card fallback, and chunk projection can all produce more than one deliverable message, so a send context must either deliver the whole projected batch or explicitly document why only one payload is valid.
 
@@ -830,7 +830,7 @@ type RenderedMessageUnit = {
 
 > When such a fallback is durable, the whole projected batch must be represented by one durable send intent or another atomic batch plan. Recording each payload one-by-one is not enough: a crash between payloads can leave a partial visible fallback with no durable record for the remaining payloads. Recovery must know which units already have receipts and either replay only missing units or mark the batch `unknown_after_send` until the adapter reconciles it.
 
-这种降级如果是持久化的，整个投影批次必须由一份持久化 send 意图或另一种原子批次计划来表示。一条一条记 payload 不够：payload 之间的崩溃会让部分可见降级已经发出去、剩下的 payload 却没有持久化记录。恢复必须知道哪些 unit 已经有 receipt，然后要么只重放缺失的 unit、要么把这个批次标成 `unknown_after_send` 直到适配器对账。
+这种降级如果是持久化的，整个投影批次必须由一份持久化 send 意图或另一种原子批次计划来表示。一条一条记 payload 不够：payload 之间的崩溃会让部分可见降级已经发出去、剩下的 payload 却没有持久化记录。恢复必须知道哪些 unit 已经有回执，然后要么只重放缺失的 unit、要么把这个批次标成 `unknown_after_send` 直到适配器对账。
 
 ---
 
@@ -897,7 +897,7 @@ type MessageLiveAdapter = {
 > };
 > ```
 
-live 状态有足够的持久度来恢复或抑制重复：
+实时状态有足够的持久度来恢复或抑制重复：
 
 ```typescript
 type LiveMessageState = {
@@ -1034,7 +1034,7 @@ type MessageReceiveAdapter<TRaw = unknown> = {
 
 > Before preflight authorization, core must run the shared OpenClaw echo predicate whenever `origin.decode` returns OpenClaw-origin metadata. The receive adapter supplies platform facts such as bot author and room shape; core owns the drop decision and ordering so channels do not reimplement text filters.
 
-preflight 授权之前，只要 `origin.decode` 返回了 OpenClaw 来源元数据，核心就必须跑共享的 OpenClaw 回声断言。receive 适配器提供平台事实，比如是否 bot 作者、房间形态；核心拥有 drop 决策和顺序，让通道不必各自实现文本过滤。
+预检授权之前，只要 `origin.decode` 返回了 OpenClaw 来源元数据，核心就必须跑共享的 OpenClaw 回声断言。receive 适配器提供平台事实，比如是否 bot 作者、房间形态；核心拥有 drop 决策和顺序，让通道不必各自实现文本过滤。
 
 > Origin adapter:
 >
@@ -1056,7 +1056,7 @@ type MessageOriginAdapter<TRaw = unknown, TNative = unknown> = {
 
 > Core sets `MessageOrigin`. Channels only translate it to and from native transport metadata. Slack maps this to `chat.postMessage({ metadata })` and inbound `message.metadata`; Matrix can map it to extra event content; channels without native metadata can use a receipt/outbound registry when that is the best available approximation.
 
-核心设置 `MessageOrigin`。通道只负责把它和原生传输元数据互译。Slack 把它映射到 `chat.postMessage({ metadata })` 和接收的 `message.metadata`；Matrix 可以映射到额外 event content；没有原生元数据的通道可以用 receipt / outbound 注册表作为现有最佳近似。
+核心设置 `MessageOrigin`。通道只负责把它和原生传输元数据互译。Slack 把它映射到 `chat.postMessage({ metadata })` 和接收的 `message.metadata`；Matrix 可以映射到额外 event content；没有原生元数据的通道可以用回执 / outbound 注册表作为现有最佳近似。
 
 > Capabilities:
 >
@@ -1240,7 +1240,7 @@ channel.turn.run
 
 - 持久化最终投递返回一个判别状态。`handled_visible` 和 `handled_no_send` 终结；`unsupported` 和 `not_applicable` 可以降级到通道自有投递；`failed` 把 send 失败传出去。
 - 通用持久化最终投递由适配器能力闸门控制 —— 静默投递、回复目标保留、原生引用保留、message-sending hook。缺失对等行为时应当选通道自有投递，不要选一个会改变用户可见行为的通用 send。
-- 队列支持的持久化 send 暴露一个 delivery intent 引用。过渡期间，已有的 `pendingFinalDelivery*` 会话字段可以承载 intent id；终态是 `MessageSendIntent` 存储，不再是冻结的 reply 文本加临时上下文字段。
+- 队列支持的持久化 send 暴露一个 delivery 意图引用。过渡期间，已有的 `pendingFinalDelivery*` 会话字段可以承载意图 id；终态是 `MessageSendIntent` 存储，不再是冻结的 reply 文本加临时上下文字段。
 
 > Do not enable the generic durable path for a channel until all of these are true:
 >
@@ -1255,10 +1255,10 @@ channel.turn.run
 
 - 通用 send 适配器跟旧直接路径执行同样的渲染和传输行为。
 - 本地 post-send 副作用通过 send 上下文保留。
-- 适配器返回 receipt 或投递结果，含所有平台消息 id。
+- 适配器返回回执或投递结果，含所有平台消息 id。
 - prepared dispatcher 路径要么调新 send 上下文，要么文档明确说不在持久化保证范围内。
 - 降级投递处理每个投影 payload，不只是第一个。
-- 持久化降级投递把整个投影 payload 数组记成一份可重放的 intent 或 batch 计划。
+- 持久化降级投递把整个投影 payload 数组记成一份可重放的意图或 批次计划。
 
 > Concrete migration hazards to preserve:
 >
@@ -1273,7 +1273,7 @@ channel.turn.run
 具体的迁移风险，要保留：
 
 - iMessage monitor 投递在 send 成功后会把发出消息存进 echo 缓存。持久化最终 send 仍要填这个缓存，否则 OpenClaw 可能把自己的最终回复又作为接收用户消息读回来。
-- Tlon 在群回复后追加可选的 model 签名并记参与过的 thread。通用持久化投递不能绕开这些副作用；要么把它们挪到 Tlon 的 render / send / finalize 适配器，要么让 Tlon 留在通道自有路径上。
+- Tlon 在群回复后追加可选的 model 签名并记参与过的 thread。通用持久化投递不能绕开这些副作用；要么把它们挪到 Tlon 的渲染 / send / finalize 适配器，要么让 Tlon 留在通道自有路径上。
 - Discord 和其他 prepared dispatcher 已经拥有直接投递和预览行为。在它们的 prepared dispatcher 显式把 final 路由到 send 上下文之前，"已组装轮次的持久化保证"不覆盖它们。
 - Telegram 静默降级投递必须投递完整的投影 payload 数组。单 payload 捷径会在投影后丢掉额外的降级 payload。
 - LINE、Zalo、Nostr 和其他现有 assembled / helper 路径可能有 reply-token 处理、媒体代理、发送消息缓存、loading / 状态清理或只能用回调的目标。它们留在通道自有投递上，直到这些语义由 send 适配器表达且测试验证通过。
@@ -1422,11 +1422,11 @@ type DeliveryFailureKind =
 核心策略：
 
 - `transient` 和 `rate_limit` 重试。
-- `invalid_payload` 不重试 —— 除非有 render 降级。
+- `invalid_payload` 不重试 —— 除非有渲染降级。
 - `auth` 或 `permission` 不重试，直到配置变更。
-- `not_found` 时，让 live 收尾在通道声明安全的情况下从 edit 降级到新 send。
-- `conflict` 时，用 receipt / 幂等规则判断消息是否已存在。
-- 适配器可能完成了平台 I/O 但 receipt 提交之前发生的任何错误都成为 `unknown_after_send`，除非适配器能证明平台操作没发生。
+- `not_found` 时，让实时收尾在通道声明安全的情况下从 edit 降级到新 send。
+- `conflict` 时，用回执 / 幂等规则判断消息是否已存在。
+- 适配器可能完成了平台 I/O 但回执提交之前发生的任何错误都成为 `unknown_after_send`，除非适配器能证明平台操作没发生。
 
 ---
 
@@ -1461,23 +1461,23 @@ type DeliveryFailureKind =
 
 | 通道               | 目标迁移                                                                                                                                                                                                                                                                                                       |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Telegram           | receive ack 策略 + 持久化 final send。live 适配器拥有 send + edit 预览、过期预览的新 final send、topic、quote-reply 跳过预览、媒体降级、retry-after 处理。                                                                                                                                                  |
-| Discord            | send 适配器包装现有持久化 payload 投递。live 适配器拥有草稿 edit、progress 草稿、媒体 / 错误时的预览 cancel、回复目标保留、消息 id receipt。审计 bot 作者的 Gateway 失败回声在共享房间里的行为；Discord 不能在常规消息上承载 origin 元数据时用 outbound 注册表或其他原生等价物。                              |
-| Slack              | send 适配器处理常规 chat post。live 适配器在 thread 形态支持时选原生流，否则用草稿预览。receipt 保留 thread 时间戳。origin 适配器把 OpenClaw Gateway 失败映射到 Slack `chat.postMessage.metadata`，在 `allowBots` 授权之前 drop 带标签的 bot-room 回声。                                                       |
-| WhatsApp           | send 适配器拥有文本 / 媒体 send，带持久化 final intent。receive 适配器处理群 @ 和发件人身份。在 WhatsApp 有可编辑传输之前，live 可以缺席。                                                                                                                                                                  |
-| Matrix             | live 适配器拥有草稿 event edit、收尾、redaction、加密媒体约束、回复目标不匹配时的降级。receive 适配器拥有加密 event 的 hydrate 和 dedupe。origin 适配器应把 OpenClaw Gateway 失败 origin 编码进 Matrix event content，在 `allowBots` 处理之前 drop 已配置 bot 的房间回声。                                       |
-| Mattermost         | live 适配器拥有一个草稿 post、进度 / 工具折叠、原地收尾、新 send 降级。                                                                                                                                                                                                                                          |
-| Microsoft Teams    | live 适配器拥有原生 progress 和 block 流式行为。send 适配器拥有 activity 和附件 / card receipt。                                                                                                                                                                                                                |
-| 飞书               | render 适配器拥有 text / card / raw 渲染。live 适配器拥有流式 card 和重复 final 抑制。send 适配器拥有评论、topic 会话、媒体、语音抑制。                                                                                                                                                                            |
-| QQ Bot             | live 适配器拥有 C2C 流式、累加器超时、降级 final send。render 适配器拥有媒体标签和文本作语音。                                                                                                                                                                                                                  |
-| Signal             | 简单的 receive 加 send 适配器。signal-cli 没有可靠 edit 支持时不需要 live 适配器。                                                                                                                                                                                                                              |
+| Telegram           | receive 确认策略 + 持久化 final send。实时适配器拥有 send + edit 预览、过期预览的新 final send、topic、quote-reply 跳过预览、媒体降级、retry-after 处理。                                                                                                                                                  |
+| Discord            | send 适配器包装现有持久化 payload 投递。实时适配器拥有草稿 edit、progress 草稿、媒体 / 错误时的预览 cancel、回复目标保留、消息 id 回执。审计 bot 作者的 Gateway 失败回声在共享房间里的行为；Discord 不能在常规消息上承载 origin 元数据时用 outbound 注册表或其他原生等价物。                              |
+| Slack              | send 适配器处理常规 chat post。实时适配器在 thread 形态支持时选原生流，否则用草稿预览。回执保留 thread 时间戳。origin 适配器把 OpenClaw Gateway 失败映射到 Slack `chat.postMessage.metadata`，在 `allowBots` 授权之前 drop 带标签的 bot-room 回声。                                                       |
+| WhatsApp           | send 适配器拥有文本 / 媒体 send，带持久化 final 意图。receive 适配器处理群 @ 和发件人身份。在 WhatsApp 有可编辑传输之前，实时可以缺席。                                                                                                                                                                  |
+| Matrix             | 实时适配器拥有草稿 event edit、收尾、redaction、加密媒体约束、回复目标不匹配时的降级。receive 适配器拥有加密 event 的 hydrate 和去重。origin 适配器应把 OpenClaw Gateway 失败 origin 编码进 Matrix event content，在 `allowBots` 处理之前 drop 已配置 bot 的房间回声。                                       |
+| Mattermost         | 实时适配器拥有一个草稿 post、进度 / 工具折叠、原地收尾、新 send 降级。                                                                                                                                                                                                                                          |
+| Microsoft Teams    | 实时适配器拥有原生 progress 和 block 流式行为。send 适配器拥有 activity 和附件 / card 回执。                                                                                                                                                                                                                |
+| 飞书               | 渲染适配器拥有 text / card / raw 渲染。实时适配器拥有流式 card 和重复 final 抑制。send 适配器拥有评论、topic 会话、媒体、语音抑制。                                                                                                                                                                            |
+| QQ Bot             | 实时适配器拥有 C2C 流式、累加器超时、降级 final send。渲染适配器拥有媒体标签和文本作语音。                                                                                                                                                                                                                  |
+| Signal             | 简单的 receive 加 send 适配器。signal-cli 没有可靠 edit 支持时不需要实时适配器。                                                                                                                                                                                                                              |
 | iMessage           | 简单的 receive 加 send 适配器。在持久化 final 可以绕过 monitor 投递之前，iMessage send 必须保留 monitor echo 缓存填充。                                                                                                                                                                                          |
 | Google Chat        | 简单的 receive 加 send 适配器，thread 关系映射到 space 和 thread id。审计 `allowBots=true` 房间对带标签 OpenClaw Gateway 失败回声的行为。                                                                                                                                                                          |
-| LINE               | 简单的 receive 加 send 适配器，reply-token 约束建模为 target / relation 能力。                                                                                                                                                                                                                                  |
+| LINE               | 简单的 receive 加 send 适配器，reply-token 约束建模为 target / 关系能力。                                                                                                                                                                                                                                  |
 | Nextcloud Talk     | SDK receive 桥 + send 适配器。                                                                                                                                                                                                                                                                                  |
-| IRC                | 简单的 receive 加 send 适配器，没有持久 edit receipt。                                                                                                                                                                                                                                                          |
-| Nostr              | 加密 DM 的 receive + send 适配器；receipt 是 event id。                                                                                                                                                                                                                                                          |
-| QA Channel         | 给 receive、send、live、retry、recovery 行为做契约测试用的适配器。                                                                                                                                                                                                                                                  |
+| IRC                | 简单的 receive 加 send 适配器，没有持久 edit 回执。                                                                                                                                                                                                                                                          |
+| Nostr              | 加密 DM 的 receive + send 适配器；回执是 event id。                                                                                                                                                                                                                                                          |
+| QA Channel         | 给 receive、send、实时、retry、recovery 行为做契约测试用的适配器。                                                                                                                                                                                                                                                  |
 | Synology Chat      | 简单的 receive 加 send 适配器。                                                                                                                                                                                                                                                                                  |
 | Tlon               | send 适配器在启用通用持久化 final 投递之前必须保留 model 签名渲染和参与 thread 追踪。                                                                                                                                                                                                                            |
 | Twitch             | 简单的 receive 加 send 适配器，带限速分类。                                                                                                                                                                                                                                                                      |
@@ -1532,7 +1532,7 @@ type DeliveryFailureKind =
 
 > Unit tests / Integration tests / Channel tests / Validation
 
-单测 / 集成测试 / 通道测试 / 验证（参见原文条目，覆盖：持久化 send 意图序列化和恢复、幂等 key 复用与重复抑制、receipt 提交与重放跳过、`unknown_after_send` 在适配器支持时重放前对账、失败分类策略、receive ack 策略顺序、reply / followup / system / broadcast 关系映射、Gateway 失败 origin 工厂和 `shouldDropOpenClawEcho` 断言、origin 在 payload 归一化 / 分片 / 持久队列序列化和恢复中保留；以及各通道场景的契约测试和 Vitest / Testbox / qa-channel 验证）。
+单测 / 集成测试 / 通道测试 / 验证（参见原文条目，覆盖：持久化 send 意图序列化和恢复、幂等 key 复用与重复抑制、回执提交与重放跳过、`unknown_after_send` 在适配器支持时重放前对账、失败分类策略、receive 确认策略顺序、reply / followup / system / broadcast 关系映射、Gateway 失败 origin 工厂和 `shouldDropOpenClawEcho` 断言、origin 在 payload 归一化 / 分片 / 持久队列序列化和恢复中保留；以及各通道场景的契约测试和 Vitest / Testbox / qa-channel 验证）。
 
 ---
 
@@ -1549,11 +1549,11 @@ type DeliveryFailureKind =
 > * Which channels have native origin metadata, which need persisted outbound registries, and which cannot offer reliable cross-bot echo suppression.
 
 - Telegram 是否最终该把 grammY runner 源替换成一个完全持久化的 polling 源，能控制平台级重投，不仅是 OpenClaw 的持久化重启水位。
-- 持久化的 live preview 状态该和最终 send 意图存在同一条队列记录里，还是放在并列的 live-state 存储。
+- 持久化的实时预览状态该和最终 send 意图存在同一条队列记录里，还是放在并列的实时-state 存储。
 - `plugin-sdk/channel-message` 发布之后，兼容包装在文档里保留多久。
-- 第三方插件应当直接实现 receive 适配器，还是只通过 `defineChannelMessageAdapter` 提供 normalize / send / live hook。
-- receipt 字段哪些能安全暴露到公共 SDK 里、哪些只能留在内部 runtime 状态里。
-- 自回声缓存和参与 thread 标记这种副作用，应当建模为 send 上下文 hook、适配器拥有的 finalize 步骤、还是 receipt 订阅者。
+- 第三方插件应当直接实现 receive 适配器，还是只通过 `defineChannelMessageAdapter` 提供归一化 / send / 实时 hook。
+- 回执字段哪些能安全暴露到公共 SDK 里、哪些只能留在内部 runtime 状态里。
+- 自回声缓存和参与 thread 标记这种副作用，应当建模为 send 上下文 hook、适配器拥有的 finalize 步骤、还是回执订阅者。
 - 哪些通道有原生 origin 元数据、哪些需要持久化的 outbound 注册表、哪些根本无法做可靠的跨 bot 回声抑制。
 
 ---
@@ -1580,19 +1580,19 @@ type DeliveryFailureKind =
 
 - 每个内置消息通道都通过 `messages.send` 发最终可见输出。
 - 每个接收消息通道都通过 `messages.receive` 或一个有文档的兼容包装进入。
-- 每个 preview / edit / stream 通道都用 `messages.live` 做草稿状态和收尾。
+- 每个预览 / edit / stream 通道都用 `messages.live` 做草稿状态和收尾。
 - `channel.turn` 只是一个包装。
 - reply 命名的 SDK helper 只是兼容导出，不是推荐路径。
 - 持久化恢复能在重启后重放 pending 的最终 send，不丢最终响应、不重复已提交的 send；平台结果未知的 send 在重放前对账，或者按该适配器文档化为"至少一次"。
-- 持久化最终 send 在写不进 intent 时 fail-closed —— 除非调用者显式选了一个文档化的非持久模式。
+- 持久化最终 send 在写不进意图时 默认拒绝 —— 除非调用者显式选了一个文档化的非持久模式。
 - 旧版 channel-turn 和 SDK 兼容助手默认直接走通道自有投递；通用持久化 send 必须显式 opt-in。
-- 多部分投递的 receipt 保留所有平台消息 id，并提供一个主 id 给 threading / edit 用。
+- 多部分投递的回执保留所有平台消息 id，并提供一个主 id 给 threading / edit 用。
 - 持久化包装在替换直接投递回调之前先保留通道本地副作用。
 - prepared dispatcher 在它的最终投递路径显式使用 send 上下文之前都不算持久化。
 - 降级投递处理每一个投影 payload。
-- 持久化降级投递把每一个投影 payload 记进一份可重放的 intent 或 batch 计划。
+- 持久化降级投递把每一个投影 payload 记进一份可重放的意图或 批次计划。
 - OpenClaw 来源的 Gateway 失败输出对人可见，但带标签的、bot 作者的房间回声在那些声明支持 origin 契约的通道上、在 bot 授权之前 drop。
-- 文档讲清楚 send、receive、live、state、receipt、relation、失败策略、迁移、测试覆盖。
+- 文档讲清楚 send、receive、实时、state、回执、关系、失败策略、迁移、测试覆盖。
 
 ---
 

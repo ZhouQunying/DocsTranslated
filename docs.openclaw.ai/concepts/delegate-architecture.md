@@ -386,7 +386,7 @@ New-ApplicationAccessPolicy `
 > https://www.googleapis.com/auth/calendar           # Tier 2
 > ```
 
-只代理你需要的 scope：
+只代理你需要的作用域：
 
 ```
 https://www.googleapis.com/auth/gmail.readonly    # 层级 1
@@ -410,7 +410,7 @@ https://www.googleapis.com/auth/calendar           # 层级 2
 
 > Route inbound messages to the delegate agent using [Multi-Agent Routing](/concepts/multi-agent) bindings:
 
-用 [多 agent 路由](/concepts/multi-agent) 的 binding 把接收消息路由到 delegate agent：
+用 [多 agent 路由](/concepts/multi-agent) 的绑定把接收消息路由到 delegate agent：
 
 > ```json5
 > {

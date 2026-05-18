@@ -2,7 +2,7 @@
 
 > Progress drafts make long-running agent turns feel alive in chat without turning the conversation into a stack of temporary status replies.
 
-进度草稿（progress drafts）让长时 agent 轮次在聊天里"活着"，又不会把对话堆成一摞临时状态回复。
+进度草稿（progress 草稿）让长时 agent 轮次在聊天里"活着"，又不会把对话堆成一摞临时状态回复。
 
 > When progress drafts are enabled, OpenClaw creates one visible work-in-progress message only after the turn proves it is doing real work, updates it while the agent reads, plans, calls tools, or waits for approval, and then turns that draft into the final answer when the channel can do that safely.
 
@@ -122,7 +122,7 @@ Shelling...
 
 > Choose `block` when you want draft preview updates in larger text chunks. On Discord and Telegram, `streaming.mode: "block"` is still preview streaming, not normal block delivery. Use `streaming.block.enabled` or legacy `blockStreaming` when you want normal block replies.
 
-想要更大文本块的草稿预览更新时选 `block`。在 Discord 和 Telegram 上，`streaming.mode: "block"` 仍然是 preview 流式，不是常规 block 投递。要常规 block 回复用 `streaming.block.enabled` 或旧版 `blockStreaming`。
+想要更大文本块的草稿预览更新时选 `block`。在 Discord 和 Telegram 上，`streaming.mode: "block"` 仍然是预览流式，不是常规 block 投递。要常规 block 回复用 `streaming.block.enabled` 或旧版 `blockStreaming`。
 
 ---
 

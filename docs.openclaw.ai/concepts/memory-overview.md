@@ -278,7 +278,7 @@ agent 有两个用于操作记忆的工具：
 > * **Live dreaming** works from the short-term dreaming store under `memory/.dreams/` and is what the normal deep phase uses when deciding what can graduate into `MEMORY.md`.
 > * **Grounded backfill** reads historical `memory/YYYY-MM-DD.md` notes as standalone day files and writes structured review output into `DREAMS.md`.
 
-做梦系统现在有两条关系紧密的审阅 lane：
+做梦系统现在有两条关系紧密的审阅队列：
 
 - **Live dreaming**：从 `memory/.dreams/` 下的短期做梦存储工作，这是常规深度阶段在判断什么可以晋升到 `MEMORY.md` 时用的。
 - **Grounded backfill**：把历史 `memory/YYYY-MM-DD.md` 笔记当独立的日文件读，把结构化审阅输出写到 `DREAMS.md`。

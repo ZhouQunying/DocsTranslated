@@ -298,7 +298,7 @@ openclaw pairing approve whatsapp <CODE>
 
 > * When `messages.removeAckAfterReply` is enabled, OpenClaw clears the WhatsApp ack reaction after a visible reply is delivered.
 
-- 启用 `messages.removeAckAfterReply` 后，OpenClaw 在可见回复送达后会清掉 WhatsApp 的 ack 表情。
+- 启用 `messages.removeAckAfterReply` 后，OpenClaw 在可见回复送达后会清掉 WhatsApp 的确认表情。
 
 ---
 
@@ -814,7 +814,7 @@ WhatsApp 支持原生回复引用：发出的回复可视化地引用收到的�
 | 等级          | Ack 表情 | Agent 主动表情 | 说明                                          |
 | ------------- | -------- | -------------- | --------------------------------------------- |
 | `"off"`       | 无       | 无             | 完全不发表情                                  |
-| `"ack"`       | 有       | 无             | 只发 ack 表情（回复前回执）                   |
+| `"ack"`       | 有       | 无             | 只发确认表情（回复前回执）                   |
 | `"minimal"`   | 有       | 有（保守）     | Ack + agent 表情，引导偏保守                  |
 | `"extensive"` | 有       | 有（鼓励）     | Ack + agent 表情，引导偏鼓励                  |
 
@@ -855,8 +855,8 @@ WhatsApp 支持原生回复引用：发出的回复可视化地引用收到的�
 > WhatsApp supports immediate ack reactions on inbound receipt via `channels.whatsapp.ackReaction`.
 > Ack reactions are gated by `reactionLevel` — they are suppressed when `reactionLevel` is `"off"`.
 
-WhatsApp 支持在收到消息时立即发 ack 表情，配置在 `channels.whatsapp.ackReaction`。
-ack 表情受 `reactionLevel` 限制 —— `reactionLevel` 为 `"off"` 时会被静默掉。
+WhatsApp 支持在收到消息时立即发确认表情，配置在 `channels.whatsapp.ackReaction`。
+确认表情受 `reactionLevel` 限制 —— `reactionLevel` 为 `"off"` 时会被静默掉。
 
 > ```json5
 > {
@@ -908,7 +908,7 @@ ack 表情受 `reactionLevel` 限制 —— `reactionLevel` 为 `"off"` 时会�
 
 > Set `messages.statusReactions.enabled: true` to let WhatsApp replace the ack reaction during a turn instead of leaving a static receipt emoji. When enabled, OpenClaw uses the same inbound message reaction slot for lifecycle states such as queued, thinking, tool activity, compaction, done, and error.
 
-把 `messages.statusReactions.enabled` 设成 `true`，WhatsApp 在一轮里就会替换掉 ack 表情，而不是留一个静态的回执 emoji。开启后，OpenClaw 复用同一条接收消息的表情槽，承载生命周期状态：排队、思考、工具活动、压缩、完成、错误。
+把 `messages.statusReactions.enabled` 设成 `true`，WhatsApp 在一轮里就会替换掉确认表情，而不是留一个静态的回执 emoji。开启后，OpenClaw 复用同一条接收消息的表情槽，承载生命周期状态：排队、思考、工具活动、压缩、完成、错误。
 
 > ```json5
 > {

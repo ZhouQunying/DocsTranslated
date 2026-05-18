@@ -8,11 +8,11 @@
 OpenClaw 有两层独立的流式：
 
 - **block 流式（通道）**：assistant 写出完整**块**就发出去。这些是常规通道消息（不是 token delta）。
-- **preview 流式（Telegram / Discord / Slack）**：生成过程中更新一条临时的**预览消息**。
+- **预览流式（Telegram / Discord / Slack）**：生成过程中更新一条临时的**预览消息**。
 
 > There is **no true token-delta streaming** to channel messages today. Preview streaming is message-based (send + edits/appends).
 
-目前**没有**真正的 token delta 流式发到通道消息。preview 流式是基于消息的（send + edit / append）。
+目前**没有**真正的 token delta 流式发到通道消息。预览流式是基于消息的（send + edit / append）。
 
 ---
 
@@ -190,7 +190,7 @@ block 流式开启时，可以在 block 回复之间（第一块之后）加一�
 
 > **Channel note:** Block streaming is **off unless** `*.blockStreaming` is explicitly set to `true`. Channels can stream a live preview (`channels.<channel>.streaming`) without block replies.
 
-**通道说明**：除非 `*.blockStreaming` 显式设成 `true`，否则 block 流式**关**。通道可以只开实时 preview 流式（`channels.<channel>.streaming`），不开 block 回复。
+**通道说明**：除非 `*.blockStreaming` 显式设成 `true`，否则 block 流式**关**。通道可以只开实时预览流式（`channels.<channel>.streaming`），不开 block 回复。
 
 > Config location reminder: the `blockStreaming*` defaults live under `agents.defaults`, not the root config.
 
@@ -200,7 +200,7 @@ block 流式开启时，可以在 block 回复之间（第一块之后）加一�
 
 > ## Preview streaming modes
 
-## preview 流式模式
+## 预览流式模式
 
 > Canonical key: `channels.<channel>.streaming`
 
@@ -215,14 +215,14 @@ block 流式开启时，可以在 block 回复之间（第一块之后）加一�
 
 模式：
 
-- `off`：关闭 preview 流式。
+- `off`：关闭预览流式。
 - `partial`：单条预览，被最新文本替换。
-- `block`：preview 按分片 / 追加步骤更新。
+- `block`：预览按分片 / 追加步骤更新。
 - `progress`：生成期间的进度 / 状态预览，完成时发最终答案。
 
 > `streaming.mode: "block"` is a preview-streaming mode for edit-capable channels such as Discord and Telegram. It does not enable channel block delivery there. Use `streaming.block.enabled` or the legacy `blockStreaming` channel key when you want normal block replies. Microsoft Teams is the exception: it has no draft-preview block transport, so `streaming.mode: "block"` maps to Teams block delivery instead of native partial/progress streaming.
 
-`streaming.mode: "block"` 是一种 preview 流式模式，用于 Discord、Telegram 这种能 edit 的通道。它**不**在那里启用通道 block 投递。要常规 block 回复用 `streaming.block.enabled` 或旧版 `blockStreaming` 通道 key。Microsoft Teams 是例外：它没有草稿预览的 block 传输，所以 `streaming.mode: "block"` 在 Teams 上映射到 Teams block 投递，不是原生 partial / progress 流式。
+`streaming.mode: "block"` 是一种预览流式模式，用于 Discord、Telegram 这种能 edit 的通道。它**不**在那里启用通道 block 投递。要常规 block 回复用 `streaming.block.enabled` 或旧版 `blockStreaming` 通道 key。Microsoft Teams 是例外：它没有草稿预览的 block 传输，所以 `streaming.mode: "block"` 在 Teams 上映射到 Teams block 投递，不是原生 partial / progress 流式。
 
 > ### Channel mapping
 
@@ -285,7 +285,7 @@ Telegram：
 - 最终文本原地编辑活跃预览；长 final 把这条消息用作第一段，剩下的另发。
 - `progress` 模式把工具进度放进一个可编辑的状态草稿，完成时清掉草稿，最终答案走正常投递。
 - 已完成文本确认前最终 edit 失败时，OpenClaw 用正常 final 投递并清理过期预览。
-- Telegram block 流式显式开启时，preview 流式跳过（避免双流）。
+- Telegram block 流式显式开启时，预览流式跳过（避免双流）。
 - `/reasoning stream` 可以把推理写到临时预览里，最终投递后删除。
 
 > Discord:
@@ -299,7 +299,7 @@ Discord：
 
 - 用 send + edit 预览消息。
 - `block` 模式用草稿分片（`draftChunk`）。
-- Discord block 流式显式开启时跳过 preview 流式。
+- Discord block 流式显式开启时跳过预览流式。
 - 最终的媒体、错误、显式 reply payload 取消 pending 预览（不再 flush 新草稿），走正常投递。
 
 > Slack:
@@ -348,7 +348,7 @@ Matrix：
 
 > Preview streaming can also include **tool-progress** updates - short status lines like "searching the web", "reading file", or "calling tool" - that appear in the same preview message while tools are running, ahead of the final reply. In Codex app-server mode, Codex preamble/commentary messages use this same preview path, so short "I am checking..." progress notes can stream into the editable draft without becoming part of the final answer. This keeps multi-step tool turns visually alive rather than silent between the first thinking preview and the final answer.
 
-preview 流式还可以包含**工具进度**更新 —— 像 "searching the web"、"reading file"、"calling tool" 这种短状态行 —— 工具运行期间出现在同一条预览消息里，先于最终回复。在 Codex app-server 模式下，Codex preamble / 注释消息走同一条预览路径，"I am checking..." 这种简短进度备注会流进可编辑草稿，但不会进最终答案。这让多步工具轮次在视觉上活着，不会在第一次 thinking 预览和最终答案之间一片寂静。
+预览流式还可以包含**工具进度**更新 —— 像 "searching the web"、"reading file"、"calling tool" 这种短状态行 —— 工具运行期间出现在同一条预览消息里，先于最终回复。在 Codex app-server 模式下，Codex preamble / 注释消息走同一条预览路径，"I am checking..." 这种简短进度备注会流进可编辑草稿，但不会进最终答案。这让多步工具轮次在视觉上活着，不会在第一次 thinking 预览和最终答案之间一片寂静。
 
 > Supported surfaces:
 >
@@ -361,12 +361,12 @@ preview 流式还可以包含**工具进度**更新 —— 像 "searching the we
 
 支持的面：
 
-- **Discord**、**Slack**、**Telegram**、**Matrix** 在 preview 流式开启时默认把工具进度和 Codex preamble 更新流到实时预览编辑里。Microsoft Teams 在个人聊天里用它的原生 progress 流。
+- **Discord**、**Slack**、**Telegram**、**Matrix** 在预览流式开启时默认把工具进度和 Codex preamble 更新流到实时预览编辑里。Microsoft Teams 在个人聊天里用它的原生 progress 流。
 - Telegram 自 `v2026.4.22` 起默认带工具进度预览更新；保持开启就是保留发布行为。
 - **Mattermost** 已经把工具活动折进它的单一草稿预览 post（见上面）。
-- 工具进度的 edit 跟随当前 preview 流式模式；preview 流式 `off` 或 block 流式接管该消息时跳过。Telegram 上 `streaming.mode: "off"` 是 final-only：通用进度闲聊也被抑制、不会作为独立状态消息投递；批准提示、媒体载荷、错误仍正常路由。
-- 要保留 preview 流式但隐藏工具进度行，把通道的 `streaming.preview.toolProgress` 设成 `false`。要保留工具进度行但隐藏命令 / exec 文本，把 `streaming.preview.commandText` 设成 `"status"`，或 `streaming.progress.commandText` 设成 `"status"`；默认 `"raw"`，保留发布行为。这条策略由用 OpenClaw 紧凑进度渲染器的 draft / progress 通道共享，含 Discord、Matrix、Microsoft Teams、Mattermost、Slack 草稿预览、Telegram。要完全关闭预览 edit，把 `streaming.mode` 设成 `off`。
-- Telegram selected quote 回复是例外：`replyToMode` 不是 `"off"` 且消息带 selected quote 文本时，OpenClaw 这一轮跳过答案预览流，因此工具进度预览行无法渲染。当前消息的回复没有 selected quote 文本时仍走 preview 流式。细节见 [Telegram 通道文档](/channels/telegram)。
+- 工具进度的 edit 跟随当前预览流式模式；预览流式 `off` 或 block 流式接管该消息时跳过。Telegram 上 `streaming.mode: "off"` 是 final-only：通用进度闲聊也被抑制、不会作为独立状态消息投递；批准提示、媒体载荷、错误仍正常路由。
+- 要保留预览流式但隐藏工具进度行，把通道的 `streaming.preview.toolProgress` 设成 `false`。要保留工具进度行但隐藏命令 / exec 文本，把 `streaming.preview.commandText` 设成 `"status"`，或 `streaming.progress.commandText` 设成 `"status"`；默认 `"raw"`，保留发布行为。这条策略由用 OpenClaw 紧凑进度渲染器的草稿 / progress 通道共享，含 Discord、Matrix、Microsoft Teams、Mattermost、Slack 草稿预览、Telegram。要完全关闭预览 edit，把 `streaming.mode` 设成 `off`。
+- Telegram selected quote 回复是例外：`replyToMode` 不是 `"off"` 且消息带 selected quote 文本时，OpenClaw 这一轮跳过答案预览流，因此工具进度预览行无法渲染。当前消息的回复没有 selected quote 文本时仍走预览流式。细节见 [Telegram 通道文档](/channels/telegram)。
 
 > Keep progress lines visible but hide raw command/exec text:
 >
@@ -452,7 +452,7 @@ preview 流式还可以包含**工具进度**更新 —— 像 "searching the we
 > * [Retry](/concepts/retry) - retry behavior on delivery failure
 > * [Channels](/channels) - per-channel streaming support
 
-- [消息生命周期重构](/concepts/message-lifecycle-refactor)：目标共享 preview、edit、stream、收尾设计
+- [消息生命周期重构](/concepts/message-lifecycle-refactor)：目标共享预览、edit、stream、收尾设计
 - [进度草稿](/concepts/progress-drafts)：长轮次期间可见的、会更新的"工作中"消息
 - [消息](/concepts/messages)：消息生命周期和投递
 - [重试](/concepts/retry)：投递失败时的重试行为

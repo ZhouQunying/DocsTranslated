@@ -170,7 +170,7 @@ OpenClaw 调用两个可选的 sub-agent 生命周期钩子：
 >   Prepare shared context state before a child run starts. The hook receives parent/child session keys, `contextMode` (`isolated` or `fork`), available transcript ids/files, and optional TTL. If it returns a rollback handle, OpenClaw calls it when spawn fails after preparation succeeds.
 > </ParamField>
 
-- `prepareSubagentSpawn`（method）：子运行启动前准备共享上下文状态。钩子收到父 / 子 session key、`contextMode`（`isolated` 或 `fork`）、可用的 transcript id / 文件、可选 TTL。如果它返回一个 rollback 句柄，spawn 在准备成功后失败时 OpenClaw 会调它。
+- `prepareSubagentSpawn`（method）：子运行启动前准备共享上下文状态。钩子收到父 / 子 session key、`contextMode`（`isolated` 或 `fork`）、可用的 transcript id / 文件、可选 TTL。如果它返回一个 rollback 句柄，派生在准备成功后失败时 OpenClaw 会调它。
 
 > <ParamField path="onSubagentEnded" type="method">
 >   Clean up when a subagent session completes or is swept.

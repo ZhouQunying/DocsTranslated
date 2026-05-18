@@ -138,7 +138,7 @@ pnpm openclaw qa suite
 
 > Runs scenarios in parallel against the QA gateway lane. See [QA overview](/concepts/qa-e2e-automation) for scenarios, profiles, and provider modes.
 
-在 QA 网关 lane 上并行跑场景。场景、profile 和 provider 模式见 [QA 概览](/concepts/qa-e2e-automation)。
+在 QA 网关队列上并行跑场景。场景、profile 和 provider 模式见 [QA 概览](/concepts/qa-e2e-automation)。
 
 > Docker-backed QA site (gateway + QA Lab debugger UI in one stack):
 
@@ -154,7 +154,7 @@ pnpm qa:lab:up
 
 > Builds the QA site, starts the Docker-backed gateway + QA Lab stack, and prints the QA Lab URL. From there you can pick scenarios, choose the model lane, launch individual runs, and watch results live. The QA Lab debugger is separate from the shipped Control UI bundle.
 
-构建 QA 站点，启动 Docker 版的 gateway + QA Lab stack，并打印 QA Lab URL。从 UI 里挑场景、选模型 lane、单独发起运行、实时看结果。QA Lab 调试器跟随产品发布的 Control UI 包是分开的。
+构建 QA 站点，启动 Docker 版的 gateway + QA Lab stack，并打印 QA Lab URL。从 UI 里挑场景、选模型队列、单独发起运行、实时看结果。QA Lab 调试器跟随产品发布的 Control UI 包是分开的。
 
 ---
 

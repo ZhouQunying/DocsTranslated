@@ -81,9 +81,9 @@ OpenClaw 里，一个循环就是按会话串行的一次运行，模型在思�
 > * Transcript writes are also protected by a session write lock on the session file. The lock is process-aware and file-based, so it catches writers that bypass the in-process queue or come from another process. Session transcript writers wait up to `session.writeLock.acquireTimeoutMs` before reporting the session as busy; the default is `60000` ms.
 > * Session write locks are non-reentrant by default. If a helper intentionally nests acquisition of the same lock while preserving one logical writer, it must opt in explicitly with `allowReentrant: true`.
 
-- 运行按 session key（session lane）串行化，可选地再过一道全局 lane。
+- 运行按 session key（session 队列）串行化，可选地再过一道全局队列。
 - 这样能避免工具 / 会话竞态，保持会话历史一致。
-- 消息通道可以选不同的队列模式（steer / followup / collect / interrupt），把消息喂给这套 lane 系统。
+- 消息通道可以选不同的队列模式（steer / followup / collect / interrupt），把消息喂给这套队列系统。
   见 [命令队列](/concepts/queue)。
 - 写对话也有一把 session 写锁，加在会话文件上。这把锁感知进程、基于文件，所以能拦下那些绕过进程内队列、或者来自另一个进程的写入。会话对话写入方等 `session.writeLock.acquireTimeoutMs` 之内拿不到锁就报 busy；默认 `60000` 毫秒。
 - session 写锁默认不可重入。某个 helper 出于设计要嵌套获取同一把锁，且保留单一逻辑写入方时，必须显式带 `allowReentrant: true` 才能拿到。
@@ -315,8 +315,8 @@ OpenClaw 有两套钩子系统：
 
 - `agent.wait` 默认 30 秒（只等待）。`timeoutMs` 参数覆盖。
 - Agent 运行时：`agents.defaults.timeoutSeconds` 默认 172800 秒（48 小时）；由 `runEmbeddedPiAgent` 的中止定时器执行。
-- Cron 运行时：与 agent 隔离的轮次 `timeoutSeconds` 由 cron 拥有。调度器在执行开始时启动这个定时器，到配置的截止时间中止底层运行，然后跑一段有界清理之后再记录超时，避免一个过期的子会话把 lane 卡住。
-- 会话存活性诊断：开启诊断后，`diagnostics.stuckSessionWarnMs` 把那些一直 `processing` 但没观察到回复 / 工具 / 状态 / block / ACP 进度的会话归类。活跃的嵌入运行、模型调用、工具调用算作 `session.long_running`；正在干活但最近没进展的算 `session.stalled`；`session.stuck` 保留给"没活在干、但记账上还在 processing"这种过期账目。过期账目会立刻释放会话 lane；卡住的嵌入运行要等到 `diagnostics.stuckSessionAbortMs`（默认至少 5 分钟，且为告警阈值的 3 倍）才中止排空 —— 这样队列里其他活能继续，又不会误伤只是慢的运行。恢复时会发出结构化的请求 / 完成结果；只有当同一代 processing 仍然是当前代时，诊断状态才会被标为 idle。会话没变的情况下，反复出现的 `session.stuck` 诊断会逐步退避。
+- Cron 运行时：与 agent 隔离的轮次 `timeoutSeconds` 由 cron 拥有。调度器在执行开始时启动这个定时器，到配置的截止时间中止底层运行，然后跑一段有界清理之后再记录超时，避免一个过期的子会话把队列卡住。
+- 会话存活性诊断：开启诊断后，`diagnostics.stuckSessionWarnMs` 把那些一直 `processing` 但没观察到回复 / 工具 / 状态 / block / ACP 进度的会话归类。活跃的嵌入运行、模型调用、工具调用算作 `session.long_running`；正在干活但最近没进展的算 `session.stalled`；`session.stuck` 保留给"没活在干、但记账上还在 processing"这种过期账目。过期账目会立刻释放会话队列；卡住的嵌入运行要等到 `diagnostics.stuckSessionAbortMs`（默认至少 5 分钟，且为告警阈值的 3 倍）才中止排空 —— 这样队列里其他活能继续，又不会误伤只是慢的运行。恢复时会发出结构化的请求 / 完成结果；只有当同一代 processing 仍然是当前代时，诊断状态才会被标为 idle。会话没变的情况下，反复出现的 `session.stuck` 诊断会逐步退避。
 - 模型空闲超时：模型在空闲窗口内没回任何 chunk 时 OpenClaw 中止该请求。`models.providers.<id>.timeoutSeconds` 给慢的本地 / 自托管 provider 延长这个空闲看门狗，但仍受更低的 `agents.defaults.timeoutSeconds` 或运行级超时约束 —— 那两个控制整个 agent 运行。否则有配置时用 `agents.defaults.timeoutSeconds`，默认上限 120 秒。cron 触发、没显式模型或 agent 超时的运行会关闭空闲看门狗，依赖 cron 外层超时。
 - Provider HTTP 请求超时：`models.providers.<id>.timeoutSeconds` 作用于该 provider 的模型 HTTP fetch，包括 connect、headers、body、SDK 请求超时、整体 guarded-fetch 中止处理和模型流空闲看门狗。慢的本地 / 自托管 provider（如 Ollama）应优先用这个，而不是直接抬高整个 agent 运行时超时；模型请求要跑久时，把 agent / 运行时超时也至少抬到同样高。
 

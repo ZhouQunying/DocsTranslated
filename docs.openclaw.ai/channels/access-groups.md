@@ -352,7 +352,7 @@ Discord 还支持一种动态访问组：
 
 - 机器人要能访问这个 guild 和频道。
 - 机器人在 Discord 开发者后台要打开 **Server Members Intent**。
-- 出现以下情况时，访问组会"fail closed"（默认拒绝）：Discord 返回 `Missing Access`、发件人解析不出来不是 guild 成员、频道属于另一个 guild。
+- 出现以下情况时，访问组会"默认拒绝"（默认拒绝）：Discord 返回 `Missing Access`、发件人解析不出来不是 guild 成员、频道属于另一个 guild。
 
 > More Discord-specific examples: [Discord access control](/channels/discord#access-control-and-routing)
 
@@ -371,7 +371,7 @@ Discord 还支持一种动态访问组：
 
 - 访问组只是白名单别名，不是 role。它本身不会创建所有者、不会批准配对请求、也不会授予工具权限。
 - `dmPolicy: "open"` 仍然要求有效的 DM 白名单里写了 `"*"`。引用一个访问组并不等同于"对外开放"。
-- 找不到的组名按"fail closed"处理。`allowFrom` 里写了 `accessGroup:operators` 但 `accessGroups.operators` 不存在时，这条条目谁也不放行。
+- 找不到的组名按"默认拒绝"处理。`allowFrom` 里写了 `accessGroup:operators` 但 `accessGroups.operators` 不存在时，这条条目谁也不放行。
 - 通道 ID 要稳定。通道同时支持数字 ID 和显示名时，优先用数字 / 用户 ID。
 
 ---

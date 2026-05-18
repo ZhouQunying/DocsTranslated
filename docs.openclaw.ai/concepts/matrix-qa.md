@@ -2,7 +2,7 @@
 
 > The Matrix QA lane runs the bundled `@openclaw/matrix` plugin against a disposable Tuwunel homeserver in Docker, with temporary driver, SUT, and observer accounts plus seeded rooms. It is the live transport-real coverage for Matrix.
 
-Matrix QA lane 让内置的 `@openclaw/matrix` 插件跑在 Docker 里一台一次性 Tuwunel homeserver 上，用临时的 driver、SUT、observer 账号和预先种好的房间。它是 Matrix 的真实传输覆盖。
+Matrix QA 队列让内置的 `@openclaw/matrix` 插件跑在 Docker 里一台一次性 Tuwunel homeserver 上，用临时的 driver、SUT、observer 账号和预先种好的房间。它是 Matrix 的真实传输覆盖。
 
 > This is maintainer-only tooling. Packaged OpenClaw releases intentionally omit `qa-lab`, so `openclaw qa` is only available from a source checkout. Source checkouts load the bundled runner directly - no plugin install step is needed.
 
@@ -34,7 +34,7 @@ pnpm openclaw qa matrix --profile fast --fail-fast
 
 > ## What the lane does
 
-## 这条 lane 做什么
+## 这条队列做什么
 
 > 1. Provisions a disposable Tuwunel homeserver in Docker (default image `ghcr.io/matrix-construct/tuwunel:v1.5.1`, server name `matrix-qa.test`, port `28008`).
 > 2. Registers three temporary users - `driver` (sends inbound traffic), `sut` (the OpenClaw Matrix account under test), `observer` (third-party traffic capture).
@@ -92,7 +92,7 @@ pnpm openclaw qa matrix [options]
 
 > The lane uses a real Matrix transport but the model provider is configurable:
 
-这条 lane 用真实的 Matrix 传输，但模型 provider 可配：
+这条队列用真实的 Matrix 传输，但模型 provider 可配：
 
 > | Flag                     | Default          | Description                                                                                                                               |
 > | ------------------------ | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
@@ -110,7 +110,7 @@ pnpm openclaw qa matrix [options]
 
 > Matrix QA does not accept `--credential-source` or `--credential-role`. The lane provisions disposable users locally; there is no shared credential pool to lease against.
 
-Matrix QA 不接受 `--credential-source` 或 `--credential-role`。这条 lane 在本地 provision 一次性用户；没有共享凭证池可租。
+Matrix QA 不接受 `--credential-source` 或 `--credential-role`。这条队列在本地 provision 一次性用户；没有共享凭证池可租。
 
 ---
 
@@ -254,7 +254,7 @@ Matrix QA 不接受 `--credential-source` 或 `--credential-role`。这条 lane 
 - **清理出错**：看打印出来的恢复命令（一条 `docker compose ... down --remove-orphans`），手动跑一下释放 homeserver 端口。
 - **CI 里负向断言窗口抖**：CI 快时调低 `OPENCLAW_QA_MATRIX_NO_REPLY_WINDOW_MS`（默认 8 秒）；慢的共享 runner 上调高。
 - **写 bug 报告需要脱敏正文**：用 `OPENCLAW_QA_MATRIX_CAPTURE_CONTENT=1` 重跑，附 `matrix-qa-observed-events.json`。把出来的产物当作敏感数据对待。
-- **换 Tuwunel 版本**：把 `OPENCLAW_QA_MATRIX_TUWUNEL_IMAGE` 指向被测版本。lane 默认只 check in 一个钉死的镜像。
+- **换 Tuwunel 版本**：把 `OPENCLAW_QA_MATRIX_TUWUNEL_IMAGE` 指向被测版本。队列默认只 check in 一个钉死的镜像。
 
 ---
 
@@ -264,7 +264,7 @@ Matrix QA 不接受 `--credential-source` 或 `--credential-role`。这条 lane 
 
 > Matrix is one of three live transport lanes (Matrix, Telegram, Discord) that share a single contract checklist defined in [QA overview → Live transport coverage](/concepts/qa-e2e-automation#live-transport-coverage). `qa-channel` remains the broad synthetic suite and is intentionally not part of that matrix.
 
-Matrix 是三条共享同一份契约清单的实时传输 lane（Matrix、Telegram、Discord）之一，清单定义在 [QA 总览 → 实时传输覆盖](/concepts/qa-e2e-automation#live-transport-coverage)。`qa-channel` 仍然是宽泛的合成套件，刻意不进这个矩阵。
+Matrix 是三条共享同一份契约清单的实时传输队列（Matrix、Telegram、Discord）之一，清单定义在 [QA 总览 → 实时传输覆盖](/concepts/qa-e2e-automation#live-transport-coverage)。`qa-channel` 仍然是宽泛的合成套件，刻意不进这个矩阵。
 
 ---
 
