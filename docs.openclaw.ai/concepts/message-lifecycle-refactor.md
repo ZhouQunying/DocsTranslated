@@ -1,8 +1,8 @@
-# Message lifecycle refactor
+# Message lifecycle refactor（消息生命周期重构）
 
 > This page is the target design for replacing scattered channel turn, reply dispatch, preview streaming, and outbound delivery helpers with one durable message lifecycle.
 
-本页是一份目标设计：把散乱的 channel turn、reply dispatch、预览 streaming、outbound delivery helper 替换成一套持久化的消息生命周期。
+本页是一份**目标设计文档**：用一套"持久化的消息生命周期"，替换掉目前散落在各处的通道轮次（channel turn）、回复派发（reply dispatch）、预览流（preview streaming）、外发投递（outbound delivery）等辅助逻辑。
 
 > The short version:
 >
@@ -13,14 +13,14 @@
 > * Receiving must be context based too: normalize, dedupe, route, record, dispatch, platform ack, fail.
 > * The public plugin SDK should collapse to one small channel-message surface.
 
-简短版：
+一句话概括：
 
-- 核心原语应该是 **receive** 和 **send**，不是 **reply**。
-- reply 只是发送消息上的一种关系。
-- turn 是接收处理的便捷封装，不是投递的所有者。
-- 发送必须基于上下文：`begin`、渲染、预览或 stream、final send、commit、fail。
-- 接收也必须基于上下文：归一化、去重、route、record、dispatch、平台确认、fail。
-- 公共插件 SDK 应该收敛到一个小的 channel-message 面。
+- 核心原语应该是 **receive（接收）** 和 **send（发送）**，而不是 **reply（回复）**。
+- reply 只是某条外发消息上的一种"关系"。
+- turn 是处理接收消息的便捷封装，**不应该**承担投递的责任。
+- 发送必须走上下文（context）：`begin`（开始）、render（渲染）、preview / stream（预览或流式）、final send（最终发送）、commit（提交）、fail（失败）。
+- 接收也必须走上下文：normalize（归一化）、dedupe（去重）、route（路由）、record（记录）、dispatch（派发）、平台 ack（确认）、fail。
+- 公共插件 SDK 应该收敛成一个小巧的"通道消息"接口面。
 
 ---
 
@@ -36,17 +36,17 @@
 > * Preview streaming lives in channel-specific dispatchers.
 > * Final delivery durability is being added around existing reply payload paths.
 
-现有通道栈是从一些合理的局部需求里长出来的：
+现在这套通道栈是从几个合理的、各自的局部需求里逐步长出来的：
 
 - 简单的接收适配器用 `runtime.channel.turn.run`。
-- 富适配器用 `runtime.channel.turn.runPrepared`。
-- 旧版助手用 `dispatchInboundReplyWithBase`、`recordInboundSessionAndDispatchReply`、reply payload 助手、reply chunking、reply reference 以及 outbound runtime 助手。
-- 预览流式实现在通道专属的 dispatcher 里。
-- 投递持久化是绕着现有 reply payload 路径加上去的。
+- 复杂的适配器用 `runtime.channel.turn.runPrepared`。
+- 旧版的辅助函数用 `dispatchInboundReplyWithBase`、`recordInboundSessionAndDispatchReply`、reply payload 相关的辅助、回复分块、回复引用，以及一堆外发运行时辅助。
+- 预览流式逻辑分散在各通道自己的 dispatcher 里。
+- "持久化最终投递"是后期围绕已有的 reply payload 路径打补丁加上去的。
 
 > That shape fixes local bugs, but it leaves OpenClaw with too many public concepts and too many places where delivery semantics can drift.
 
-这种形状能修局部 bug，但留给 OpenClaw 太多公共概念、太多投递语义可能漂移的地方。
+这种形态确实能修局部 bug，但代价是：OpenClaw 暴露的公共概念太多，投递语义可能"漂移"的地方也太多。
 
 > The reliability issue that exposed this is:
 >
@@ -68,11 +68,11 @@ Telegram polling 已 ack
 
 > The target invariant is broader than Telegram: once core decides a visible outbound message should exist, the intent must be durable before the platform send is attempted, and the platform receipt must be committed after success. That gives OpenClaw at-least-once recovery. Exactly-once behavior exists only for adapters that can prove native idempotency or reconcile an unknown-after-send attempt against platform state before replay.
 
-目标不变量比 Telegram 更广：核心一旦决定要存在一条可见发送消息，意图必须在平台 send 之前就持久化，平台收据必须在成功后提交。这给 OpenClaw 提供"至少一次"恢复。"恰好一次"只有那些能证明原生幂等、或能在重放前把"send 后未知"尝试和平台状态对账的适配器才有。
+目标不变量（target invariant）的范围比 Telegram 这一个例子更广：**只要核心决定"应该存在一条可见的外发消息"，那么这条意图就必须在调用平台发送 API 之前就持久化下来，并且只在平台确认成功之后才能提交回执**。这样 OpenClaw 就拿到了"至少一次"（at-least-once）的恢复保证。"恰好一次"（exactly-once）的语义则只属于两种适配器——要么能证明自己是原生幂等的，要么能在重放前把"发送后状态未知"的尝试与平台真实状态做对账。
 
 > That is the end state for this refactor, not a description of every current path. During migration, existing outbound helpers can still fall through to a direct send when best-effort queue writes fail. The refactor is complete only when durable final sends fail closed or explicitly opt out with a documented non-durable policy.
 
-这是这次重构的终态，不是现状每条路径的描述。迁移期间，现有 outbound 助手仍可以在 best-effort 队列写入失败时降级到直接 send。只有当持久化的最终 send 在失败时默认拒绝、或显式带有文档化的非持久策略时，重构才算完成。
+这是这次重构的**终态**，并不是对当前每条代码路径的描述。在迁移过程中，已有的外发辅助函数仍然可以采用"尽力一次（best-effort）"的策略——队列写入失败时降级到直接发送。只有当**持久化的最终发送在失败时默认拒绝（fail-closed），或明确退出并记录在案的"非持久化策略"**时，这次重构才算完成。
 
 ---
 
@@ -90,15 +90,15 @@ Telegram polling 已 ack
 > * No token-delta channel messages. Channel streaming remains message preview, edit, append, or completed block delivery.
 > * Structured OpenClaw-origin metadata for operational/system output so visible gateway failures do not re-enter shared bot-enabled rooms as fresh prompts.
 
-- 所有通道消息 receive 和 send 路径走一套核心生命周期。
-- 在新消息生命周期里，适配器声明 replay-safe 后，默认走持久化的最终 send。
-- 共享预览、edit、stream、finalization、retry、recovery、回执语义。
-- 一个小的插件 SDK 面，第三方插件能学得会、维护得动。
-- 迁移期间对现有 `channel.turn` 调用者保持兼容。
-- 给新的通道能力留清晰的扩展点。
-- 核心里不要平台专属分支。
-- 不发 token-delta 的通道消息。通道流式保留为消息预览、edit、append、或完成块投递。
-- 给运维 / 系统输出加上结构化的 OpenClaw 来源元数据，避免可见的 Gateway 失败作为新 prompt 重新进入开了 bot 的共享房间。
+- 所有通道的接收和发送路径都走同一套核心生命周期。
+- 适配器声明自己是"重放安全"（replay-safe）的之后，新生命周期默认采用"持久化的最终发送"。
+- 预览、编辑、流式、收尾、重试、恢复、回执这些语义全部共享一套。
+- 公共插件 SDK 接口面要小到第三方插件能学会、能维护得动。
+- 迁移过程中保持对现有 `channel.turn` 调用方的兼容。
+- 给新的通道能力留出清晰的扩展点。
+- 核心层不写任何平台专属分支。
+- 通道消息不再发 token 级别的增量（token-delta）。通道流式仍然限定为：消息预览、编辑、追加、或整块投递。
+- 给运维 / 系统类输出加上结构化的"OpenClaw 来源"元数据——这样可见的 Gateway 失败消息不会作为新的提示词，重新进入那些已经允许机器人发言的共享房间。
 
 ---
 
@@ -370,15 +370,15 @@ type MessageRelation =
 
 > This lets the same send path handle normal replies, cron notifications, approval prompts, task completions, message-tool sends, CLI or Control UI sends, subagent results, and automation sends.
 
-让同一条 send 路径处理常规回复、cron 通知、批准提示、任务完成、message-tool 发送、CLI 或 Control UI 发送、sub-agent 结果、自动化发送。
+这样同一条发送路径就能同时承担：常规回复、cron 通知、审批提示、任务完成通知、消息工具发送、CLI / Control UI 发送、子 Agent 结果、自动化发送。
 
 > ### Origin
 
-### Origin
+### Origin（来源）
 
 > Origin describes who produced a message and how OpenClaw should treat echoes of that message. It is separate from relation: a message can be a reply to a user and still be OpenClaw-originated operational output.
 
-origin 描述消息是谁产生的、OpenClaw 应该怎么对待它的回声。它和关系是两码事：一条消息可以既是对用户的回复，又是 OpenClaw 来源的运维输出。
+Origin 字段描述的是"这条消息是谁产生的、OpenClaw 看到它的回声时该怎么处理"。它和 relation（关系）是两个独立的概念——一条消息既可以是"对用户的回复"，同时又是"OpenClaw 自己产生的运维输出"。
 
 > ```typescript
 > type MessageOrigin =
@@ -792,11 +792,11 @@ send 上下文也拥有通道本地的 post-send 副作用。如果持久化投�
 
 > Send helpers must return receipts all the way back to their caller. Durable wrappers cannot swallow message ids or replace a channel delivery result with `undefined`; buffered dispatchers use those ids for thread anchors, later edits, preview finalization, and duplicate suppression.
 
-send helper 必须把回执一路返回给调用方。持久化包装不能吞掉消息 id，也不能把通道投递结果替换成 `undefined`；缓冲 dispatcher 用这些 id 来做 thread 锚点、后续 edit、预览收尾和重复抑制。
+发送辅助函数必须把回执（receipt）一路返回给调用方。持久化包装层不能吞掉消息 id，也不能把通道投递结果替换成 `undefined`——因为带缓冲的 dispatcher 要拿这些 id 做线程锚点、后续编辑、预览收尾和重复抑制。
 
 > Fallback sends operate on batches, not single payloads. Silent-reply rewrites, media fallback, card fallback, and chunk projection can all produce more than one deliverable message, so a send context must either deliver the whole projected batch or explicitly document why only one payload is valid.
 
-降级发送以批次为单位、不是单个 payload。静默回复改写、媒体降级、card 降级、chunk 投影都可能产生多于一条可投递消息，所以 send 上下文要么投递整批投影，要么显式文档化为什么只有一个 payload 是合法的。
+降级发送（fallback send）的处理单位是"一批载荷"，而不是单条载荷。静默回复改写、媒体降级、卡片降级、分块投射这几种情况都可能产生不止一条可投递的消息——所以发送上下文要么把整批投射全部投递出去，要么必须明确写清楚"为什么只有一条载荷是合法的"。
 
 > ```typescript
 > type RenderedMessageBatch = {
@@ -920,21 +920,21 @@ type LiveMessageState = {
 > * Teams native progress stream.
 > * QQ Bot stream or accumulated fallback.
 
-应当覆盖当前行为：
+这套机制应当覆盖以下现有行为：
 
-- Telegram：send + edit 预览，预览过旧后发新 final。
-- Discord：send + edit 预览，遇到媒体 / 错误 / 显式回复时取消。
-- Slack：根据 thread 形态选原生流或草稿预览。
-- Mattermost：草稿 post 收尾。
-- Matrix：草稿 event 收尾，不匹配时 redaction。
-- Teams：原生 progress 流。
-- QQ Bot：流式或累积降级。
+- **Telegram**：发一条预览消息后通过 edit 更新；预览太旧时发一条新的最终消息。
+- **Discord**：发预览后通过 edit 更新；遇到媒体 / 错误 / 显式回复时取消预览。
+- **Slack**：根据线程形态选择原生流或草稿预览。
+- **Mattermost**：草稿帖收尾。
+- **Matrix**：草稿事件收尾，不匹配时撤回（redaction）。
+- **Microsoft Teams**：原生进度流。
+- **QQ Bot**：流式输出或累积型降级。
 
 ---
 
 > ## Adapter surface
 
-## 适配器面
+## Adapter surface（适配器接口面）
 
 > The public SDK target should be one subpath:
 >
@@ -942,7 +942,7 @@ type LiveMessageState = {
 > import { defineChannelMessageAdapter } from "openclaw/plugin-sdk/channel-message";
 > ```
 
-公共 SDK 目标应该是一个子路径：
+公共 SDK 的目标是收敛成一个子路径：
 
 ```typescript
 import { defineChannelMessageAdapter } from "openclaw/plugin-sdk/channel-message";
