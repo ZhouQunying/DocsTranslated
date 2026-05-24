@@ -1,6 +1,6 @@
 # Concepts / 概念
 
-在线 50 / 本地 37 / 待译 13。最近核对:2026-05-24。
+在线 50 / 本地 38 / 待译 12。最近核对:2026-05-24。
 
 > 文件名按页面 H1 标题 slug 化,跟 URL 末段经常对不上(如 `/concepts/queue` 的标题是 "Command queue",文件叫 `command-queue.md`)。两列都列出来方便查。
 
@@ -8,6 +8,7 @@
 
 | 在线 URL | 文件 | 英文标题 | 中文标题 |
 |---|---|---|---|
+| [/concepts/active-memory](https://docs.openclaw.ai/concepts/active-memory) | [active-memory.md](active-memory.md) | Active memory | 主动记忆 |
 | [/concepts/agent](https://docs.openclaw.ai/concepts/agent) | [agent-runtime.md](agent-runtime.md) | Agent runtime | Agent 运行时 |
 | [/concepts/agent-loop](https://docs.openclaw.ai/concepts/agent-loop) | [agent-loop.md](agent-loop.md) | Agent loop | Agent 循环 |
 | [/concepts/agent-runtimes](https://docs.openclaw.ai/concepts/agent-runtimes) | [agent-runtimes.md](agent-runtimes.md) | Agent runtimes | Agent 运行时类型 |
@@ -50,7 +51,6 @@
 
 | 在线 URL | 英文标题 | 描述 |
 |---|---|---|
-| [/concepts/active-memory](https://docs.openclaw.ai/concepts/active-memory) | Active memory | 插件拥有的阻塞式记忆子 agent,把相关记忆注入交互对话 |
 | [/concepts/features](https://docs.openclaw.ai/concepts/features) | Features | OpenClaw 跨通道、路由、媒体、交互的能力清单 |
 | [/concepts/mantis](https://docs.openclaw.ai/concepts/mantis) | Mantis | 真实通道 bug 的视觉端到端验证系统:前后证据捕获、附件挂到 PR |
 | [/concepts/mantis-slack-desktop-runbook](https://docs.openclaw.ai/concepts/mantis-slack-desktop-runbook) | Mantis Slack desktop runbook | Mantis Slack 桌面 QA 操作员手册:GitHub 触发、本地 CLI、热 VNC 租约、hydrate 模式、时长解读、产物、失败处理 |
