@@ -1,6 +1,6 @@
 # Concepts / 概念
 
-在线 50 / 本地 34 / 待译 16。最近核对:2026-05-24。
+在线 50 / 本地 35 / 待译 15。最近核对:2026-05-24。
 
 > 文件名按页面 H1 标题 slug 化,跟 URL 末段经常对不上(如 `/concepts/queue` 的标题是 "Command queue",文件叫 `command-queue.md`)。两列都列出来方便查。
 
@@ -14,6 +14,7 @@
 | [/concepts/agent-workspace](https://docs.openclaw.ai/concepts/agent-workspace) | [agent-workspace.md](agent-workspace.md) | Agent workspace | Agent 工作区 |
 | [/concepts/architecture](https://docs.openclaw.ai/concepts/architecture) | [gateway-architecture.md](gateway-architecture.md) | Gateway architecture | 网关架构 |
 | [/concepts/channel-docking](https://docs.openclaw.ai/concepts/channel-docking) | [channel-docking.md](channel-docking.md) | Channel docking | 通道对接 |
+| [/concepts/memory-builtin](https://docs.openclaw.ai/concepts/memory-builtin) | [builtin-memory-engine.md](builtin-memory-engine.md) | Builtin memory engine | 内置记忆引擎 |
 | [/concepts/compaction](https://docs.openclaw.ai/concepts/compaction) | [compaction.md](compaction.md) | Compaction | 上下文压缩 |
 | [/concepts/context](https://docs.openclaw.ai/concepts/context) | [context.md](context.md) | Context | 上下文 |
 | [/concepts/context-engine](https://docs.openclaw.ai/concepts/context-engine) | [context-engine.md](context-engine.md) | Context engine | 上下文引擎 |
@@ -52,7 +53,6 @@
 | [/concepts/mantis](https://docs.openclaw.ai/concepts/mantis) | Mantis | 真实通道 bug 的视觉端到端验证系统:前后证据捕获、附件挂到 PR |
 | [/concepts/mantis-slack-desktop-runbook](https://docs.openclaw.ai/concepts/mantis-slack-desktop-runbook) | Mantis Slack desktop runbook | Mantis Slack 桌面 QA 操作员手册:GitHub 触发、本地 CLI、热 VNC 租约、hydrate 模式、时长解读、产物、失败处理 |
 | [/concepts/markdown-formatting](https://docs.openclaw.ai/concepts/markdown-formatting) | Markdown formatting | 发送通道的 Markdown 格式化管线 |
-| [/concepts/memory-builtin](https://docs.openclaw.ai/concepts/memory-builtin) | Builtin memory engine | 默认的 SQLite 记忆后端:关键字、向量、混合检索 |
 | [/concepts/memory-honcho](https://docs.openclaw.ai/concepts/memory-honcho) | Honcho memory | 通过 Honcho 插件的 AI 原生跨会话记忆 |
 | [/concepts/memory-qmd](https://docs.openclaw.ai/concepts/memory-qmd) | QMD memory engine | 本地优先的检索 sidecar:BM25、向量、重排、查询扩展 |
 | [/concepts/model-failover](https://docs.openclaw.ai/concepts/model-failover) | Model failover | OpenClaw 怎么轮换认证 profile 并在模型间回退 |
