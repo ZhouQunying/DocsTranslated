@@ -1,6 +1,6 @@
 # Concepts / 概念
 
-在线 50 / 本地 31 / 待译 19。最近核对:2026-05-24。
+在线 50 / 本地 32 / 待译 18。最近核对:2026-05-24。
 
 > 文件名按页面 H1 标题 slug 化,跟 URL 末段经常对不上(如 `/concepts/queue` 的标题是 "Command queue",文件叫 `command-queue.md`)。两列都列出来方便查。
 
@@ -18,6 +18,7 @@
 | [/concepts/context](https://docs.openclaw.ai/concepts/context) | [context.md](context.md) | Context | 上下文 |
 | [/concepts/context-engine](https://docs.openclaw.ai/concepts/context-engine) | [context-engine.md](context-engine.md) | Context engine | 上下文引擎 |
 | [/concepts/delegate-architecture](https://docs.openclaw.ai/concepts/delegate-architecture) | [delegate-architecture.md](delegate-architecture.md) | Delegate architecture | 委派架构 |
+| [/concepts/commitments](https://docs.openclaw.ai/concepts/commitments) | [inferred-commitments.md](inferred-commitments.md) | Inferred commitments | 推断式跟进事项 |
 | [/concepts/experimental-features](https://docs.openclaw.ai/concepts/experimental-features) | [experimental-features.md](experimental-features.md) | Experimental features | 实验性功能 |
 | [/concepts/memory](https://docs.openclaw.ai/concepts/memory) | [memory-overview.md](memory-overview.md) | Memory overview | 记忆总览 |
 | [/concepts/message-lifecycle-refactor](https://docs.openclaw.ai/concepts/message-lifecycle-refactor) | [message-lifecycle-refactor.md](message-lifecycle-refactor.md) | Message lifecycle refactor | 消息生命周期重构 |
@@ -45,7 +46,6 @@
 | 在线 URL | 英文标题 | 描述 |
 |---|---|---|
 | [/concepts/active-memory](https://docs.openclaw.ai/concepts/active-memory) | Active memory | 插件拥有的阻塞式记忆子 agent,把相关记忆注入交互对话 |
-| [/concepts/commitments](https://docs.openclaw.ai/concepts/commitments) | Inferred commitments | 推断式跟进记忆,处理非精确提醒的回头检查 |
 | [/concepts/dreaming](https://docs.openclaw.ai/concepts/dreaming) | Dreaming | 后台记忆整理:浅睡、深睡、REM 三阶段加梦境日记 |
 | [/concepts/features](https://docs.openclaw.ai/concepts/features) | Features | OpenClaw 跨通道、路由、媒体、交互的能力清单 |
 | [/concepts/mantis](https://docs.openclaw.ai/concepts/mantis) | Mantis | 真实通道 bug 的视觉端到端验证系统:前后证据捕获、附件挂到 PR |
