@@ -1,6 +1,6 @@
 # Concepts / 概念
 
-在线 50 / 本地 32 / 待译 18。最近核对:2026-05-24。
+在线 50 / 本地 33 / 待译 17。最近核对:2026-05-24。
 
 > 文件名按页面 H1 标题 slug 化,跟 URL 末段经常对不上(如 `/concepts/queue` 的标题是 "Command queue",文件叫 `command-queue.md`)。两列都列出来方便查。
 
@@ -22,6 +22,7 @@
 | [/concepts/experimental-features](https://docs.openclaw.ai/concepts/experimental-features) | [experimental-features.md](experimental-features.md) | Experimental features | 实验性功能 |
 | [/concepts/memory](https://docs.openclaw.ai/concepts/memory) | [memory-overview.md](memory-overview.md) | Memory overview | 记忆总览 |
 | [/concepts/message-lifecycle-refactor](https://docs.openclaw.ai/concepts/message-lifecycle-refactor) | [message-lifecycle-refactor.md](message-lifecycle-refactor.md) | Message lifecycle refactor | 消息生命周期重构 |
+| [/concepts/memory-search](https://docs.openclaw.ai/concepts/memory-search) | [memory-search.md](memory-search.md) | Memory search | 记忆检索 |
 | [/concepts/messages](https://docs.openclaw.ai/concepts/messages) | [messages.md](messages.md) | Messages | 消息 |
 | [/concepts/multi-agent](https://docs.openclaw.ai/concepts/multi-agent) | [multi-agent-routing.md](multi-agent-routing.md) | Multi-agent routing | 多 Agent 路由 |
 | [/concepts/oauth](https://docs.openclaw.ai/concepts/oauth) | [oauth.md](oauth.md) | OAuth | OAuth |
@@ -54,7 +55,6 @@
 | [/concepts/memory-builtin](https://docs.openclaw.ai/concepts/memory-builtin) | Builtin memory engine | 默认的 SQLite 记忆后端:关键字、向量、混合检索 |
 | [/concepts/memory-honcho](https://docs.openclaw.ai/concepts/memory-honcho) | Honcho memory | 通过 Honcho 插件的 AI 原生跨会话记忆 |
 | [/concepts/memory-qmd](https://docs.openclaw.ai/concepts/memory-qmd) | QMD memory engine | 本地优先的检索 sidecar:BM25、向量、重排、查询扩展 |
-| [/concepts/memory-search](https://docs.openclaw.ai/concepts/memory-search) | Memory search | 记忆检索如何用嵌入和混合检索找到相关笔记 |
 | [/concepts/model-failover](https://docs.openclaw.ai/concepts/model-failover) | Model failover | OpenClaw 怎么轮换认证 profile 并在模型间回退 |
 | [/concepts/model-providers](https://docs.openclaw.ai/concepts/model-providers) | Model providers | 模型 provider 总览,带配置示例和 CLI 流程 |
 | [/concepts/models](https://docs.openclaw.ai/concepts/models) | Models CLI | Models CLI:list、set、aliases、fallbacks、scan、status |
