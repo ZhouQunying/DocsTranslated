@@ -1,6 +1,6 @@
 # Concepts / 概念
 
-在线 50 / 本地 36 / 待译 14。最近核对:2026-05-24。
+在线 50 / 本地 37 / 待译 13。最近核对:2026-05-24。
 
 > 文件名按页面 H1 标题 slug 化,跟 URL 末段经常对不上(如 `/concepts/queue` 的标题是 "Command queue",文件叫 `command-queue.md`)。两列都列出来方便查。
 
@@ -29,6 +29,7 @@
 | [/concepts/messages](https://docs.openclaw.ai/concepts/messages) | [messages.md](messages.md) | Messages | 消息 |
 | [/concepts/multi-agent](https://docs.openclaw.ai/concepts/multi-agent) | [multi-agent-routing.md](multi-agent-routing.md) | Multi-agent routing | 多 Agent 路由 |
 | [/concepts/oauth](https://docs.openclaw.ai/concepts/oauth) | [oauth.md](oauth.md) | OAuth | OAuth |
+| [/concepts/memory-qmd](https://docs.openclaw.ai/concepts/memory-qmd) | [qmd-memory-engine.md](qmd-memory-engine.md) | QMD memory engine | QMD 记忆引擎 |
 | [/concepts/parallel-specialist-lanes](https://docs.openclaw.ai/concepts/parallel-specialist-lanes) | [parallel-specialist-lanes.md](parallel-specialist-lanes.md) | Parallel specialist lanes | 并行专家通道 |
 | [/concepts/personal-agent-benchmark-pack](https://docs.openclaw.ai/concepts/personal-agent-benchmark-pack) | [personal-agent-benchmark-pack.md](personal-agent-benchmark-pack.md) | Personal agent benchmark pack | 个人 Agent 基准测试包 |
 | [/concepts/presence](https://docs.openclaw.ai/concepts/presence) | [presence.md](presence.md) | Presence | 在线状态 |
@@ -54,7 +55,6 @@
 | [/concepts/mantis](https://docs.openclaw.ai/concepts/mantis) | Mantis | 真实通道 bug 的视觉端到端验证系统:前后证据捕获、附件挂到 PR |
 | [/concepts/mantis-slack-desktop-runbook](https://docs.openclaw.ai/concepts/mantis-slack-desktop-runbook) | Mantis Slack desktop runbook | Mantis Slack 桌面 QA 操作员手册:GitHub 触发、本地 CLI、热 VNC 租约、hydrate 模式、时长解读、产物、失败处理 |
 | [/concepts/markdown-formatting](https://docs.openclaw.ai/concepts/markdown-formatting) | Markdown formatting | 发送通道的 Markdown 格式化管线 |
-| [/concepts/memory-qmd](https://docs.openclaw.ai/concepts/memory-qmd) | QMD memory engine | 本地优先的检索 sidecar:BM25、向量、重排、查询扩展 |
 | [/concepts/model-failover](https://docs.openclaw.ai/concepts/model-failover) | Model failover | OpenClaw 怎么轮换认证 profile 并在模型间回退 |
 | [/concepts/model-providers](https://docs.openclaw.ai/concepts/model-providers) | Model providers | 模型 provider 总览,带配置示例和 CLI 流程 |
 | [/concepts/models](https://docs.openclaw.ai/concepts/models) | Models CLI | Models CLI:list、set、aliases、fallbacks、scan、status |
