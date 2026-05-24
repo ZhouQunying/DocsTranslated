@@ -23,7 +23,7 @@
 - **会话锁**：同一时刻只有一个运行能改某个具体会话。
 - **全局模型容量**：所有可见的聊天运行仍共享 provider 上限。
 - **工具容量**：shell、浏览器、网络、仓库操作可能比模型轮次本身还慢。
-- **上下文预算**：长 transcript 让之后每一轮都更慢、更难聚焦。
+- **上下文预算**：长对话记录让之后每一轮都更慢、更难聚焦。
 - **归属模糊**：多个 agent 干同一件事浪费容量。
 
 > OpenClaw already serializes runs per session and caps global parallelism through the [command queue](/concepts/queue). Specialist lanes add policy on top: which agent owns which work, what stays in chat, and what becomes background work.

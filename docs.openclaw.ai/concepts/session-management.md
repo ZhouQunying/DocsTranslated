@@ -24,7 +24,7 @@ OpenClaw 把对话组织成**会话**。每条消息按来源路由到一个会�
 | 群聊              | 按群隔离                          |
 | 房间 / 频道       | 按房间隔离                        |
 | cron 任务         | 每次运行一个新会话                |
-| webhook           | 按 hook 隔离                      |
+| webhook           | 按钩子隔离                      |
 
 ---
 
@@ -134,7 +134,7 @@ dock 命令让用户把当前私聊会话的回复路由切到另一个链接的
 > * **Transcripts:** `~/.openclaw/agents/<agentId>/sessions/<sessionId>.jsonl`
 
 - **存储**：`~/.openclaw/agents/<agentId>/sessions/sessions.json`
-- **transcript**：`~/.openclaw/agents/<agentId>/sessions/<sessionId>.jsonl`
+- **对话记录**：`~/.openclaw/agents/<agentId>/sessions/<sessionId>.jsonl`
 
 > `sessions.json` keeps separate lifecycle timestamps:
 >
@@ -150,7 +150,7 @@ dock 命令让用户把当前私聊会话的回复路由切到另一个链接的
 
 > Older rows without `sessionStartedAt` are resolved from the transcript JSONL session header when available. If an older row also lacks `lastInteractionAt`, idle freshness falls back to that session start time, not to later bookkeeping writes.
 
-没 `sessionStartedAt` 的旧行可用时从 transcript JSONL 的会话头解出。旧行也没 `lastInteractionAt` 时，空闲新鲜度回退到会话开始时间，不回退到后来的记账写入。
+没 `sessionStartedAt` 的旧行可用时从对话记录 JSONL 的会话头解出。旧行也没 `lastInteractionAt` 时，空闲新鲜度回退到会话开始时间，不回退到后来的记账写入。
 
 ---
 
@@ -192,11 +192,11 @@ OpenClaw 会随时间限制会话存储大小。默认跑在 `warn` 模式（报
 
 > Maintenance preserves durable external conversation pointers, including group sessions and thread-scoped chat sessions, while still allowing synthetic cron, hook, heartbeat, ACP, and sub-agent entries to age out.
 
-维护会保留长期的外部对话指针 —— 包括群会话和按 thread 作用域的聊天会话 —— 同时让 cron、hook、心跳、ACP、sub-agent 这些合成条目随时间淘汰。
+维护会保留长期的外部对话指针 —— 包括群会话和按 thread 作用域的聊天会话 —— 同时让 cron、钩子、心跳、ACP、sub-agent 这些合成条目随时间淘汰。
 
 > If you previously used direct-message isolation and later returned `session.dmScope` to `main`, preview stale peer-keyed DM rows with `openclaw sessions cleanup --dry-run --fix-dm-scope`. Applying the same flag retires those old direct-DM rows and keeps their transcripts as deleted archives.
 
-如果之前用过私聊隔离，后来又把 `session.dmScope` 改回 `main`，用 `openclaw sessions cleanup --dry-run --fix-dm-scope` 预览过期的、按发件人 key 的私聊行。带同样的开关执行会让这些旧私聊行退役，把它们的 transcript 留作已删除归档。
+如果之前用过私聊隔离，后来又把 `session.dmScope` 改回 `main`，用 `openclaw sessions cleanup --dry-run --fix-dm-scope` 预览过期的、按发件人 key 的私聊行。带同样的开关执行会让这些旧私聊行退役，把它们的对话记录留作已删除归档。
 
 > Preview with `openclaw sessions cleanup --dry-run`.
 
@@ -235,7 +235,7 @@ OpenClaw 会随时间限制会话存储大小。默认跑在 `warn` 模式（报
 - [会话裁剪](/concepts/session-pruning)：裁掉工具结果。
 - [压缩](/concepts/compaction)：概括长对话。
 - [会话工具](/concepts/session-tool)：跨会话工作的 agent 工具。
-- [会话管理深入](/reference/session-management-compaction)：存储 schema、transcript、发送策略、来源元数据、进阶配置。
+- [会话管理深入](/reference/session-management-compaction)：存储 schema、对话记录、发送策略、来源元数据、进阶配置。
 - [多 Agent](/concepts/multi-agent)：跨 agent 的路由和会话隔离。
 - [后台任务](/automation/tasks)：脱离主 agent 的工作怎么建带会话引用的任务记录。
 - [通道路由](/channels/channel-routing)：接收消息怎么路由到会话。

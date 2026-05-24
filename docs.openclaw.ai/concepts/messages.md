@@ -122,11 +122,11 @@ OpenClaw 用一条流水线处理接收消息：会话解析、排队、流式�
 
 - 私聊收敛到 agent 的 main 会话 key。
 - 群 / 频道有自己的会话 key。
-- 会话存储和 transcript 都在 Gateway 宿主机上。
+- 会话存储和对话记录都在 Gateway 宿主机上。
 
 > Multiple devices/channels can map to the same session, but history is not fully synced back to every client. Recommendation: use one primary device for long conversations to avoid divergent context. The Control UI and TUI always show the gateway-backed session transcript, so they are the source of truth.
 
-多个设备 / 通道可以映射到同一个会话，但历史不会全量同步回每个客户端。建议：长对话用一个主设备，避免上下文分叉。Control UI 和 TUI 始终显示 Gateway 后端的会话 transcript，所以它们是权威源。
+多个设备 / 通道可以映射到同一个会话，但历史不会全量同步回每个客户端。建议：长对话用一个主设备，避免上下文分叉。Control UI 和 TUI 始终显示 Gateway 后端的会话对话记录，所以它们是权威源。
 
 > Details: [Session management](/concepts/session).
 
@@ -151,7 +151,7 @@ OpenClaw 用一条流水线处理接收消息：会话解析、排队、流式�
 OpenClaw 把这条边界保持显式：
 
 - `toolResult.details` 在 provider 重放和压缩输入前被剥掉。
-- 持久化的会话 transcript 只保留有界的 `details`；超大元数据替换成一份紧凑摘要，并标 `persistedDetailsTruncated: true`。
+- 持久化的会话对话记录只保留有界的 `details`；超大元数据替换成一份紧凑摘要，并标 `persistedDetailsTruncated: true`。
 - 插件和工具：模型必须读到的文本要放 `content`，不能只放在 `details` 里。
 
 ---
@@ -190,7 +190,7 @@ OpenClaw 把 **prompt 正文**和**命令正文**分开：
 
 > History buffers are **pending-only**: they include group messages that did *not* trigger a run (for example, mention-gated messages) and **exclude** messages already in the session transcript.
 
-历史缓冲是**仅 pending 的**：包含没触发运行的群消息（例如 @ 触发拦下的），**排除**已经在会话 transcript 里的消息。
+历史缓冲是**仅 pending 的**：包含没触发运行的群消息（例如 @ 触发拦下的），**排除**已经在会话对话记录里的消息。
 
 > Directive stripping only applies to the **current message** section so history remains intact. Channels that wrap history should set `CommandBody` (or `RawBody`) to the original message text and keep `Body` as the combined prompt. Structured history, reply, forwarded, and channel metadata are rendered as user-role untrusted context blocks during prompt assembly. History buffers are configurable via `messages.groupChat.historyLimit` (global default) and per-channel overrides like `channels.slack.historyLimit` or `channels.telegram.accounts.<id>.historyLimit` (set `0` to disable).
 
@@ -326,15 +326,15 @@ OpenClaw 按对话类型决定行为：
 
 > OpenClaw also uses silent replies for internal runner failures that happen before any assistant reply in non-direct chats, so groups/channels do not see gateway error boilerplate. Direct chats show compact failure copy by default; raw runner details are shown only when `/verbose` is `on` or `full`.
 
-OpenClaw 在非私聊里、还没有任何 assistant 回复就发生的 runner 内部失败上也用静默回复，让群 / 频道看不到 Gateway 错误样板。私聊默认显示紧凑的失败文案；原始 runner 细节只在 `/verbose` 是 `on` 或 `full` 时显示。
+OpenClaw 在非私聊里、还没有任何 assistant 回复就发生的运行器内部失败上也用静默回复，让群 / 频道看不到 Gateway 错误样板。私聊默认显示紧凑的失败文案；原始运行器细节只在 `/verbose` 是 `on` 或 `full` 时显示。
 
 > Defaults live under `agents.defaults.silentReply`; `surfaces.<id>.silentReply` can override group/internal policy per surface.
 
-默认值在 `agents.defaults.silentReply` 下；`surfaces.<id>.silentReply` 可以按 surface 覆盖群 / 内部策略。
+默认值在 `agents.defaults.silentReply` 下；`surfaces.<id>.silentReply` 可以按接口覆盖群 / 内部策略。
 
 > Bare silent replies are dropped on all surfaces, so parent sessions stay quiet instead of rewriting sentinel text into fallback chatter.
 
-裸的静默回复在所有 surface 都丢弃，让父会话保持安静，而不是把哨兵文本改写成回退闲聊。
+裸的静默回复在所有接口都丢弃，让父会话保持安静，而不是把哨兵文本改写成回退闲聊。
 
 ---
 

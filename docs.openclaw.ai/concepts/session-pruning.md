@@ -61,7 +61,7 @@ OpenClaw 还会给那些把原始图片块或 prompt-hydration 媒体标记持�
 - 它**逐字节**保留**最近 3 次已完成的轮次**，让最近跟进的 prompt 缓存前缀保持稳定。
 - 在回放视图里，`user` 或 `toolResult` 历史里旧的、已经处理过的图片块可被替换成 `[image data removed - already processed by model]`。
 - 旧的文本媒体引用（如 `[media attached: ...]`、`[Image: source: ...]`、`media://inbound/...`）可被替换成 `[media reference removed - already processed by model]`。当前轮的附件标记保持不动，让视觉模型仍然能 hydrate 新图。
-- 原始会话 transcript 不会被改写，历史查看器仍能渲染原始消息条目和它们的图片。
+- 原始会话对话记录不会被改写，历史查看器仍能渲染原始消息条目和它们的图片。
 - 这跟常规的缓存 TTL 裁剪是分开的。它的目的是阻止重复图片载荷或过期媒体引用在后续轮次里把 prompt 缓存搞崩。
 
 ---
@@ -137,7 +137,7 @@ OpenClaw 给 Anthropic profile 自动开裁剪：
 |              | 裁剪                  | 压缩                          |
 | ------------ | --------------------- | ----------------------------- |
 | **做什么**   | 裁剪工具结果          | 概括对话                      |
-| **保存吗？** | 否（按请求）          | 是（写进 transcript）         |
+| **保存吗？** | 否（按请求）          | 是（写进对话记录）         |
 | **范围**     | 只是工具结果          | 整段对话                      |
 
 > They complement each other -- pruning keeps tool output lean between compaction cycles.

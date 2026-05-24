@@ -15,7 +15,7 @@
 > 3. Recent messages are kept intact.
 
 1. 较早的对话轮次概括成一条紧凑条目。
-2. 摘要写到会话 transcript 里。
+2. 摘要写到会话对话记录里。
 3. 最近的消息保持不动。
 
 > When OpenClaw splits history into compaction chunks, it keeps assistant tool calls paired with their matching `toolResult` entries. If a split point lands inside a tool block, OpenClaw moves the boundary so the pair stays together and the current unsummarized tail is preserved.
@@ -186,7 +186,7 @@ OpenClaw 从这些 provider 错误模式里检测上下文溢出：
 
 > When `agents.defaults.compaction.maxActiveTranscriptBytes` is set, OpenClaw triggers normal local compaction before a run if the active JSONL reaches that size. This is useful for long-running sessions where provider-side context management may keep model context healthy while the local transcript keeps growing. It does not split raw JSONL bytes; it asks the normal compaction pipeline to create a semantic summary.
 
-设了 `agents.defaults.compaction.maxActiveTranscriptBytes` 时，活动 JSONL 达到这个大小，OpenClaw 在运行前触发常规本地压缩。这对长运行会话有用 ——provider 端的上下文管理可能让模型上下文健康，但本地 transcript 仍在增长。它不切原始 JSONL 字节；它让常规压缩流水线生成一份语义摘要。
+设了 `agents.defaults.compaction.maxActiveTranscriptBytes` 时，活动 JSONL 达到这个大小，OpenClaw 在运行前触发常规本地压缩。这对长运行会话有用 ——provider 端的上下文管理可能让模型上下文健康，但本地对话记录仍在增长。它不切原始 JSONL 字节；它让常规压缩流水线生成一份语义摘要。
 
 > <Warning>
 >   The byte guard requires `truncateAfterCompaction: true`. Without transcript rotation, the active file would not shrink and the guard remains inactive.
@@ -201,12 +201,12 @@ OpenClaw 从这些 provider 错误模式里检测上下文溢出：
 > When `agents.defaults.compaction.truncateAfterCompaction` is enabled, OpenClaw does not rewrite the existing transcript in place. It creates a new active successor transcript from the compaction summary, preserved state, and unsummarized tail, then keeps the previous JSONL as the archived checkpoint source.
 > Successor transcripts also drop exact duplicate long user turns that arrive inside a short retry window, so channel retry storms are not carried into the next active transcript after compaction.
 
-启用 `agents.defaults.compaction.truncateAfterCompaction` 时，OpenClaw 不会原地改写已有 transcript。它从压缩摘要、保留状态和未概括的尾部建一份新的活动后继 transcript，把之前的 JSONL 留作归档的 checkpoint 源。
-后继 transcript 还会丢掉短重试窗口内到达的、字面上完全重复的长 user 轮次，避免通道重试风暴被带进压缩后的下一个活动 transcript。
+启用 `agents.defaults.compaction.truncateAfterCompaction` 时，OpenClaw 不会原地改写已有对话记录。它从压缩摘要、保留状态和未概括的尾部建一份新的活动后继对话记录，把之前的 JSONL 留作归档的 checkpoint 源。
+后继对话记录还会丢掉短重试窗口内到达的、字面上完全重复的长 user 轮次，避免通道重试风暴被带进压缩后的下一个活动对话记录。
 
 > Pre-compaction checkpoints are retained only while they stay below OpenClaw's checkpoint size cap; oversized active transcripts still compact, but OpenClaw skips the large debug snapshot instead of doubling disk usage.
 
-只在低于 OpenClaw 的 checkpoint 大小上限时才保留压缩前 checkpoint；超大的活动 transcript 仍然压缩，但 OpenClaw 跳过大体积的调试快照，避免占用双倍磁盘。
+只在低于 OpenClaw 的 checkpoint 大小上限时才保留压缩前 checkpoint；超大的活动对话记录仍然压缩，但 OpenClaw 跳过大体积的调试快照，避免占用双倍磁盘。
 
 > ### Compaction notices
 
@@ -343,7 +343,7 @@ memory-flush 的模型覆盖是精确值，不继承当前会话回退链。细�
 |                  | 压缩                              | 裁剪                                |
 | ---------------- | --------------------------------- | ----------------------------------- |
 | **做什么**       | 概括较早的对话                    | 裁剪老的工具结果                    |
-| **保存吗？**     | 是（写到会话 transcript）         | 否（仅内存里，按请求）              |
+| **保存吗？**     | 是（写到会话对话记录）         | 否（仅内存里，按请求）              |
 | **范围**         | 整段对话                          | 只是工具结果                        |
 
 > [Session pruning](/concepts/session-pruning) is a lighter-weight complement that trims tool output without summarizing.
@@ -386,4 +386,4 @@ memory-flush 的模型覆盖是精确值，不继承当前会话回退链。细�
 - [会话](/concepts/session)：会话管理和生命周期。
 - [会话裁剪](/concepts/session-pruning)：裁剪工具结果。
 - [Context](/concepts/context)：agent 轮次的上下文怎么构建。
-- [钩子](/automation/hooks)：压缩生命周期钩子（`before_compaction`、`after_compaction`）。
+- [钩子](/automation/钩子)：压缩生命周期钩子（`before_compaction`、`after_compaction`）。

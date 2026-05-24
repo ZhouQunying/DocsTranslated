@@ -253,7 +253,7 @@ delegate 按定时**自主**运作，按长期指令执行，不再每个动作�
 delegate 处理任何真实数据之前先配好日志：
 
 - Cron 运行历史：`~/.openclaw/cron/runs/<jobId>.jsonl`
-- 会话 transcript：`~/.openclaw/agents/delegate/sessions`
+- 会话对话记录：`~/.openclaw/agents/delegate/sessions`
 - 身份提供方审计日志（Exchange、Google Workspace）
 
 > All delegate actions flow through OpenClaw's session store. For compliance, ensure these logs are retained and reviewed.
@@ -572,7 +572,7 @@ delegate 的 `AGENTS.md` 定义它的自主权限 —— 什么不用问就能�
 
 > If you grant `sessions_history`, remember it is a bounded, safety-filtered recall view. OpenClaw redacts credential/token-like text, truncates long content, strips thinking tags / `<relevant-memories>` scaffolding / plain-text tool-call XML payloads (including `<tool_call>...</tool_call>`, `<function_call>...</function_call>`, `<tool_calls>...</tool_calls>`, `<function_calls>...</function_calls>`, and truncated tool-call blocks) / downgraded tool-call scaffolding / leaked ASCII/full-width model control tokens / malformed MiniMax tool-call XML from assistant recall, and can replace oversized rows with `[sessions_history omitted: message too large]` instead of returning a raw transcript dump.
 
-授予 `sessions_history` 时记住它是一个有界的、经过安全过滤的召回视图。OpenClaw 会脱敏凭证 / token 类文本、截断长内容、剥掉 assistant 召回里的 thinking 标签 / `<relevant-memories>` 脚手架 / 纯文本工具调用 XML 载荷（含 `<tool_call>...</tool_call>`、`<function_call>...</function_call>`、`<tool_calls>...</tool_calls>`、`<function_calls>...</function_calls>`、被截断的工具调用块）/ 降级的工具调用脚手架 / 泄漏的 ASCII / 全角模型控制 token / 畸形的 MiniMax 工具调用 XML，并把超大行替换成 `[sessions_history omitted: message too large]`，而不是返回原始 transcript dump。
+授予 `sessions_history` 时记住它是一个有界的、经过安全过滤的召回视图。OpenClaw 会脱敏凭证 / token 类文本、截断长内容、剥掉 assistant 召回里的 thinking 标签 / `<relevant-memories>` 脚手架 / 纯文本工具调用 XML 载荷（含 `<tool_call>...</tool_call>`、`<function_call>...</function_call>`、`<tool_calls>...</tool_calls>`、`<function_calls>...</function_calls>`、被截断的工具调用块）/ 降级的工具调用脚手架 / 泄漏的 ASCII / 全角模型控制 token / 畸形的 MiniMax 工具调用 XML，并把超大行替换成 `[sessions_history omitted: message too large]`，而不是返回原始对话记录 dump。
 
 ---
 

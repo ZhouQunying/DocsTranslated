@@ -22,8 +22,8 @@ OpenClaw 给 agent 提供跨会话工作、查看状态、调度 sub-agent 的�
 
 | 工具               | 作用                                                                          |
 | ------------------ | ----------------------------------------------------------------------------- |
-| `sessions_list`    | 列出会话，可按 kind、label、agent、近期程度、预览过滤                         |
-| `sessions_history` | 读某个会话的 transcript                                                       |
+| `sessions_list`    | 列出会话，可按类型、label、agent、近期程度、预览过滤                         |
+| `sessions_history` | 读某个会话的对话记录                                                       |
 | `sessions_send`    | 给另一个会话发消息，可选等待                                                  |
 | `sessions_spawn`   | 为后台工作派生一个隔离的 sub-agent 会话                                    |
 | `sessions_yield`   | 结束当前轮次，等 sub-agent 后续结果                                           |
@@ -64,11 +64,11 @@ OpenClaw 给 agent 提供跨会话工作、查看状态、调度 sub-agent 的�
 
 > `sessions_list` returns sessions with their key, agentId, kind, channel, model, token counts, and timestamps. Filter by kind (`main`, `group`, `cron`, `hook`, `node`), exact `label`, exact `agentId`, search text, or recency (`activeMinutes`). When you need mailbox-style triage, it can also ask for a visibility-scoped derived title, a last-message preview snippet, or bounded recent messages on each row. Derived titles and previews are produced only for sessions the caller can already see under the configured session tool visibility policy, so unrelated sessions stay hidden.
 
-`sessions_list` 返回会话的 key、agentId、kind、channel、model、token 数和时间戳。按 kind（`main`、`group`、`cron`、`hook`、`node`）、精确 `label`、精确 `agentId`、搜索文本或近期程度（`activeMinutes`）过滤。需要类似邮箱的归类时，还可以让它给每一行带上一个可见性范围内的派生标题、最近一条消息的预览片段或有界的最近消息。派生标题和预览只对调用方在配置的会话工具可见性策略下能看到的会话产生 —— 不相关的会话仍然藏着。
+`sessions_list` 返回会话的 key、agentId、类型、channel、model、token 数和时间戳。按类型（`main`、`group`、`cron`、`hook`、`node`）、精确 `label`、精确 `agentId`、搜索文本或近期程度（`activeMinutes`）过滤。需要类似邮箱的归类时，还可以让它给每一行带上一个可见性范围内的派生标题、最近一条消息的预览片段或有界的最近消息。派生标题和预览只对调用方在配置的会话工具可见性策略下能看到的会话产生 —— 不相关的会话仍然藏着。
 
 > `sessions_history` fetches the conversation transcript for a specific session. By default, tool results are excluded -- pass `includeTools: true` to see them. The returned view is intentionally bounded and safety-filtered:
 
-`sessions_history` 抓取某个会话的对话 transcript。默认排除工具结果 —— 传 `includeTools: true` 才看得到。返回的视图刻意有界并经过安全过滤：
+`sessions_history` 抓取某个会话的对话对话记录。默认排除工具结果 —— 传 `includeTools: true` 才看得到。返回的视图刻意有界并经过安全过滤：
 
 > * assistant text is normalized before recall:
 >   * thinking tags are stripped
@@ -100,7 +100,7 @@ OpenClaw 给 agent 提供跨会话工作、查看状态、调度 sub-agent 的�
 
 > If you need the exact byte-for-byte transcript, inspect the transcript file on disk instead of treating `sessions_history` as a raw dump.
 
-需要逐字节精确的 transcript 时，直接看磁盘上的 transcript 文件，不要把 `sessions_history` 当原始 dump。
+需要逐字节精确的对话记录时，直接看磁盘上的对话记录文件，不要把 `sessions_history` 当原始 dump。
 
 ---
 
@@ -124,7 +124,7 @@ OpenClaw 给 agent 提供跨会话工作、查看状态、调度 sub-agent 的�
 
 > Messages and A2A follow-up replies are marked as inter-session data in the receiving prompt (`[Inter-session message ... isUser=false]`) and in transcript provenance. The receiving agent should treat them as tool-routed data, not as a direct end-user-authored instruction.
 
-消息和 A2A 跟进回复在接收侧 prompt 里被标记为跨会话数据（`[Inter-session message ... isUser=false]`），在 transcript 来源标注里也是。接收方 agent 应当把它们当作工具路由的数据，不是用户直接发的指令。
+消息和 A2A 跟进回复在接收侧 prompt 里被标记为跨会话数据（`[Inter-session message ... isUser=false]`），在对话记录来源标注里也是。接收方 agent 应当把它们当作工具路由的数据，不是用户直接发的指令。
 
 > After the target responds, OpenClaw can run a **reply-back loop** where the agents alternate messages (up to `session.agentToAgent.maxPingPongTurns`, range 0-20, default 5). The target agent can reply `REPLY_SKIP` to stop early.
 
@@ -138,7 +138,7 @@ OpenClaw 给 agent 提供跨会话工作、查看状态、调度 sub-agent 的�
 
 > `session_status` is the lightweight `/status`-equivalent tool for the current or another visible session. It reports usage, time, model/runtime state, and linked background-task context when present. Like `/status`, it can backfill sparse token/cache counters from the latest transcript usage entry, and `model=default` clears a per-session override. Use `sessionKey="current"` for the caller's current session; visible client labels such as `openclaw-tui` are not session keys.
 
-`session_status` 是 `/status` 的轻量工具版，用于当前会话或另一个可见会话。它报告用量、时间、模型 / 运行时状态，以及（存在时）关联的后台任务上下文。和 `/status` 一样，它能从最新的 transcript usage 条目回填稀疏的 token / 缓存计数；`model=default` 清掉按会话的覆盖。当前会话用 `sessionKey="current"`；可见的客户端标签（如 `openclaw-tui`）不是会话 key。
+`session_status` 是 `/status` 的轻量工具版，用于当前会话或另一个可见会话。它报告用量、时间、模型 / 运行时状态，以及（存在时）关联的后台任务上下文。和 `/status` 一样，它能从最新的对话记录 usage 条目回填稀疏的 token / 缓存计数；`model=default` 清掉按会话的覆盖。当前会话用 `sessionKey="current"`；可见的客户端标签（如 `openclaw-tui`）不是会话 key。
 
 > `sessions_yield` intentionally ends the current turn so the next message can be the follow-up event you are waiting for. Use it after spawning sub-agents when you want completion results to arrive as the next message instead of building poll loops.
 
@@ -180,7 +180,7 @@ OpenClaw 给 agent 提供跨会话工作、查看状态、调度 sub-agent 的�
 - 子会话的 `model` 和 `thinking` 覆盖。
 - `thread: true` 把派生绑到聊天 thread（Discord、Slack 等）。
 - `sandbox: "require"` 强制子会话进沙盒。
-- 原生 sub-agent 时，子需要当前请求者的 transcript 就用 `context: "fork"`；省略或写 `context: "isolated"` 让子会话干净。绑定 thread 的原生 sub-agent 默认 `context: "fork"`，除非 `threadBindings.defaultSpawnContext` 改了。
+- 原生 sub-agent 时，子需要当前请求者的对话记录就用 `context: "fork"`；省略或写 `context: "isolated"` 让子会话干净。绑定 thread 的原生 sub-agent 默认 `context: "fork"`，除非 `threadBindings.defaultSpawnContext` 改了。
 
 > Default leaf sub-agents do not get session tools. When `maxSpawnDepth >= 2`, depth-1 orchestrator sub-agents additionally receive `sessions_spawn`, `subagents`, `sessions_list`, and `sessions_history` so they can manage their own children. Leaf runs still do not get recursive orchestration tools.
 

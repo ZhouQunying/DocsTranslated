@@ -158,7 +158,7 @@ presence 刻意是短暂的：
 
 > The macOS app renders the output of `system-presence` and applies a small status indicator (Active/Idle/Stale) based on the age of the last update.
 
-macOS App 渲染 `system-presence` 的输出，根据最后一次更新的年龄给出小状态指示（Active / Idle / Stale）。
+macOS App 渲染 `system-presence` 的输出，根据最后一次更新的年龄给出小状态指示（Active / Idle / 过期）。
 
 ---
 

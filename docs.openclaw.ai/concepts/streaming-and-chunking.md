@@ -453,7 +453,7 @@ Matrix：
 > * [Channels](/channels) - per-channel streaming support
 
 - [消息生命周期重构](/concepts/message-lifecycle-refactor)：目标共享预览、edit、stream、收尾设计
-- [进度草稿](/concepts/progress-drafts)：长轮次期间可见的、会更新的"工作中"消息
+- [进度草稿](/concepts/progress-草稿)：长轮次期间可见的、会更新的"工作中"消息
 - [消息](/concepts/messages)：消息生命周期和投递
 - [重试](/concepts/retry)：投递失败时的重试行为
 - [通道](/channels)：按通道的流式支持
