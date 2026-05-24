@@ -1,6 +1,6 @@
 # Tools / 工具
 
-在线 52 / 本地 14 / 待译 38。最近核对:2026-05-24。
+在线 52 / 本地 17 / 待译 35。最近核对:2026-05-24。
 
 > 文件名按页面 H1 标题 slug 化,跟 URL 末段经常对不上(如 `/tools/btw` 的标题是 "BTW side questions",文件叫 `btw-side-questions.md`)。两列都列出来方便查。
 
@@ -13,9 +13,12 @@
 | [/tools/code-execution](https://docs.openclaw.ai/tools/code-execution) | [code-execution.md](code-execution.md) | Code execution | 代码执行 |
 | [/tools/elevated](https://docs.openclaw.ai/tools/elevated) | [elevated-mode.md](elevated-mode.md) | Elevated mode | 提权模式 |
 | [/tools/exec](https://docs.openclaw.ai/tools/exec) | [exec-tool.md](exec-tool.md) | Exec tool | Exec 工具 |
+| [/tools/image-generation](https://docs.openclaw.ai/tools/image-generation) | [image-generation.md](image-generation.md) | Image generation | 图片生成 |
 | [/tools/llm-task](https://docs.openclaw.ai/tools/llm-task) | [llm-task.md](llm-task.md) | LLM task | LLM 任务 |
+| [/tools/lobster](https://docs.openclaw.ai/tools/lobster) | [lobster.md](lobster.md) | Lobster | Lobster |
 | [/tools/loop-detection](https://docs.openclaw.ai/tools/loop-detection) | [tool-loop-detection.md](tool-loop-detection.md) | Tool-loop detection | 工具循环检测 |
 | [/tools/media-overview](https://docs.openclaw.ai/tools/media-overview) | [media-overview.md](media-overview.md) | Media overview | 媒体总览 |
+| [/tools/music-generation](https://docs.openclaw.ai/tools/music-generation) | [music-generation.md](music-generation.md) | Music generation | 音乐生成 |
 | [/tools/pdf](https://docs.openclaw.ai/tools/pdf) | [pdf-tool.md](pdf-tool.md) | PDF tool | PDF 工具 |
 | [/tools/reactions](https://docs.openclaw.ai/tools/reactions) | [reactions.md](reactions.md) | Reactions | 表情反应 |
 | [/tools/thinking](https://docs.openclaw.ai/tools/thinking) | [thinking-levels.md](thinking-levels.md) | Thinking levels | 思考级别 |
@@ -25,16 +28,13 @@
 
 ## 待译
 
-### Tools 主体 (剩 8)
+### Tools 主体 (剩 5)
 
 | 在线 URL | 英文标题 |
 |---|---|
 | [/tools/diffs](https://docs.openclaw.ai/tools/diffs) | Diffs |
 | [/tools/exec-approvals](https://docs.openclaw.ai/tools/exec-approvals) | Exec approvals |
 | [/tools/exec-approvals-advanced](https://docs.openclaw.ai/tools/exec-approvals-advanced) | Exec approvals — advanced |
-| [/tools/image-generation](https://docs.openclaw.ai/tools/image-generation) | Image generation |
-| [/tools/lobster](https://docs.openclaw.ai/tools/lobster) | Lobster |
-| [/tools/music-generation](https://docs.openclaw.ai/tools/music-generation) | Music generation |
 | [/tools/tts](https://docs.openclaw.ai/tools/tts) | Text-to-speech |
 | [/tools/video-generation](https://docs.openclaw.ai/tools/video-generation) | Video generation |
 
