@@ -1,6 +1,6 @@
 # Tools / 工具
 
-在线 52 / 本地 8 / 待译 44。最近核对:2026-05-24。
+在线 52 / 本地 14 / 待译 38。最近核对:2026-05-24。
 
 > 文件名按页面 H1 标题 slug 化,跟 URL 末段经常对不上(如 `/tools/btw` 的标题是 "BTW side questions",文件叫 `btw-side-questions.md`)。两列都列出来方便查。
 
@@ -14,12 +14,18 @@
 | [/tools/elevated](https://docs.openclaw.ai/tools/elevated) | [elevated-mode.md](elevated-mode.md) | Elevated mode | 提权模式 |
 | [/tools/exec](https://docs.openclaw.ai/tools/exec) | [exec-tool.md](exec-tool.md) | Exec tool | Exec 工具 |
 | [/tools/llm-task](https://docs.openclaw.ai/tools/llm-task) | [llm-task.md](llm-task.md) | LLM task | LLM 任务 |
+| [/tools/loop-detection](https://docs.openclaw.ai/tools/loop-detection) | [tool-loop-detection.md](tool-loop-detection.md) | Tool-loop detection | 工具循环检测 |
+| [/tools/media-overview](https://docs.openclaw.ai/tools/media-overview) | [media-overview.md](media-overview.md) | Media overview | 媒体总览 |
+| [/tools/pdf](https://docs.openclaw.ai/tools/pdf) | [pdf-tool.md](pdf-tool.md) | PDF tool | PDF 工具 |
 | [/tools/reactions](https://docs.openclaw.ai/tools/reactions) | [reactions.md](reactions.md) | Reactions | 表情反应 |
 | [/tools/thinking](https://docs.openclaw.ai/tools/thinking) | [thinking-levels.md](thinking-levels.md) | Thinking levels | 思考级别 |
+| [/tools/tokenjuice](https://docs.openclaw.ai/tools/tokenjuice) | [tokenjuice.md](tokenjuice.md) | Tokenjuice | Tokenjuice |
+| [/tools/tool-search](https://docs.openclaw.ai/tools/tool-search) | [tool-search.md](tool-search.md) | Tool Search | 工具检索 |
+| [/tools/trajectory](https://docs.openclaw.ai/tools/trajectory) | [trajectory-bundles.md](trajectory-bundles.md) | Trajectory bundles | 轨迹打包 |
 
 ## 待译
 
-### Tools 主体 (剩 14)
+### Tools 主体 (剩 8)
 
 | 在线 URL | 英文标题 |
 |---|---|
@@ -28,13 +34,7 @@
 | [/tools/exec-approvals-advanced](https://docs.openclaw.ai/tools/exec-approvals-advanced) | Exec approvals — advanced |
 | [/tools/image-generation](https://docs.openclaw.ai/tools/image-generation) | Image generation |
 | [/tools/lobster](https://docs.openclaw.ai/tools/lobster) | Lobster |
-| [/tools/media-overview](https://docs.openclaw.ai/tools/media-overview) | Media overview |
 | [/tools/music-generation](https://docs.openclaw.ai/tools/music-generation) | Music generation |
-| [/tools/pdf](https://docs.openclaw.ai/tools/pdf) | PDF tool |
-| [/tools/tokenjuice](https://docs.openclaw.ai/tools/tokenjuice) | Tokenjuice |
-| [/tools/tool-search](https://docs.openclaw.ai/tools/tool-search) | Tool Search |
-| [/tools/loop-detection](https://docs.openclaw.ai/tools/loop-detection) | Tool-loop detection |
-| [/tools/trajectory](https://docs.openclaw.ai/tools/trajectory) | Trajectory bundles |
 | [/tools/tts](https://docs.openclaw.ai/tools/tts) | Text-to-speech |
 | [/tools/video-generation](https://docs.openclaw.ai/tools/video-generation) | Video generation |
 
