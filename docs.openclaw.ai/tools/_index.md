@@ -1,6 +1,6 @@
 # Tools / 工具
 
-在线 52 / 本地 17 / 待译 35。最近核对:2026-05-24。
+在线 52 / 本地 20 / 待译 32。最近核对:2026-05-24。
 
 > 文件名按页面 H1 标题 slug 化,跟 URL 末段经常对不上(如 `/tools/btw` 的标题是 "BTW side questions",文件叫 `btw-side-questions.md`)。两列都列出来方便查。
 
@@ -11,8 +11,11 @@
 | [/tools/apply-patch](https://docs.openclaw.ai/tools/apply-patch) | [apply-patch-tool.md](apply-patch-tool.md) | apply_patch tool | apply_patch 工具 |
 | [/tools/btw](https://docs.openclaw.ai/tools/btw) | [btw-side-questions.md](btw-side-questions.md) | BTW side questions | BTW 侧边问题 |
 | [/tools/code-execution](https://docs.openclaw.ai/tools/code-execution) | [code-execution.md](code-execution.md) | Code execution | 代码执行 |
+| [/tools/diffs](https://docs.openclaw.ai/tools/diffs) | [diffs.md](diffs.md) | Diffs | Diffs |
 | [/tools/elevated](https://docs.openclaw.ai/tools/elevated) | [elevated-mode.md](elevated-mode.md) | Elevated mode | 提权模式 |
 | [/tools/exec](https://docs.openclaw.ai/tools/exec) | [exec-tool.md](exec-tool.md) | Exec tool | Exec 工具 |
+| [/tools/exec-approvals](https://docs.openclaw.ai/tools/exec-approvals) | [exec-approvals.md](exec-approvals.md) | Exec approvals | Exec 审批 |
+| [/tools/exec-approvals-advanced](https://docs.openclaw.ai/tools/exec-approvals-advanced) | [exec-approvals-advanced.md](exec-approvals-advanced.md) | Exec approvals — advanced | Exec 审批 - 进阶 |
 | [/tools/image-generation](https://docs.openclaw.ai/tools/image-generation) | [image-generation.md](image-generation.md) | Image generation | 图片生成 |
 | [/tools/llm-task](https://docs.openclaw.ai/tools/llm-task) | [llm-task.md](llm-task.md) | LLM task | LLM 任务 |
 | [/tools/lobster](https://docs.openclaw.ai/tools/lobster) | [lobster.md](lobster.md) | Lobster | Lobster |
@@ -28,13 +31,10 @@
 
 ## 待译
 
-### Tools 主体 (剩 5)
+### Tools 主体 (剩 2)
 
 | 在线 URL | 英文标题 |
 |---|---|
-| [/tools/diffs](https://docs.openclaw.ai/tools/diffs) | Diffs |
-| [/tools/exec-approvals](https://docs.openclaw.ai/tools/exec-approvals) | Exec approvals |
-| [/tools/exec-approvals-advanced](https://docs.openclaw.ai/tools/exec-approvals-advanced) | Exec approvals — advanced |
 | [/tools/tts](https://docs.openclaw.ai/tools/tts) | Text-to-speech |
 | [/tools/video-generation](https://docs.openclaw.ai/tools/video-generation) | Video generation |
 
