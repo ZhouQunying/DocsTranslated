@@ -1,6 +1,6 @@
 # Concepts / 概念
 
-在线 50 / 本地 35 / 待译 15。最近核对:2026-05-24。
+在线 50 / 本地 36 / 待译 14。最近核对:2026-05-24。
 
 > 文件名按页面 H1 标题 slug 化,跟 URL 末段经常对不上(如 `/concepts/queue` 的标题是 "Command queue",文件叫 `command-queue.md`)。两列都列出来方便查。
 
@@ -23,6 +23,7 @@
 | [/concepts/dreaming](https://docs.openclaw.ai/concepts/dreaming) | [dreaming.md](dreaming.md) | Dreaming | 做梦 |
 | [/concepts/experimental-features](https://docs.openclaw.ai/concepts/experimental-features) | [experimental-features.md](experimental-features.md) | Experimental features | 实验性功能 |
 | [/concepts/memory](https://docs.openclaw.ai/concepts/memory) | [memory-overview.md](memory-overview.md) | Memory overview | 记忆总览 |
+| [/concepts/memory-honcho](https://docs.openclaw.ai/concepts/memory-honcho) | [honcho-memory.md](honcho-memory.md) | Honcho memory | Honcho 记忆 |
 | [/concepts/message-lifecycle-refactor](https://docs.openclaw.ai/concepts/message-lifecycle-refactor) | [message-lifecycle-refactor.md](message-lifecycle-refactor.md) | Message lifecycle refactor | 消息生命周期重构 |
 | [/concepts/memory-search](https://docs.openclaw.ai/concepts/memory-search) | [memory-search.md](memory-search.md) | Memory search | 记忆检索 |
 | [/concepts/messages](https://docs.openclaw.ai/concepts/messages) | [messages.md](messages.md) | Messages | 消息 |
@@ -53,7 +54,6 @@
 | [/concepts/mantis](https://docs.openclaw.ai/concepts/mantis) | Mantis | 真实通道 bug 的视觉端到端验证系统:前后证据捕获、附件挂到 PR |
 | [/concepts/mantis-slack-desktop-runbook](https://docs.openclaw.ai/concepts/mantis-slack-desktop-runbook) | Mantis Slack desktop runbook | Mantis Slack 桌面 QA 操作员手册:GitHub 触发、本地 CLI、热 VNC 租约、hydrate 模式、时长解读、产物、失败处理 |
 | [/concepts/markdown-formatting](https://docs.openclaw.ai/concepts/markdown-formatting) | Markdown formatting | 发送通道的 Markdown 格式化管线 |
-| [/concepts/memory-honcho](https://docs.openclaw.ai/concepts/memory-honcho) | Honcho memory | 通过 Honcho 插件的 AI 原生跨会话记忆 |
 | [/concepts/memory-qmd](https://docs.openclaw.ai/concepts/memory-qmd) | QMD memory engine | 本地优先的检索 sidecar:BM25、向量、重排、查询扩展 |
 | [/concepts/model-failover](https://docs.openclaw.ai/concepts/model-failover) | Model failover | OpenClaw 怎么轮换认证 profile 并在模型间回退 |
 | [/concepts/model-providers](https://docs.openclaw.ai/concepts/model-providers) | Model providers | 模型 provider 总览,带配置示例和 CLI 流程 |
