@@ -2,13 +2,13 @@
 
 在线 14 / 本地 1 / 待译 13。最近核对:2026-05-24。
 
-> **URL ↔ 文件名映射坑**:本地文件名按页面 H1 标题取 slug,跟 URL 末段经常对不上。`/start/bootstrapping` 的页面标题是 "Agent bootstrapping",所以文件叫 `agent-bootstrapping.md`,不是 `bootstrapping.md`。
+> **文件名 = URL 末段**(2026-05-24 起的新规则):URL `/X/Y/z` 永远对应 `Y/z.md`,从 URL 反查 100% 命中。中英文标题留在表里方便从内容反查。
 
 ## 已译
 
 | 在线 URL | 文件 | 英文标题 | 中文标题 |
 |---|---|---|---|
-| [/start/bootstrapping](https://docs.openclaw.ai/start/bootstrapping) | [agent-bootstrapping.md](agent-bootstrapping.md) | Agent bootstrapping | Agent 引导 |
+| [/start/bootstrapping](https://docs.openclaw.ai/start/bootstrapping) | [bootstrapping.md](bootstrapping.md) | Agent bootstrapping | Agent 引导 |
 
 ## 待译
 

@@ -2,32 +2,32 @@
 
 在线 52 / 本地 20 / 待译 32。最近核对:2026-05-24。
 
-> 文件名按页面 H1 标题 slug 化,跟 URL 末段经常对不上(如 `/tools/btw` 的标题是 "BTW side questions",文件叫 `btw-side-questions.md`)。两列都列出来方便查。
+> **文件名 = URL 末段**(2026-05-24 起的新规则):URL `/X/Y/z` 永远对应 `Y/z.md`,从 URL 反查 100% 命中。中英文标题留在表里方便从内容反查。
 
 ## 已译
 
 | 在线 URL | 文件 | 英文标题 | 中文标题 |
 |---|---|---|---|
-| [/tools/apply-patch](https://docs.openclaw.ai/tools/apply-patch) | [apply-patch-tool.md](apply-patch-tool.md) | apply_patch tool | apply_patch 工具 |
-| [/tools/btw](https://docs.openclaw.ai/tools/btw) | [btw-side-questions.md](btw-side-questions.md) | BTW side questions | BTW 侧边问题 |
+| [/tools/apply-patch](https://docs.openclaw.ai/tools/apply-patch) | [apply-patch.md](apply-patch.md) | apply_patch tool | apply_patch 工具 |
+| [/tools/btw](https://docs.openclaw.ai/tools/btw) | [btw.md](btw.md) | BTW side questions | BTW 侧边问题 |
 | [/tools/code-execution](https://docs.openclaw.ai/tools/code-execution) | [code-execution.md](code-execution.md) | Code execution | 代码执行 |
 | [/tools/diffs](https://docs.openclaw.ai/tools/diffs) | [diffs.md](diffs.md) | Diffs | Diffs |
-| [/tools/elevated](https://docs.openclaw.ai/tools/elevated) | [elevated-mode.md](elevated-mode.md) | Elevated mode | 提权模式 |
-| [/tools/exec](https://docs.openclaw.ai/tools/exec) | [exec-tool.md](exec-tool.md) | Exec tool | Exec 工具 |
+| [/tools/elevated](https://docs.openclaw.ai/tools/elevated) | [elevated.md](elevated.md) | Elevated mode | 提权模式 |
+| [/tools/exec](https://docs.openclaw.ai/tools/exec) | [exec.md](exec.md) | Exec tool | Exec 工具 |
 | [/tools/exec-approvals](https://docs.openclaw.ai/tools/exec-approvals) | [exec-approvals.md](exec-approvals.md) | Exec approvals | Exec 审批 |
 | [/tools/exec-approvals-advanced](https://docs.openclaw.ai/tools/exec-approvals-advanced) | [exec-approvals-advanced.md](exec-approvals-advanced.md) | Exec approvals — advanced | Exec 审批 - 进阶 |
 | [/tools/image-generation](https://docs.openclaw.ai/tools/image-generation) | [image-generation.md](image-generation.md) | Image generation | 图片生成 |
 | [/tools/llm-task](https://docs.openclaw.ai/tools/llm-task) | [llm-task.md](llm-task.md) | LLM task | LLM 任务 |
 | [/tools/lobster](https://docs.openclaw.ai/tools/lobster) | [lobster.md](lobster.md) | Lobster | Lobster |
-| [/tools/loop-detection](https://docs.openclaw.ai/tools/loop-detection) | [tool-loop-detection.md](tool-loop-detection.md) | Tool-loop detection | 工具循环检测 |
+| [/tools/loop-detection](https://docs.openclaw.ai/tools/loop-detection) | [loop-detection.md](loop-detection.md) | Tool-loop detection | 工具循环检测 |
 | [/tools/media-overview](https://docs.openclaw.ai/tools/media-overview) | [media-overview.md](media-overview.md) | Media overview | 媒体总览 |
 | [/tools/music-generation](https://docs.openclaw.ai/tools/music-generation) | [music-generation.md](music-generation.md) | Music generation | 音乐生成 |
-| [/tools/pdf](https://docs.openclaw.ai/tools/pdf) | [pdf-tool.md](pdf-tool.md) | PDF tool | PDF 工具 |
+| [/tools/pdf](https://docs.openclaw.ai/tools/pdf) | [pdf.md](pdf.md) | PDF tool | PDF 工具 |
 | [/tools/reactions](https://docs.openclaw.ai/tools/reactions) | [reactions.md](reactions.md) | Reactions | 表情反应 |
-| [/tools/thinking](https://docs.openclaw.ai/tools/thinking) | [thinking-levels.md](thinking-levels.md) | Thinking levels | 思考级别 |
+| [/tools/thinking](https://docs.openclaw.ai/tools/thinking) | [thinking.md](thinking.md) | Thinking levels | 思考级别 |
 | [/tools/tokenjuice](https://docs.openclaw.ai/tools/tokenjuice) | [tokenjuice.md](tokenjuice.md) | Tokenjuice | Tokenjuice |
 | [/tools/tool-search](https://docs.openclaw.ai/tools/tool-search) | [tool-search.md](tool-search.md) | Tool Search | 工具检索 |
-| [/tools/trajectory](https://docs.openclaw.ai/tools/trajectory) | [trajectory-bundles.md](trajectory-bundles.md) | Trajectory bundles | 轨迹打包 |
+| [/tools/trajectory](https://docs.openclaw.ai/tools/trajectory) | [trajectory.md](trajectory.md) | Trajectory bundles | 轨迹打包 |
 
 ## 待译
 

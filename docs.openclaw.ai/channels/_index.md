@@ -2,7 +2,7 @@
 
 在线 39 / 本地 14 / 待译 25。最近核对:2026-05-24。
 
-> 文件名按页面 H1 标题 slug 化,跟 URL 末段经常对不上(如 `/channels/location` 的标题是 "Channel location parsing",文件叫 `channel-location-parsing.md`)。两列都列出来方便查。
+> **文件名 = URL 末段**(2026-05-24 起的新规则):URL `/X/Y/z` 永远对应 `Y/z.md`,从 URL 反查 100% 命中。中英文标题留在表里方便从内容反查。
 
 ## 已译
 
@@ -12,14 +12,14 @@
 | [/channels/broadcast-groups](https://docs.openclaw.ai/channels/broadcast-groups) | [broadcast-groups.md](broadcast-groups.md) | Broadcast groups | 广播组 |
 | [/channels/channel-routing](https://docs.openclaw.ai/channels/channel-routing) | [channel-routing.md](channel-routing.md) | Channel routing | 通道路由 |
 | [/channels/feishu](https://docs.openclaw.ai/channels/feishu) | [feishu.md](feishu.md) | Feishu | 飞书 |
-| [/channels/group-messages](https://docs.openclaw.ai/channels/group-messages) | [whatsapp-group-messages.md](whatsapp-group-messages.md) | WhatsApp group messages | WhatsApp 群消息 |
+| [/channels/group-messages](https://docs.openclaw.ai/channels/group-messages) | [group-messages.md](group-messages.md) | WhatsApp group messages | WhatsApp 群消息 |
 | [/channels/groups](https://docs.openclaw.ai/channels/groups) | [groups.md](groups.md) | Groups | 群组 |
-| [/channels/location](https://docs.openclaw.ai/channels/location) | [channel-location-parsing.md](channel-location-parsing.md) | Channel location parsing | 通道位置解析 |
+| [/channels/location](https://docs.openclaw.ai/channels/location) | [location.md](location.md) | Channel location parsing | 通道位置解析 |
 | [/channels/pairing](https://docs.openclaw.ai/channels/pairing) | [pairing.md](pairing.md) | Pairing | 配对 |
 | [/channels/qa-channel](https://docs.openclaw.ai/channels/qa-channel) | [qa-channel.md](qa-channel.md) | QA channel | QA 通道 |
 | [/channels/qqbot](https://docs.openclaw.ai/channels/qqbot) | [qqbot.md](qqbot.md) | QQ bot | QQ 机器人 |
 | [/channels/telegram](https://docs.openclaw.ai/channels/telegram) | [telegram.md](telegram.md) | Telegram | Telegram |
-| [/channels/troubleshooting](https://docs.openclaw.ai/channels/troubleshooting) | [channel-troubleshooting.md](channel-troubleshooting.md) | Channel troubleshooting | 通道故障排查 |
+| [/channels/troubleshooting](https://docs.openclaw.ai/channels/troubleshooting) | [troubleshooting.md](troubleshooting.md) | Channel troubleshooting | 通道故障排查 |
 | [/channels/wechat](https://docs.openclaw.ai/channels/wechat) | [wechat.md](wechat.md) | WeChat | 微信 |
 | [/channels/whatsapp](https://docs.openclaw.ai/channels/whatsapp) | [whatsapp.md](whatsapp.md) | WhatsApp | WhatsApp |
 
