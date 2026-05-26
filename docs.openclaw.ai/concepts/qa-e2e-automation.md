@@ -650,7 +650,7 @@ pnpm openclaw qa slack
 
 > Go to [api.slack.com/apps](https://api.slack.com/apps) → *Create New App* → *From a manifest* → pick the QA workspace, paste the following manifest, then *Install to Workspace*:
 
-去 [api.slack.com/apps](https://api.slack.com/apps) → *Create New App* → *From a manifest* → 选 QA 工作区，粘贴下面的 manifest，然后 *Install to Workspace*：
+去 [api.slack.com/apps](https://api.slack.com/apps) → *Create New App* → *From a manifest*,选 QA 工作区,把下面这份 manifest 粘进去,然后点 *Install to Workspace*:
 
 > ```json
 > {
@@ -700,7 +700,7 @@ pnpm openclaw qa slack
 
 > Copy the *Bot User OAuth Token* (`xoxb-...`) - that becomes `driverBotToken`. The driver only needs to post messages and identify itself; no events, no Socket Mode.
 
-复制 *Bot User OAuth Token*（`xoxb-...`）—— 那就是 `driverBotToken`。driver 只需要发消息和识别自己；不需要事件，也不需要 Socket Mode。
+把 *Bot User OAuth Token*(`xoxb-...`)复制出来,这就是 `driverBotToken`。driver 只要能发消息、能报自己身份就行,不接事件、也不开 Socket Mode。
 
 > **2. Create the SUT app**
 
@@ -708,7 +708,7 @@ pnpm openclaw qa slack
 
 > Repeat *Create New App → From a manifest* in the same workspace. This QA app intentionally uses a narrower version of the bundled Slack plugin's production manifest (`extensions/slack/src/setup-shared.ts:10`): reaction scopes and events are omitted because the live Slack QA suite does not cover reaction handling yet.
 
-在同一个工作区重复 *Create New App → From a manifest*。这个 QA app 刻意用比内置 Slack 插件生产 manifest（`extensions/slack/src/setup-shared.ts:10`）更窄的版本：反应作用域和事件省了，因为实时 Slack QA 套件目前不覆盖反应处理。
+在同一个工作区里再来一次 *Create New App → From a manifest*。下面这份 QA app 的 manifest 比内置 Slack 插件的生产版(`extensions/slack/src/setup-shared.ts:10`)窄一截 —— 反应相关的权限和事件都省了,因为实时 Slack QA 套件暂时不覆盖反应处理。
 
 > ```json
 > {
@@ -845,14 +845,14 @@ pnpm openclaw qa slack
 > * *Install to Workspace* → copy the *Bot User OAuth Token* → that becomes `sutBotToken`.
 > * *Basic Information → App-Level Tokens → Generate Token and Scopes* → add scope `connections:write` → save → copy the `xapp-...` value → that becomes `sutAppToken`.
 
-Slack 把 app 建好后，在它的设置页做两件事：
+Slack 把这个 app 建好之后,在它的设置页做两件事:
 
-- *Install to Workspace* → 复制 *Bot User OAuth Token* → 那就是 `sutBotToken`。
-- *Basic Information → App-Level Tokens → Generate Token and Scopes* → 加作用域 `connections:write` → 保存 → 复制 `xapp-...` 值 → 那就是 `sutAppToken`。
+- *Install to Workspace*,复制 *Bot User OAuth Token*,这就是 `sutBotToken`。
+- *Basic Information → App-Level Tokens → Generate Token and Scopes*,加一个 `connections:write` 权限,保存,把 `xapp-...` 那串复制出来,这就是 `sutAppToken`。
 
 > Verify the two bots have distinct user ids by calling `auth.test` on each token. The runtime distinguishes driver and SUT by user id; reusing one app for both will fail mention-gating immediately.
 
-调每个 token 的 `auth.test` 验证两个机器人的 user id 不一样。runtime 靠 user id 区分 driver 和 SUT；用同一个 app 同时充当两者会让 @ 提及触发立刻失败。
+拿两个 token 各调一次 `auth.test`,确认两个机器人的 user id 真的不一样。运行时是靠 user id 来区分 driver 和 SUT 的;一个 app 兼任两个角色,@ 提及触发立刻就会失败。
 
 > **3. Create the channel**
 
@@ -865,7 +865,7 @@ Slack 把 app 建好后，在它的设置页做两件事：
 > /invite @OpenClaw QA SUT
 > ```
 
-在 QA 工作区里创建一个频道（如 `#openclaw-qa`），从频道内部邀请两个机器人：
+在 QA 工作区里建一个频道(比如 `#openclaw-qa`),进频道之后把两个机器人都邀请进来:
 
 ```
 /invite @OpenClaw QA Driver
@@ -874,7 +874,7 @@ Slack 把 app 建好后，在它的设置页做两件事：
 
 > Copy the `Cxxxxxxxxxx` id from *channel info → About → Channel ID* - that becomes `channelId`. A public channel works; if you use a private channel both apps already have `groups:history` so the harness's history reads will still succeed.
 
-从 *channel info → About → Channel ID* 复制 `Cxxxxxxxxxx` id —— 那就是 `channelId`。公开频道可以；用私有频道也行，两个 app 都有 `groups:history`，harness 的历史读取仍然能成功。
+从 *channel info → About → Channel ID* 把 `Cxxxxxxxxxx` 复制出来 —— 这就是 `channelId`。公开频道可以;用私有频道也行,两个 app 都申请了 `groups:history`,harness 读历史仍然能读到。
 
 > **4. Register the credentials**
 
@@ -882,7 +882,7 @@ Slack 把 app 建好后，在它的设置页做两件事：
 
 > Two options. Use env vars for single-machine debugging (set the four `OPENCLAW_QA_SLACK_*` variables and pass `--credential-source env`), or seed the shared Convex pool so CI and other maintainers can lease them.
 
-两种选择：单机调试用环境变量（设那四个 `OPENCLAW_QA_SLACK_*` 变量并传 `--credential-source env`），或者播种到共享 Convex 池供 CI 和其他维护者租用。
+有两种选择。单机调试就用环境变量(把那四个 `OPENCLAW_QA_SLACK_*` 设好,跑命令时加 `--credential-source env`);要让 CI 和其他维护者也能拿到,就预置到共享的 Convex 池里租用。
 
 > For the Convex pool, write the four fields to a JSON file:
 >
@@ -895,7 +895,7 @@ Slack 把 app 建好后，在它的设置页做两件事：
 > }
 > ```
 
-走 Convex 池的话，把四个字段写到 JSON 文件里：
+走 Convex 池的话,把这四个字段写进一个 JSON 文件:
 
 ```json
 {
@@ -917,7 +917,7 @@ Slack 把 app 建好后，在它的设置页做两件事：
 > pnpm openclaw qa credentials list --kind slack --status all --json
 > ```
 
-shell 里 export `OPENCLAW_QA_CONVEX_SITE_URL` 和 `OPENCLAW_QA_CONVEX_SECRET_MAINTAINER` 后，注册并验证：
+在 shell 里 export 好 `OPENCLAW_QA_CONVEX_SITE_URL` 和 `OPENCLAW_QA_CONVEX_SECRET_MAINTAINER`,然后注册并验证:
 
 ```bash
 pnpm openclaw qa credentials add \
@@ -930,7 +930,7 @@ pnpm openclaw qa credentials list --kind slack --status all --json
 
 > Expect `count: 1`, `status: "active"`, no `lease` field.
 
-预期 `count: 1`、`status: "active"`、没有 `lease` 字段。
+应该看到 `count: 1`、`status: "active"`、没有 `lease` 字段。
 
 > **5. Verify end to end**
 
@@ -945,7 +945,7 @@ pnpm openclaw qa credentials list --kind slack --status all --json
 >   --output-dir .artifacts/qa-e2e/slack-local
 > ```
 
-本地跑一次队列，确认两个机器人能通过 broker 互相对话：
+本地跑一次这条通路,看看两个机器人能不能通过 broker 互相说话:
 
 ```bash
 pnpm openclaw qa slack \
@@ -956,7 +956,7 @@ pnpm openclaw qa slack \
 
 > A green run completes in well under 30 seconds and `slack-qa-report.md` shows both `slack-canary` and `slack-mention-gating` at status `pass`. If the lane hangs for \~90 seconds and exits with `Convex credential pool exhausted for kind "slack"`, either the pool is empty or every row is leased - `qa credentials list --kind slack --status all --json` will tell you which.
 
-绿色一次跑在 30 秒以内完成，`slack-qa-report.md` 里 `slack-canary` 和 `slack-mention-gating` 状态都是 `pass`。队列卡 \~90 秒后以 `Convex credential pool exhausted for kind "slack"` 退出，要么池空了，要么每行都被租了 ——`qa credentials list --kind slack --status all --json` 会告诉你是哪种情况。
+一次跑通常 30 秒内就好,`slack-qa-report.md` 里 `slack-canary` 和 `slack-mention-gating` 应该都是 `pass`。如果卡了大约 90 秒、然后报 `Convex credential pool exhausted for kind "slack"` 退出,要么池子是空的、要么每条凭证都被租走了 —— `qa credentials list --kind slack --status all --json` 能告诉你具体是哪种。
 
 > ### Convex credential pool
 
@@ -964,7 +964,7 @@ pnpm openclaw qa slack \
 
 > Telegram, Discord, Slack, and WhatsApp lanes can lease credentials from a shared Convex pool instead of reading the env vars above. Pass `--credential-source convex` (or set `OPENCLAW_QA_CREDENTIAL_SOURCE=convex`); QA Lab acquires an exclusive lease, heartbeats it for the duration of the run, and releases it on shutdown. Pool kinds are `"telegram"`, `"discord"`, `"slack"`, and `"whatsapp"`.
 
-Telegram、Discord、Slack 和 WhatsApp 队列可以从共享 Convex 池租凭证，不用读上面的环境变量。传 `--credential-source convex`（或设 `OPENCLAW_QA_CREDENTIAL_SOURCE=convex`）；QA Lab 拿一个独占 lease，运行期间心跳保持，关停时释放。池的 kind 是 `"telegram"`、`"discord"`、`"slack"`、`"whatsapp"`。
+Telegram / Discord / Slack / WhatsApp 这几条通路可以不读上面那些环境变量,改从共享的 Convex 池里租凭证。加 `--credential-source convex`(或设 `OPENCLAW_QA_CREDENTIAL_SOURCE=convex`);QA Lab 会拿一份独占的租约,运行期间每隔一段心跳一次,跑完关停时释放。池子的 kind 有 `"telegram"`、`"discord"`、`"slack"`、`"whatsapp"`。
 
 > Payload shapes the broker validates on `admin/add`:
 >
@@ -973,12 +973,12 @@ Telegram、Discord、Slack 和 WhatsApp 队列可以从共享 Convex 池租凭�
 > * Discord (`kind: "discord"`): `{ guildId: string, channelId: string, driverBotToken: string, sutBotToken: string, sutApplicationId: string }`.
 > * WhatsApp (`kind: "whatsapp"`): `{ driverPhoneE164: string, sutPhoneE164: string, driverAuthArchiveBase64: string, sutAuthArchiveBase64: string, groupJid?: string }` - phone numbers must be distinct E.164 strings.
 
-broker 在 `admin/add` 时校验的载荷形状：
+broker 在 `admin/add` 时会校验的载荷形态:
 
-- Telegram（`kind: "telegram"`）：`{ groupId: string, driverToken: string, sutToken: string }` ——`groupId` 必须是数字 chat-id 字符串。
-- Telegram 真实用户（`kind: "telegram-user"`）：`{ groupId: string, sutToken: string, testerUserId: string, testerUsername: string, telegramApiId: string, telegramApiHash: string, tdlibDatabaseEncryptionKey: string, tdlibArchiveBase64: string, tdlibArchiveSha256: string, desktopTdataArchiveBase64: string, desktopTdataArchiveSha256: string }` —— 一份独占的 burner 账号 lease，由 TDLib CLI driver 和 Telegram Desktop 可视见证人共同使用。
-- Discord（`kind: "discord"`）：`{ guildId: string, channelId: string, driverBotToken: string, sutBotToken: string, sutApplicationId: string }`。
-- WhatsApp（`kind: "whatsapp"`）：`{ driverPhoneE164: string, sutPhoneE164: string, driverAuthArchiveBase64: string, sutAuthArchiveBase64: string, groupJid?: string }` —— 电话号码必须是不同的 E.164 字符串。
+- Telegram(`kind: "telegram"`):`{ groupId: string, driverToken: string, sutToken: string }` —— `groupId` 必须是数字 chat-id 的字符串形式。
+- Telegram 真实用户(`kind: "telegram-user"`):`{ groupId: string, sutToken: string, testerUserId: string, testerUsername: string, telegramApiId: string, telegramApiHash: string, tdlibDatabaseEncryptionKey: string, tdlibArchiveBase64: string, tdlibArchiveSha256: string, desktopTdataArchiveBase64: string, desktopTdataArchiveSha256: string }` —— 一份独占的 burner 账号租约,TDLib CLI driver 和 Telegram Desktop 可视旁观人共用一份。
+- Discord(`kind: "discord"`):`{ guildId: string, channelId: string, driverBotToken: string, sutBotToken: string, sutApplicationId: string }`。
+- WhatsApp(`kind: "whatsapp"`):`{ driverPhoneE164: string, sutPhoneE164: string, driverAuthArchiveBase64: string, sutAuthArchiveBase64: string, groupJid?: string }` —— 两个电话号码必须是不同的 E.164 字符串。
 
 > For visual real-user Telegram proof, prefer a held Crabbox session:
 >
@@ -988,7 +988,7 @@ broker 在 `admin/add` 时校验的载荷形状：
 > pnpm qa:telegram-user:crabbox -- finish --session .artifacts/qa-e2e/telegram-user-crabbox/pr-review/session.json
 > ```
 
-可视化的真实用户 Telegram 证明用持有的 Crabbox session：
+想给真实用户的 Telegram 留可视证据,优先用一份持续保持的 Crabbox session:
 
 ```bash
 pnpm qa:telegram-user:crabbox -- start --tdlib-url http://artifacts.openclaw.ai/tdlib-v1.8.0-linux-x64.tgz --output-dir .artifacts/qa-e2e/telegram-user-crabbox/pr-review
@@ -998,19 +998,19 @@ pnpm qa:telegram-user:crabbox -- finish --session .artifacts/qa-e2e/telegram-use
 
 > `start` holds one exclusive Convex `telegram-user` lease for both the TDLib CLI driver and Telegram Desktop witness, starts desktop recording, and leaves the Crabbox alive for arbitrary agent-driven repro steps. Agents can use `send`, `run`, `screenshot`, and `status` until they are satisfied, then `finish` collects the screenshot, video, motion-trimmed video/GIF, TDLib probe outputs, and logs before releasing the credential. `publish --session <file> --pr <number>` comments only the motion GIF by default; `--full-artifacts` is the explicit opt-in for logs and JSON output. The default `probe` command remains a one-command shorthand for quick `/status` smoke checks.
 
-`start` 给 TDLib CLI driver 和 Telegram Desktop 见证人各持一份独占的 Convex `telegram-user` lease，启动桌面录制，让 Crabbox 一直活着供 agent 驱动任意复现步骤。agent 可以用 `send`、`run`、`screenshot`、`status` 直到满意为止，然后 `finish` 收集截图、视频、按动作裁剪的视频 / GIF、TDLib probe 输出和日志后释放凭证。`publish --session <file> --pr <number>` 默认只评论运动 GIF；`--full-artifacts` 是显式开关，用来包含日志和 JSON 输出。默认的 `probe` 命令仍是快速 `/status` 冒烟测试的一行简写。
+`start` 会拿一份独占的 Convex `telegram-user` 租约,TDLib CLI driver 和 Telegram Desktop 旁观人共用这份,然后开桌面录制,让 Crabbox 一直活着给 agent 跑各种复现步骤。中间 agent 可以反复用 `send`、`run`、`screenshot`、`status`,直到觉得够了;最后 `finish` 把截图、视频、按动作裁过的视频 / GIF、TDLib probe 输出、日志都收齐,再释放凭证。`publish --session <file> --pr <number>` 默认只把那段动作 GIF 评论上去;想把日志和 JSON 一起带上,加 `--full-artifacts`。`probe` 还是那条用来快速 `/status` 冒烟的一行简写命令。
 
 > Use `--mock-response-file <path>` when a PR needs a deterministic visual diff: the same mock model reply can be run on `main` and on the PR head while the Telegram formatter or delivery layer changes. Capture defaults are tuned for PR comments: standard Crabbox class, 24fps desktop recording, 24fps motion GIF, and 1920px preview width. Before/after comments should publish a clean bundle that contains only the intended GIFs.
 
-PR 需要确定性可视 diff 时用 `--mock-response-file <path>`：同一份 mock 模型回复在 Telegram 格式化或投递层变更时同时跑在 `main` 和 PR head。捕获默认值针对 PR 评论调过：标准 Crabbox class、24fps 桌面录制、24fps 运动 GIF、1920px 预览宽。前后对比评论要发布一个干净的 bundle，只包含预期的 GIF。
+PR 想要确定性的可视 diff 时用 `--mock-response-file <path>`:同一份 mock 模型回复,在 `main` 和 PR head 上各跑一遍,这样 Telegram 格式化或投递层有改动时,差异一眼能看出来。录制的默认值就是按 PR 评论的需要调好的:标准 Crabbox class、24fps 桌面录制、24fps 动作 GIF、预览宽度 1920px。修前修后对比评论要发的是一份干净的资源包,里面只有预期的几个 GIF。
 
 > Slack lanes can also use the pool. Slack payload shape checks currently live in the Slack QA runner rather than the broker; use `{ channelId: string, driverBotToken: string, sutBotToken: string, sutAppToken: string }`, with a Slack channel id like `Cxxxxxxxxxx`. See [Setting up the Slack workspace](#setting-up-the-slack-workspace) for app and scope provisioning.
 
-Slack 队列也能用这个池。Slack 载荷形态校验目前在 Slack QA runner 里、不在 broker 里；用 `{ channelId: string, driverBotToken: string, sutBotToken: string, sutAppToken: string }`，Slack channel id 形如 `Cxxxxxxxxxx`。app 和作用域配置见 [配置 Slack 工作区](#setting-up-the-slack-workspace)。
+Slack 通路也能用这个池。Slack 的载荷形态目前是 Slack QA 运行器自己在校验,不在 broker 上;格式是 `{ channelId: string, driverBotToken: string, sutBotToken: string, sutAppToken: string }`,Slack channel id 长这种样:`Cxxxxxxxxxx`。app 和权限怎么配,见 [配置 Slack 工作区](#setting-up-the-slack-workspace)。
 
 > Operational env vars and the Convex broker endpoint contract live in [Testing → Shared Telegram credentials via Convex](/help/testing#shared-telegram-credentials-via-convex-v1) (the section name predates the multi-channel pool; the lease semantics are shared across kinds).
 
-运维用环境变量和 Convex broker 端点契约见 [Testing → Shared Telegram credentials via Convex](/help/testing#shared-telegram-credentials-via-convex-v1)（这个段落名字早于多通道池；lease 语义跨 kind 共享）。
+运维要用的环境变量、以及 Convex broker 端点的契约,都在 [Testing → Shared Telegram credentials via Convex](/help/testing#shared-telegram-credentials-via-convex-v1)(这个章节名比"多通道池"早出现,所以名字带 Telegram;租约语义其实是所有 kind 通用的)。
 
 ---
 
