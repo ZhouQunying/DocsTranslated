@@ -1023,14 +1023,14 @@ Slack 通路也能用这个池。Slack 的载荷形态目前是 Slack QA 运行�
 > * `qa/scenarios/index.md`
 > * `qa/scenarios/<theme>/*.md`
 
-种子资产放在 `qa/`：
+种子资产放在 `qa/` 下：
 
 - `qa/scenarios/index.md`
 - `qa/scenarios/<主题>/*.md`
 
 > These are intentionally in git so the QA plan is visible to both humans and the agent.
 
-它们刻意放在 git 里，让 QA 计划对人和 agent 都可见。
+这些资产放在 git 里是故意的：人和 agent 都能直接看到 QA 计划。
 
 > `qa-lab` should stay a generic markdown runner. Each scenario markdown file is the source of truth for one test run and should define:
 >
@@ -1041,22 +1041,22 @@ Slack 通路也能用这个池。Slack 的载荷形态目前是 Slack QA 运行�
 > * optional gateway config patch
 > * the executable `qa-flow`
 
-`qa-lab` 应该保持通用的 markdown runner。每个场景 markdown 文件是一次测试运行的权威源，应当定义：
+`qa-lab` 应该保持为一个通用的 markdown 执行器。每个场景 markdown 文件是一次测试的单一事实来源，需要定义：
 
 - 场景元数据
-- 可选的分类、能力、队列、风险元数据
+- 可选的分类、能力、通路、风险元数据
 - 文档和代码引用
 - 可选的插件需求
-- 可选的 Gateway 配置 patch
+- 可选的 Gateway 配置补丁
 - 可执行的 `qa-flow`
 
 > The reusable runtime surface that backs `qa-flow` is allowed to stay generic and cross-cutting. For example, markdown scenarios can combine transport-side helpers with browser-side helpers that drive the embedded Control UI through the Gateway `browser.request` seam without adding a special-case runner.
 
-支撑 `qa-flow` 的可复用运行时面允许保持通用、跨切面。比如 markdown 场景可以把传输侧辅助函数和浏览器侧辅助函数组合起来，通过 Gateway 的 `browser.request` 接缝驱动内嵌 Control UI，不必加特例运行器。
+支撑 `qa-flow` 的可复用运行时层允许保持通用、跨切面。举个例子：markdown 场景可以把传输侧辅助和浏览器侧辅助组合起来，通过 Gateway 的 `browser.request` 接缝驱动内嵌的 Control UI，不用专门为这种场景加一个运行器。
 
 > Scenario files should be grouped by product capability rather than source tree folder. Keep scenario IDs stable when files move; use `docsRefs` and `codeRefs` for implementation traceability.
 
-场景文件应按产品能力分组，不按源代码树文件夹。文件移动时保持场景 ID 稳定；用 `docsRefs` 和 `codeRefs` 做实现可追溯。
+场景文件按产品能力分组，不按源码目录树分组。文件移动后保持场景 ID 不变；用 `docsRefs` 和 `codeRefs` 来做实现追溯。
 
 > The baseline list should stay broad enough to cover:
 >
@@ -1070,17 +1070,17 @@ Slack 通路也能用这个池。Slack 的载荷形态目前是 Slack QA 运行�
 > * repo-reading and docs-reading
 > * one small build task such as Lobster Invaders
 
-基线列表应当宽到能覆盖：
+基线覆盖范围要足够宽，至少包含：
 
-- DM 和频道聊天
+- 私聊和频道聊天
 - thread 行为
 - 消息动作生命周期
 - cron 回调
 - 记忆召回
 - 模型切换
-- sub-agent 接力
-- 读仓库和读文档
-- 一项小型构建任务（比如 Lobster Invaders）
+- subagent 交接
+- 读仓库、读文档
+- 一个小型构建任务（比如 Lobster Invaders）
 
 ---
 
@@ -1095,12 +1095,12 @@ Slack 通路也能用这个池。Slack 的载荷形态目前是 Slack QA 运行�
 
 `qa suite` 有两条本地 provider mock 通路：
 
-- `mock-openai` 是 OpenClaw 自己的、场景感知的 mock。仍然是仓库内 QA 和 parity 闸门的默认确定性 mock 队列。
-- `aimock` 启动 AIMock 支持的 provider server，用于实验性协议、fixture、record/replay 和混沌覆盖。它是增量的，不替代 `mock-openai` 的场景分发器。
+- `mock-openai` 是 OpenClaw 自带的场景感知 mock，仍然是仓库内 QA 和 parity 闸门的默认确定性 mock 通路。
+- `aimock` 启动基于 AIMock 的 provider server，覆盖实验性协议、fixture、录制/回放和混沌测试。它是增量补充，不会替换 `mock-openai` 的场景分发器。
 
 > Provider-lane implementation lives under `extensions/qa-lab/src/providers/`. Each provider owns its defaults, local server startup, gateway model config, auth-profile staging needs, and live/mock capability flags. Shared suite and gateway code should route through the provider registry instead of branching on provider names.
 
-Provider 通路的实现在 `extensions/qa-lab/src/providers/` 下。每个 provider 拥有自己的默认值、本地 server 启动、Gateway 模型配置、认证 profile 暂存需求、实时 / mock 能力标志。共享的 suite 和 Gateway 代码应通过 provider 注册表路由，不要按 provider 名分支。
+Provider 通路实现放在 `extensions/qa-lab/src/providers/` 下。每个 provider 维护自己的默认值、本地 server 启动逻辑、Gateway 模型配置、认证 profile 的暂存需求，以及 live/mock 能力标志位。共享的 suite 和 Gateway 代码应通过 provider 注册表来路由，不要按 provider 名称做分支。
 
 ---
 
@@ -1110,7 +1110,7 @@ Provider 通路的实现在 `extensions/qa-lab/src/providers/` 下。每个 prov
 
 > `qa-lab` owns a generic transport seam for markdown QA scenarios. `qa-channel` is the first adapter on that seam, but the design target is wider: future real or synthetic channels should plug into the same suite runner instead of adding a transport-specific QA runner.
 
-`qa-lab` 拥有 markdown QA 场景的通用传输接缝。`qa-channel` 是这道接缝上的第一个适配器，但设计目标更宽：未来的真实或合成通道应该接到同一个 suite runner，而不是加一个针对传输的 QA 运行器。
+`qa-lab` 提供了一个面向 markdown QA 场景的通用传输接缝。`qa-channel` 是这条接缝上的第一个适配器，但设计目标更广：未来不管是真实通道还是合成通道，都应该接入同一个 suite runner，而不是每来一个传输就加一个专属 QA 运行器。
 
 > At the architecture level, the split is:
 >
@@ -1118,29 +1118,29 @@ Provider 通路的实现在 `extensions/qa-lab/src/providers/` 下。每个 prov
 > * The transport adapter owns gateway config, readiness, inbound and outbound observation, transport actions, and normalized transport state.
 > * Markdown scenario files under `qa/scenarios/` define the test run; `qa-lab` provides the reusable runtime surface that executes them.
 
-架构上的切分：
+在架构层面，职责划分如下：
 
-- `qa-lab` 拥有通用场景执行、worker 并发、产物写入、报告。
-- 传输适配器拥有 Gateway 配置、就绪、接收和发送观察、传输动作、归一化传输状态。
-- `qa/scenarios/` 下的 markdown 场景文件定义测试运行；`qa-lab` 提供执行它们的可复用运行时面。
+- `qa-lab` 负责通用场景执行、worker 并发、产物写入和报告生成。
+- 传输适配器负责 Gateway 配置、就绪检查、收发观测、传输动作和归一化的传输状态。
+- `qa/scenarios/` 下的 markdown 场景文件定义测试内容；`qa-lab` 提供执行它们的可复用运行时层。
 
 > ### Adding a channel
 
-### 加一个通道
+### 接入一个通道
 
 > Adding a channel to the markdown QA system requires exactly two things:
 >
 > 1. A transport adapter for the channel.
 > 2. A scenario pack that exercises the channel contract.
 
-往 markdown QA 系统里加一个通道，正好需要两样东西：
+往 markdown QA 系统里接入一个新通道，只需要两样东西：
 
 1. 该通道的传输适配器。
-2. 一组练这个通道契约的场景。
+2. 一组覆盖该通道契约的场景。
 
 > Do not add a new top-level QA command root when the shared `qa-lab` host can own the flow.
 
-共享 `qa-lab` 主机能承载这个流程时，不要加新的顶层 QA 命令根。
+共享的 `qa-lab` 宿主已经能承载这个流程时，不要再加新的顶级 QA 命令根。
 
 > `qa-lab` owns the shared host mechanics:
 >
@@ -1152,15 +1152,15 @@ Provider 通路的实现在 `extensions/qa-lab/src/providers/` 下。每个 prov
 > * scenario execution
 > * compatibility aliases for older `qa-channel` scenarios
 
-`qa-lab` 拥有共享主机机制：
+`qa-lab` 掌握共享宿主机制：
 
 - `openclaw qa` 命令根
-- suite 启动和拆除
-- worker 并发
+- suite 启动与拆除
+- worker 并发控制
 - 产物写入
 - 报告生成
 - 场景执行
-- 老 `qa-channel` 场景的兼容别名
+- 旧版 `qa-channel` 场景的兼容别名
 
 > Runner plugins own the transport contract:
 >
@@ -1173,16 +1173,16 @@ Provider 通路的实现在 `extensions/qa-lab/src/providers/` 下。每个 prov
 > * how transport-backed actions are executed
 > * how transport-specific reset or cleanup is handled
 
-Runner 插件拥有传输契约：
+Runner 插件掌握传输契约：
 
-- `openclaw qa <runner>` 怎么挂在共享 `qa` 根下
-- 该传输的 Gateway 怎么配置
-- 怎么检查就绪
-- 怎么注入接收事件
-- 怎么观察发送消息
-- 怎么暴露 transcript 和归一化传输状态
-- 怎么执行传输背书的动作
-- 怎么处理传输专属的重置或清理
+- `openclaw qa <runner>` 如何挂载到共享 `qa` 根下
+- 该传输的 Gateway 如何配置
+- 就绪状态如何检查
+- 接收事件如何注入
+- 发送消息如何观测
+- transcript 和归一化传输状态如何暴露
+- 由传输驱动的动作如何执行
+- 传输专属的重置和清理如何处理
 
 > The minimum adoption bar for a new channel:
 >
@@ -1194,15 +1194,15 @@ Runner 插件拥有传输契约：
 > 6. Use the generic scenario helpers for new scenarios.
 > 7. Keep existing compatibility aliases working unless the repo is doing an intentional migration.
 
-新通道接入的最低门槛：
+新通道的最低接入门槛：
 
-1. 让 `qa-lab` 继续做共享 `qa` 根的拥有者。
-2. 在共享的 `qa-lab` 主机接缝上实现传输 runner。
-3. 把传输专属机制放在运行器插件或通道 harness 里。
-4. 把 runner 作为 `openclaw qa <runner>` 挂载，不要注册竞争根命令。Runner 插件应当在 `openclaw.plugin.json` 里声明 `qaRunners`，并从 `runtime-api.ts` 导出对应的 `qaRunnerCliRegistrations` 数组。`runtime-api.ts` 保持轻量；懒加载的 CLI 和 runner 执行放在独立入口后面。
-5. 在主题化的 `qa/scenarios/` 目录下写或改 markdown 场景。
-6. 新场景用通用场景辅助函数。
-7. 除非仓库在做有意识的迁移，否则保留现有兼容别名。
+1. 让 `qa-lab` 继续做共享 `qa` 根的宿主。
+2. 在共享的 `qa-lab` 宿主接缝上实现传输 runner。
+3. 传输专属机制保持在 runner 插件或通道 harness 内部。
+4. 把 runner 挂载为 `openclaw qa <runner>`，不要注册与之竞争的根命令。Runner 插件应在 `openclaw.plugin.json` 中声明 `qaRunners`，并在 `runtime-api.ts` 中导出对应的 `qaRunnerCliRegistrations` 数组。`runtime-api.ts` 保持轻量；懒加载的 CLI 和 runner 执行逻辑放在独立入口背后。
+5. 在主题化的 `qa/scenarios/` 目录下编写或适配 markdown 场景。
+6. 新场景使用通用场景辅助函数。
+7. 保留现有兼容别名正常工作，除非仓库正在进行主动迁移。
 
 > The decision rule is strict:
 >
@@ -1211,12 +1211,12 @@ Runner 插件拥有传输契约：
 > * If a scenario needs a new capability that more than one channel can use, add a generic helper instead of a channel-specific branch in `suite.ts`.
 > * If a behavior is only meaningful for one transport, keep the scenario transport-specific and make that explicit in the scenario contract.
 
-决策规则严格：
+决策规则很明确：
 
-- 行为能在 `qa-lab` 里写一次的，就放 `qa-lab`。
-- 行为依赖某个具体通道传输的，留在那个运行器插件或插件 harness 里。
-- 场景需要的新能力多于一个通道能用时，加一个通用辅助函数，不要在 `suite.ts` 里加按通道分支。
-- 某行为只对一个传输有意义时，让场景保持按传输专属，并在场景契约里说清楚。
+- 如果一段行为放在 `qa-lab` 里写一次就够了，就放 `qa-lab`。
+- 如果一段行为依赖某个特定通道的传输，留在那个 runner 插件或插件 harness 里。
+- 如果一个场景需要的新能力不止一个通道能用到，加一个通用辅助函数，不要在 `suite.ts` 里写按通道分支的逻辑。
+- 如果某个行为只对一种传输有意义，让场景保持传输专属，并在场景契约中明确说明。
 
 > ### Scenario helper names
 
@@ -1254,7 +1254,7 @@ Runner 插件拥有传输契约：
 
 > Compatibility aliases remain available for existing scenarios - `waitForQaChannelReady`, `waitForOutboundMessage`, `waitForNoOutbound`, `formatConversationTranscript`, `resetBus` - but new scenario authoring should use the generic names. The aliases exist to avoid a flag-day migration, not as the model going forward.
 
-兼容别名仍然为已有场景可用 ——`waitForQaChannelReady`、`waitForOutboundMessage`、`waitForNoOutbound`、`formatConversationTranscript`、`resetBus` —— 但新场景应当用通用名。别名存在是为了避免一刀切迁移，不是未来的模型。
+兼容别名仍然可供已有场景使用——`waitForQaChannelReady`、`waitForOutboundMessage`、`waitForNoOutbound`、`formatConversationTranscript`、`resetBus`——但新场景应该用通用名称。这些别名只是为了不搞一刀切迁移，不是未来的设计方向。
 
 ---
 
@@ -1269,7 +1269,7 @@ Runner 插件拥有传输契约：
 > * What stayed blocked
 > * What follow-up scenarios are worth adding
 
-`qa-lab` 从观察到的总线时间线里导出一份 Markdown 协议报告。报告要回答：
+`qa-lab` 从观测到的事件总线时间线上导出一份 Markdown 协议报告。报告要回答：
 
 - 哪些通过了
 - 哪些失败了
@@ -1278,7 +1278,13 @@ Runner 插件拥有传输契约：
 
 > For the inventory of available scenarios - useful when sizing follow-up work or wiring a new transport - run `pnpm openclaw qa coverage` (add `--json` for machine-readable output).
 
-要看可用场景清单 —— 评估跟进工作或接入新传输时有用 —— 跑 `pnpm openclaw qa coverage`（加 `--json` 输出机器可读格式）。
+要看可用场景清单 —— 评估跟进工作量或接入新传输时有用 —— 跑 `pnpm openclaw qa coverage`（加 `--json` 输出机器可读格式）。
+
+> When choosing focused proof for a touched behavior or file path, run `pnpm openclaw qa coverage --match <query>`.
+> The match report searches scenario metadata, docs refs, code refs, coverage IDs, plugins, and provider requirements, then prints matching `qa suite --scenario ...` targets.
+> Treat it as a discovery aid, not a gate replacement; the selected scenario still needs the right provider mode, live transport, Multipass, Testbox, or release lane for the behavior under test.
+
+需要为某个改动的行为或文件路径找对应的覆盖证明时，跑 `pnpm openclaw qa coverage --match <query>`。匹配报告会搜索场景元数据、文档引用、代码引用、coverage ID、插件和 provider 需求，然后打印匹配到的 `qa suite --scenario ...` 目标。把它当发现辅助工具用，不要当门禁替代品；选出的场景还需要搭配合适的 provider 模式、live 传输、Multipass、Testbox 或 release 通路才能覆盖被测行为。
 
 > For character and style checks, run the same scenario across multiple live model refs and write a judged Markdown report:
 >
@@ -1287,40 +1293,40 @@ Runner 插件拥有传输契约：
 >   --model openai/gpt-5.5,thinking=medium,fast \
 >   --model openai/gpt-5.2,thinking=xhigh \
 >   --model openai/gpt-5,thinking=xhigh \
->   --model anthropic/claude-opus-4-6,thinking=high \
+>   --model anthropic/claude-opus-4-7,thinking=high \
 >   --model anthropic/claude-sonnet-4-6,thinking=high \
 >   --model zai/glm-5.1,thinking=high \
 >   --model moonshot/kimi-k2.5,thinking=high \
 >   --model google/gemini-3.1-pro-preview,thinking=high \
 >   --judge-model openai/gpt-5.5,thinking=xhigh,fast \
->   --judge-model anthropic/claude-opus-4-6,thinking=high \
+>   --judge-model anthropic/claude-opus-4-7,thinking=high \
 >   --blind-judge-models \
 >   --concurrency 16 \
 >   --judge-concurrency 16
 > ```
 
-人格和风格检查时，把同一个场景跨多个在线模型 ref 跑，写一份带评审的 Markdown 报告：
+做角色和风格检查时，把同一个场景跨多个在线模型 ref 跑，然后生成一份带评审的 Markdown 报告：
 
 ```bash
 pnpm openclaw qa character-eval \
   --model openai/gpt-5.5,thinking=medium,fast \
   --model openai/gpt-5.2,thinking=xhigh \
   --model openai/gpt-5,thinking=xhigh \
-  --model anthropic/claude-opus-4-6,thinking=high \
+  --model anthropic/claude-opus-4-7,thinking=high \
   --model anthropic/claude-sonnet-4-6,thinking=high \
   --model zai/glm-5.1,thinking=high \
   --model moonshot/kimi-k2.5,thinking=high \
   --model google/gemini-3.1-pro-preview,thinking=high \
   --judge-model openai/gpt-5.5,thinking=xhigh,fast \
-  --judge-model anthropic/claude-opus-4-6,thinking=high \
+  --judge-model anthropic/claude-opus-4-7,thinking=high \
   --blind-judge-models \
   --concurrency 16 \
   --judge-concurrency 16
 ```
 
-> The command runs local QA gateway child processes, not Docker. Character eval scenarios should set the persona through `SOUL.md`, then run ordinary user turns such as chat, workspace help, and small file tasks. The candidate model should not be told that it is being evaluated. The command preserves each full transcript, records basic run stats, then asks the judge models in fast mode with `xhigh` reasoning where supported to rank the runs by naturalness, vibe, and humor. Use `--blind-judge-models` when comparing providers: the judge prompt still gets every transcript and run status, but candidate refs are replaced with neutral labels such as `candidate-01`; the report maps rankings back to real refs after parsing. Candidate runs default to `high` thinking, with `medium` for GPT-5.5 and `xhigh` for older OpenAI eval refs that support it. Override a specific candidate inline with `--model provider/model,thinking=<level>`. `--thinking <level>` still sets a global fallback, and the older `--model-thinking <provider/model=level>` form is kept for compatibility. OpenAI candidate refs default to fast mode so priority processing is used where the provider supports it. Add `,fast`, `,no-fast`, or `,fast=false` inline when a single candidate or judge needs an override. Pass `--fast` only when you want to force fast mode on for every candidate model. Candidate and judge durations are recorded in the report for benchmark analysis, but judge prompts explicitly say not to rank by speed. Candidate and judge model runs both default to concurrency 16. Lower `--concurrency` or `--judge-concurrency` when provider limits or local gateway pressure make a run too noisy. When no candidate `--model` is passed, the character eval defaults to `openai/gpt-5.5`, `openai/gpt-5.2`, `openai/gpt-5`, `anthropic/claude-opus-4-6`, `anthropic/claude-sonnet-4-6`, `zai/glm-5.1`, `moonshot/kimi-k2.5`, and `google/gemini-3.1-pro-preview` when no `--model` is passed. When no `--judge-model` is passed, the judges default to `openai/gpt-5.5,thinking=xhigh,fast` and `anthropic/claude-opus-4-6,thinking=high`.
+> The command runs local QA gateway child processes, not Docker. Character eval scenarios should set the persona through `SOUL.md`, then run ordinary user turns such as chat, workspace help, and small file tasks. The candidate model should not be told that it is being evaluated. The command preserves each full transcript, records basic run stats, then asks the judge models in fast mode with `xhigh` reasoning where supported to rank the runs by naturalness, vibe, and humor. Use `--blind-judge-models` when comparing providers: the judge prompt still gets every transcript and run status, but candidate refs are replaced with neutral labels such as `candidate-01`; the report maps rankings back to real refs after parsing. Candidate runs default to `high` thinking, with `medium` for GPT-5.5 and `xhigh` for older OpenAI eval refs that support it. Override a specific candidate inline with `--model provider/model,thinking=<level>`. `--thinking <level>` still sets a global fallback, and the older `--model-thinking <provider/model=level>` form is kept for compatibility. OpenAI candidate refs default to fast mode so priority processing is used where the provider supports it. Add `,fast`, `,no-fast`, or `,fast=false` inline when a single candidate or judge needs an override. Pass `--fast` only when you want to force fast mode on for every candidate model. Candidate and judge durations are recorded in the report for benchmark analysis, but judge prompts explicitly say not to rank by speed. Candidate and judge model runs both default to concurrency 16. Lower `--concurrency` or `--judge-concurrency` when provider limits or local gateway pressure make a run too noisy. When no candidate `--model` is passed, the character eval defaults to `openai/gpt-5.5`, `openai/gpt-5.2`, `openai/gpt-5`, `anthropic/claude-opus-4-7`, `anthropic/claude-sonnet-4-6`, `zai/glm-5.1`, `moonshot/kimi-k2.5`, and `google/gemini-3.1-pro-preview` when no `--model` is passed. When no `--judge-model` is passed, the judges default to `openai/gpt-5.5,thinking=xhigh,fast` and `anthropic/claude-opus-4-7,thinking=high`.
 
-这条命令跑本地 QA Gateway 子进程，不走 Docker。人格 eval 场景应当通过 `SOUL.md` 设定 persona，然后跑常规用户轮次：聊天、工作区求助、小文件任务。候选模型不要被告知它正在被评测。命令保留每份完整 transcript、记录基本运行统计，然后让评审模型在 fast 模式（支持的地方加 `xhigh` reasoning）按自然度、氛围、幽默对各次运行排名。比较 provider 时用 `--blind-judge-models`：评审 prompt 仍然拿到每份 transcript 和运行状态，但候选 ref 被换成 `candidate-01` 这种中性标签；报告解析后把排名映射回真实 ref。候选运行默认 `high` thinking；GPT-5.5 用 `medium`；支持的旧 OpenAI eval ref 用 `xhigh`。要覆盖具体候选用 `--model provider/model,thinking=<level>`。`--thinking <level>` 仍然设全局回退；旧形式 `--model-thinking <provider/model=level>` 保留兼容。OpenAI 候选 ref 默认 fast 模式，让 provider 支持的地方使用优先处理。某个候选或评审需要单独覆盖时加 `,fast`、`,no-fast`、`,fast=false`。`--fast` 只在你想让所有候选都强制 fast 时用。候选和评审时长会记录在报告里做基准分析，但评审 prompt 明确说不要按速度排名。候选和评审模型运行默认并发 16。provider 限速或本地 Gateway 压力让运行太嘈杂时调低 `--concurrency` 或 `--judge-concurrency`。没传候选 `--model` 时，character eval 默认是 `openai/gpt-5.5`、`openai/gpt-5.2`、`openai/gpt-5`、`anthropic/claude-opus-4-6`、`anthropic/claude-sonnet-4-6`、`zai/glm-5.1`、`moonshot/kimi-k2.5`、`google/gemini-3.1-pro-preview`。没传 `--judge-model` 时，评审默认 `openai/gpt-5.5,thinking=xhigh,fast` 和 `anthropic/claude-opus-4-6,thinking=high`。
+这条命令跑的是本地 QA Gateway 子进程，不是 Docker。角色评测场景应通过 `SOUL.md` 设定 persona，然后跑常规用户交互：聊天、工作区求助、小文件任务。候选模型不应该知道自己在被评测。命令保留每份完整 transcript、记录基本运行统计，然后让评审模型在 fast 模式（支持的地方加 `xhigh` reasoning）按自然度、氛围感和幽默感对各次运行排名。跨 provider 对比时用 `--blind-judge-models`：评审 prompt 仍然拿到每份 transcript 和运行状态，但候选 ref 被替换成 `candidate-01` 这样的中性标签；报告解析后会把排名重新映射回真实的 ref。候选运行默认使用 `high` 推理，GPT-5.5 用 `medium`，支持的旧 OpenAI eval ref 用 `xhigh`。要覆盖某个具体候选人，行内加 `--model provider/model,thinking=<level>`。`--thinking <level>` 仍然作为全局回退，旧格式 `--model-thinking <provider/model=level>` 保留兼容。OpenAI 候选 ref 默认 fast 模式，让 provider 支持的地方使用优先处理。某个候选或评审需要单独覆盖时，行内加 `,fast`、`,no-fast` 或 `,fast=false`。`--fast` 只在你希望强制所有候选都开 fast 时用。候选和评审的耗时会被记录在报告里供基准分析，但评审 prompt 明确要求不要按速度排名。候选和评审模型运行默认并发 16。如果 provider 限速或本地 Gateway 压力导致运行太嘈杂，可以调低 `--concurrency` 或 `--judge-concurrency`。没传候选 `--model` 时，character eval 默认使用 `openai/gpt-5.5`、`openai/gpt-5.2`、`openai/gpt-5`、`anthropic/claude-opus-4-7`、`anthropic/claude-sonnet-4-6`、`zai/glm-5.1`、`moonshot/kimi-k2.5` 和 `google/gemini-3.1-pro-preview`。没传 `--judge-model` 时，评审默认使用 `openai/gpt-5.5,thinking=xhigh,fast` 和 `anthropic/claude-opus-4-7,thinking=high`。
 
 ---
 
@@ -1329,11 +1335,13 @@ pnpm openclaw qa character-eval \
 ## 相关文档
 
 > * [Matrix QA](/concepts/qa-matrix)
+> * [Personal agent benchmark pack](/concepts/personal-agent-benchmark-pack)
 > * [QA Channel](/channels/qa-channel)
 > * [Testing](/help/testing)
 > * [Dashboard](/web/dashboard)
 
 - [Matrix QA](/concepts/qa-matrix)
+- [Personal agent benchmark pack](/concepts/personal-agent-benchmark-pack)
 - [QA Channel](/channels/qa-channel)
 - [Testing](/help/testing)
 - [Dashboard](/web/dashboard)
