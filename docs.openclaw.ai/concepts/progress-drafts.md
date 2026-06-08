@@ -2,11 +2,11 @@
 
 > Progress drafts make long-running agent turns feel alive in chat without turning the conversation into a stack of temporary status replies.
 
-进度草稿（progress 草稿）让长时 agent 轮次在聊天里"活着"，又不会把对话堆成一摞临时状态回复。
+进度草稿让长时 agent 轮次在聊天里保持活跃，又不会把对话堆成一摞临时状态回复。
 
 > When progress drafts are enabled, OpenClaw creates one visible work-in-progress message only after the turn proves it is doing real work, updates it while the agent reads, plans, calls tools, or waits for approval, and then turns that draft into the final answer when the channel can do that safely.
 
-启用进度草稿后，只有当轮次证明它确实在干活时，OpenClaw 才创建一条可见的"工作中"消息；agent 在读、规划、调工具或等批准时更新它；最后在通道能安全做到时，把这条草稿变成最终答案。
+启用进度草稿后，OpenClaw 只在轮次确实开始干活时才创建一条可见的"工作中"消息。agent 读、规划、调工具或等批准时持续更新它。通道能安全转换时，这条草稿会直接变成最终答案。
 
 > ```text
 > Shelling...
@@ -62,7 +62,7 @@ Shelling...
 
 > That is usually enough. OpenClaw will pick an automatic one-word label, wait until work lasts at least five seconds or emits a second work event, add compact progress lines while useful work happens, and suppress duplicate standalone progress chatter for that turn.
 
-通常够用。OpenClaw 会自动选一个一词的标签，等工作持续至少 5 秒或发出第二条工作事件，期间在有用的工作发生时追加紧凑的进度行，并抑制该轮次重复的独立进度闲聊。
+通常够用。OpenClaw 会自动选一个一词标签，等到工作持续满 5 秒或发出第二条工作事件后才显示。有实际工作时追加紧凑进度行，同时抑制该轮次重复的独立进度消息。
 
 ---
 
@@ -76,13 +76,13 @@ Shelling...
 
 > | Part           | Purpose                                                                               |
 > | -------------- | ------------------------------------------------------------------------------------- |
-> | Label          | A short starter/status line such as `Thinking...` or `Shelling...`.                   |
+> | Label          | A short starter/status line such as `Working` or `Shelling`.                          |
 > | Progress lines | Compact run updates using the same tool icons and detail formatter as verbose output. |
 
 | 部分      | 作用                                                                                |
 | --------- | ----------------------------------------------------------------------------------- |
-| 标签      | 一行简短的开场 / 状态文字，如 `Thinking...` 或 `Shelling...`。                      |
-| 进度行    | 紧凑的运行更新，用 verbose 输出同款工具图标和明细格式化器。                         |
+| 标签      | 一行简短的开场/状态文字，如 `Working` 或 `Shelling`。                               |
+| 进度行    | 紧凑的运行更新，用与 verbose 输出相同的工具图标和详情格式化器。                     |
 
 > The label appears after the agent starts meaningful work and either remains busy for five seconds or emits a second work event. It is part of the rolling progress line list, so the starter status scrolls away once enough concrete work appears. Plain text-only replies do not show a progress draft. Progress lines are added only when the agent emits useful work updates, for example `🛠️ Bash: run tests`, `🔎 Web Search: for "discord edit message"`, or `✍️ Write: to /tmp/file`. By default they use the same compact explain mode as `/verbose`; set `agents.defaults.toolProgressDetail: "raw"` when debugging and you also want raw commands/details appended. The final answer replaces the draft when possible; otherwise OpenClaw sends the final answer normally and cleans up or stops updating the draft according to the channel's transport.
 
@@ -134,54 +134,54 @@ Shelling...
 
 进度标签放在 `channels.<channel>.streaming.progress` 下。
 
-> The default label is `auto`, which chooses from OpenClaw's built-in single-word-with-ellipsis label pool:
+> The default label is `auto`, which chooses from OpenClaw's built-in single-word label pool:
 
-默认标签是 `auto`，从 OpenClaw 内置的、带省略号的单词标签池里选：
+默认标签是 `auto`，从 OpenClaw 内置的单词标签池里选：
 
 > ```text
-> Thinking...
-> Shelling...
-> Scuttling...
-> Clawing...
-> Pinching...
-> Molting...
-> Bubbling...
-> Tiding...
-> Reefing...
-> Cracking...
-> Sifting...
-> Brining...
-> Nautiling...
-> Krilling...
-> Barnacling...
-> Lobstering...
-> Tidepooling...
-> Pearling...
-> Snapping...
-> Surfacing...
+> Working
+> Shelling
+> Scuttling
+> Clawing
+> Pinching
+> Molting
+> Bubbling
+> Tiding
+> Reefing
+> Cracking
+> Sifting
+> Brining
+> Nautiling
+> Krilling
+> Barnacling
+> Lobstering
+> Tidepooling
+> Pearling
+> Snapping
+> Surfacing
 > ```
 
 ```text
-Thinking...
-Shelling...
-Scuttling...
-Clawing...
-Pinching...
-Molting...
-Bubbling...
-Tiding...
-Reefing...
-Cracking...
-Sifting...
-Brining...
-Nautiling...
-Krilling...
-Barnacling...
-Lobstering...
-Tidepooling...
-Pearling...
-Snapping...
-Surfacing...
+Working
+Shelling
+Scuttling
+Clawing
+Pinching
+Molting
+Bubbling
+Tiding
+Reefing
+Cracking
+Sifting
+Brining
+Nautiling
+Krilling
+Barnacling
+Lobstering
+Tidepooling
+Pearling
+Snapping
+Surfacing
 ```
 
 > Use a fixed label:
@@ -298,6 +298,76 @@ Surfacing...
 
 `progress` 模式下进度行默认开。它们来自真实运行事件：工具启动、项目更新、任务计划、批准、命令输出、补丁摘要、以及类似的 agent 活动。
 
+> Tools can also emit typed progress while a single tool call is still running. That is how a slow fetch or search can update the visible draft before the tool returns its final result. The progress update is a partial tool result with empty model content and explicit public channel metadata:
+
+工具在单次调用仍在运行期间也可以发出带类型的进度信息。慢速请求或搜索就是靠这个在工具返回最终结果之前更新可见草稿的。进度更新是一种部分工具结果，模型内容为空，带显式的公开通道元数据：
+
+> ```json
+> {
+>   "content": [],
+>   "progress": {
+>     "text": "Fetching page content...",
+>     "visibility": "channel",
+>     "privacy": "public",
+>     "id": "web_fetch:fetching"
+>   }
+> }
+> ```
+
+```json
+{
+  "content": [],
+  "progress": {
+    "text": "Fetching page content...",
+    "visibility": "channel",
+    "privacy": "public",
+    "id": "web_fetch:fetching"
+  }
+}
+```
+
+> OpenClaw renders only the `progress.text` in the channel progress UI. The normal tool result still arrives later as `content` and `details`, and is the only part returned to the model.
+
+OpenClaw 只把 `progress.text` 渲染到通道进度 UI 里。正常的工具结果稍后仍然以 `content` 和 `details` 到达，那才是返回给模型的部分。
+
+> When adding progress to a tool, use a short, generic message and delay it until the operation has been pending long enough to be useful:
+
+给工具加进度时，用简短通用的消息，等操作挂起够久再发：
+
+> ```typescript
+> const clearProgressTimer = scheduleToolProgress(
+>   onUpdate,
+>   { text: "Fetching page content...", id: "web_fetch:fetching" },
+>   5_000,
+>   { signal },
+> );
+>
+> try {
+>   return await runToolWork();
+> } finally {
+>   clearProgressTimer();
+> }
+> ```
+
+```typescript
+const clearProgressTimer = scheduleToolProgress(
+  onUpdate,
+  { text: "Fetching page content...", id: "web_fetch:fetching" },
+  5_000,
+  { signal },
+);
+
+try {
+  return await runToolWork();
+} finally {
+  clearProgressTimer();
+}
+```
+
+> This pattern means fast calls do not show a progress line, long calls show one while they are still pending, and canceled calls clear the timer before stale progress can appear. Progress text is a public UI side channel, so it must not include secrets, raw arguments, fetched content, command output, or page text.
+
+这个模式的效果是：快的调用不显示进度行，慢的调用在挂起期间显示一条，取消的调用在过期进度出现前清掉计时器。进度文本是公开的 UI 旁路通道，不能包含密钥、原始参数、抓取内容、命令输出或页面文本。
+
 > OpenClaw uses the same formatter for progress drafts and `/verbose`:
 >
 > ```json5
@@ -378,9 +448,43 @@ OpenClaw 给进度草稿和 `/verbose` 用同一个格式化器：
 
 进度行会自动紧凑化，减少草稿编辑时聊天气泡的重排。
 
-> OpenClaw truncates long progress lines by default so repeated draft edits do not wrap differently on every update. The prefix stays readable, and long details such as paths or raw commands are shortened with an ellipsis.
+> OpenClaw truncates long progress lines by default so repeated draft edits do not wrap differently on every update. The default per-line budget is 120 characters. Prose cuts at a word boundary, while long details such as paths or raw commands are shortened with a middle ellipsis so the suffix remains visible.
 
-OpenClaw 默认截断长进度行，让反复的草稿编辑不会每次换行不同。前缀保持可读，长明细如路径或原始命令用省略号截短。
+OpenClaw 默认截断长进度行，避免反复编辑草稿时每次换行位置不同。默认单行预算 120 字符。正文在词边界处截断，长详情（如路径或原始命令）用中间省略号截短，后缀仍然可见。
+
+> Tune the per-line budget:
+>
+> ```json5
+> {
+>   channels: {
+>     discord: {
+>       streaming: {
+>         mode: "progress",
+>         progress: {
+>           maxLineChars: 160,
+>         },
+>       },
+>     },
+>   },
+> }
+> ```
+
+调整单行预算：
+
+```json5
+{
+  channels: {
+    discord: {
+      streaming: {
+        mode: "progress",
+        progress: {
+          maxLineChars: 160,
+        },
+      },
+    },
+  },
+}
+```
 
 > Slack can render progress lines as structured Block Kit fields instead of a single text body:
 >
@@ -418,7 +522,7 @@ Slack 可以把进度行渲染成结构化的 Block Kit 字段，而不是单一
 
 > Rich rendering keeps the same plain-text fallback so channels and clients that do not support the richer shape can still show the compact progress text.
 
-rich 渲染仍带同样的纯文本回退 —— 不支持更丰富形态的通道和客户端仍能显示紧凑进度文本。
+丰富渲染仍带同样的纯文本回退——不支持这种格式的通道和客户端仍能显示紧凑进度文本。
 
 > Keep the single progress draft but hide tool and task lines:
 >
@@ -479,16 +583,16 @@ rich 渲染仍带同样的纯文本回退 —— 不支持更丰富形态的通�
 
 | 通道            | 进度传输                            | 说明                                                                    |
 | --------------- | ----------------------------------- | ----------------------------------------------------------------------- |
-| Discord         | 发一条消息，然后 edit。             | 最终文本能塞进一条安全预览消息时原地 edit。                             |
-| Matrix          | 发一条 event，然后 edit。           | 账号级流式配置控制账号级草稿。                                          |
+| Discord         | 发一条消息，然后编辑。             | 最终文本能塞进一条安全预览消息时原地 edit。                             |
+| Matrix          | 发一条 event，然后编辑。           | 账号级流式配置控制账号级草稿。                                          |
 | Microsoft Teams | 个人聊天里用 Teams 原生流。         | `streaming.mode: "block"` 映射到 Teams block 投递。                     |
 | Slack           | 原生流或可编辑草稿 post。           | thread 可用性影响是否能用原生流。                                       |
-| Telegram        | 发一条消息，然后 edit。             | 旧的可见草稿可能被替换，让最终时间戳更有用。                            |
-| Mattermost      | 可编辑草稿 post。                   | 工具活动折进同一条草稿风格 post。                                       |
+| Telegram        | 发一条消息，然后编辑。             | 旧的可见草稿可能被替换，让最终时间戳更有用。                            |
+| Mattermost      | 可编辑草稿 post。                   | 工具活动折进同一条草稿风格消息。                                       |
 
 > Channels without safe edit support usually fall back to typing indicators or final-only delivery.
 
-不支持安全 edit 的通道通常回退到输入中状态或仅最终投递。
+不支持安全编辑的通道通常回退到输入中状态或仅最终投递。
 
 ---
 
@@ -504,7 +608,7 @@ rich 渲染仍带同样的纯文本回退 —— 不支持更丰富形态的通�
 
 最终答案就绪时，OpenClaw 尽量保持聊天干净：
 
-- 草稿能安全变成最终答案时，OpenClaw 原地 edit。
+- 草稿能安全变成最终答案时，OpenClaw 原地编辑。
 - 通道用原生 progress 流式时，原生传输接受最终文本时 OpenClaw 收尾该流。
 - 最终答案带媒体、批准提示、显式回复目标、块太多或 edit / send 失败时，OpenClaw 走通道常规投递路径。
 
