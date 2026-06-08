@@ -23,13 +23,13 @@
 ## 工作原理
 
 > * A lane-aware FIFO queue drains each lane with a configurable concurrency cap (default 1 for unconfigured lanes; main defaults to 4, subagent to 8).
-> * `runEmbeddedPiAgent` enqueues by **session key** (lane `session:<key>`) to guarantee only one active run per session.
+> * `runEmbeddedAgent` enqueues by **session key** (lane `session:<key>`) to guarantee only one active run per session.
 > * Each session run is then queued into a **global lane** (`main` by default) so overall parallelism is capped by `agents.defaults.maxConcurrent`.
 > * When verbose logging is enabled, queued runs emit a short notice if they waited more than \~2s before starting.
 > * Typing indicators still fire immediately on enqueue (when supported by the channel) so user experience is unchanged while we wait our turn.
 
-- 一个感知队列的 FIFO 队列按可配置并发上限分别消费每条队列（未配置的队列默认 1；main 默认 4，subagent 默认 8）。
-- `runEmbeddedPiAgent` 按**会话 key** 入队（队列 `session:<key>`），保证每会话同时只有一个活跃运行。
+- 一个按通路分组的 FIFO 队列，按可配置并发上限分别消费每条通路（未配置的通路默认 1；main 默认 4，subagent 默认 8）。
+- `runEmbeddedAgent` 按**会话 key** 入队（通路 `session:<key>`），保证每会话同时只有一个活跃运行。
 - 然后会话运行排进**全局队列**（默认 `main`），整体并行受 `agents.defaults.maxConcurrent` 限制。
 - 启用 verbose 日志后，排队运行如果等了超过 \~2 秒才开始，会发一条简短通知。
 - 入队时仍然立即发输入中状态（通道支持的话），等待时用户体验不变。
@@ -47,7 +47,7 @@
 > * `cap: 20`
 > * `drop: "summarize"`
 
-不设置时，所有接收通道面用：
+不设置时，所有接收通道入口用：
 
 - `mode: "steer"`
 - `debounceMs: 500`
@@ -68,12 +68,12 @@
 
 `/queue` 控制会话已有活跃运行时常规接收消息怎么办：
 
-> * `steer`: inject messages into the active runtime. Pi delivers all pending steering messages **after the current assistant turn finishes executing its tool calls**, before the next LLM call; Codex app-server receives one batched `turn/steer`. If the run is not actively streaming or steering is unavailable, OpenClaw waits until the active run ends before starting the prompt.
+> * `steer`: inject messages into the active runtime. OpenClaw delivers all pending steering messages **after the current assistant turn finishes executing its tool calls**, before the next LLM call; Codex app-server receives one batched `turn/steer`. If the run is not actively streaming or steering is unavailable, OpenClaw waits until the active run ends before starting the prompt.
 > * `followup`: do not steer. Enqueue each message for a later agent turn after the current run ends.
 > * `collect`: do not steer. Coalesce queued messages into a **single** followup turn after the quiet window. If messages target different channels/threads, they drain individually to preserve routing.
 > * `interrupt`: abort the active run for that session, then run the newest message.
 
-- `steer`：把消息注入到活跃 runtime。Pi 在**当前 assistant 轮跑完它的工具调用之后**、下一次 LLM 调用之前投递所有待处理的 steering 消息；Codex app-server 收到一条合并的 `turn/steer`。运行没在流式或 steering 不可用时，OpenClaw 等到活跃运行结束再处理 prompt。
+- `steer`：把消息注入到活跃 runtime。OpenClaw 在**当前 assistant 轮跑完它的工具调用之后**、下一次 LLM 调用之前投递所有待处理的 steering 消息；Codex app-server 收到一条合并的 `turn/steer`。运行没在流式或 steering 不可用时，OpenClaw 等到活跃运行结束再处理 prompt。
 - `followup`：不 steer。每条消息排队进当前运行结束后的后续 agent 轮次。
 - `collect`：不 steer。把排队消息合并成静默窗口结束后的**一个**后续轮次。消息目标不同通道 / thread 时分别消费，保持路由。
 - `interrupt`：中止该会话的活跃运行，然后跑最新消息。
@@ -142,6 +142,28 @@
 
 ---
 
+> ## Steer and streaming
+
+## 转向与流式
+
+> When channel streaming is `partial` or `block`, steering can look like several short visible replies while the active run reaches runtime boundaries:
+>
+> * `partial`: the preview may finalize early, then a new preview starts after steering is accepted.
+> * `block`: draft-sized blocks can create the same sequential appearance.
+> * Without streaming, steering falls back to a followup after the active run when the runtime cannot accept same-turn steering.
+
+通道流式为 `partial` 或 `block` 时，活跃运行到达 runtime 边界过程中 steering 可能看起来像连续几条短的可见回复：
+
+- `partial`：预览可能提前定稿，steering 被接受后启动新的预览。
+- `block`：草稿大小的 block 也能产生同样的逐条观感。
+- 不开流式时，runtime 无法接受同轮 steering 就退化成活跃运行结束后的 followup。
+
+> `steer` does not abort in-flight tools. Use `/queue interrupt` when the newest message should abort the current run.
+
+`steer` 不会中止正在执行的工具。想让最新消息中止当前运行时用 `/queue interrupt`。
+
+---
+
 > ## Precedence
 
 ## 优先级
@@ -205,12 +227,12 @@
 > * If commands seem stuck, enable verbose logs and look for "queued for ...ms" lines to confirm the queue is draining.
 > * If you need queue depth, enable verbose logs and watch for queue timing lines.
 > * Codex app-server runs that accept a turn and then stop emitting progress are interrupted by the Codex adapter so the active session lane can release instead of waiting for the outer run timeout.
-> * When diagnostics are enabled, sessions that remain in `processing` past `diagnostics.stuckSessionWarnMs` with no observed reply, tool, status, block, or ACP progress are classified by current activity. Active work logs as `session.long_running`; active work with no recent progress logs as `session.stalled`; `session.stuck` is reserved for stale session bookkeeping with no active work, and only that path can release the affected session lane so queued work drains. Repeated `session.stuck` diagnostics back off while the session remains unchanged.
+> * When diagnostics are enabled, sessions that remain in `processing` past `diagnostics.stuckSessionWarnMs` with no observed reply, tool, status, block, or ACP progress are classified by current activity. Active work logs as `session.long_running`; active work with no recent progress logs as `session.stalled`; `session.stuck` is reserved for recoverable stale session bookkeeping, including idle queued sessions with stale ownerless model/tool activity, and only that path can release the affected session lane so queued work drains. Repeated `session.stuck` diagnostics back off while the session remains unchanged.
 
 - 命令好像卡住时，开 verbose 日志，看 "queued for ...ms" 行确认队列在消费。
 - 想看队列深度，开 verbose 日志，留意队列时序行。
 - Codex app-server 运行接受了一个 turn 然后停止发出进度时，Codex 适配器会中断它，让活跃会话队列能释放，而不是等外层运行超时。
-- 启用诊断后，超过 `diagnostics.stuckSessionWarnMs` 仍处于 `processing` 且没观察到回复、工具、状态、block 或 ACP 进度的会话，按当前活动分类。活跃工作记 `session.long_running`；活跃但近期无进展的记 `session.stalled`；`session.stuck` 留给"没活在干、记账还在 processing"的过期账目，只有这条路径能释放受影响的会话队列让排队工作消费。会话没变时，重复出现的 `session.stuck` 诊断会逐步退避。
+- 启用诊断后，超过 `diagnostics.stuckSessionWarnMs` 仍处于 `processing` 且没观察到回复、工具、状态、block 或 ACP 进度的会话，按当前活动分类。活跃工作记 `session.long_running`；活跃但近期无进展的记 `session.stalled`；`session.stuck` 专门处理可恢复的过期会话记账，包括持有无主模型/工具活动的空闲排队会话；只有这条路径能释放受影响的会话通路让排队工作消费。会话没变时，重复出现的 `session.stuck` 诊断会逐步退避。
 
 ---
 
