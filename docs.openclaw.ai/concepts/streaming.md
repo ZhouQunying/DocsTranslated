@@ -5,7 +5,7 @@
 > * **Block streaming (channels):** emit completed **blocks** as the assistant writes. These are normal channel messages (not token deltas).
 > * **Preview streaming (Telegram/Discord/Slack):** update a temporary **preview message** while generating.
 
-OpenClaw 有两层独立的流式：
+OpenClaw 有两层独立的流式机制：
 
 - **块流式（通道）**：assistant 写出完整**块**就发出去。这些是常规通道消息（不是 token 增量）。
 - **预览流式（Telegram / Discord / Slack）**：生成过程中更新一条临时的**预览消息**。
@@ -22,7 +22,7 @@ OpenClaw 有两层独立的流式：
 
 > Block streaming sends assistant output in coarse chunks as it becomes available.
 
-块流式在 assistant 输出可用时按粗块发出。
+块流式把 assistant 的输出拆成大块，写好一块就发一块。
 
 > ```
 > Model output
@@ -85,8 +85,8 @@ OpenClaw 有两层独立的流式：
 
 **边界语义**：
 
-- `text_end`：分块器一发出就流式发；每次 `text_end` 推出。
-- `message_end`：等 assistant 消息结束，才推出缓冲输出。
+- `text_end`：分块器一出块就立刻发；每次 `text_end` 时 flush。
+- `message_end`：等 assistant 消息写完，再一次性 flush 缓冲输出。
 
 > `message_end` still uses the chunker if the buffered text exceeds `maxChars`, so it can emit multiple chunks at the end.
 
@@ -96,13 +96,13 @@ OpenClaw 有两层独立的流式：
 
 ### 块流式下的媒体投递
 
-> `MEDIA:` directives are normal delivery metadata. When block streaming sends a media block early, OpenClaw remembers that delivery for the turn. If the final assistant payload repeats the same media URL, the final delivery strips the duplicate media instead of sending the attachment again.
+> Streaming media must use structured payload fields such as `mediaUrl` or `mediaUrls`; streamed text is not parsed as an attachment command. When block streaming sends media early, OpenClaw remembers that delivery for the turn. If the final assistant payload repeats the same media URL, the final delivery strips the duplicate media instead of sending the attachment again.
 
-`MEDIA:` 指令是常规投递元数据。块流式提前发了一个媒体块，OpenClaw 就记下这一轮投了什么。最终 assistant 载荷里又出现同一个媒体 URL 时，最终投递会把重复媒体剥掉，不再发一次附件。
+流式媒体必须用 `mediaUrl` 或 `mediaUrls` 这类结构化载荷字段；流式文本不会被当作附件命令解析。块流式提前发了媒体，OpenClaw 就记下这一轮投了什么。最终 assistant 载荷里又出现同一个媒体 URL 时，最终投递会把重复媒体剥掉，不再发一次附件。
 
-> Exact duplicate final payloads are suppressed. If the final payload adds distinct text around media that was already streamed, OpenClaw still sends the new text while keeping the media single-delivery. This prevents duplicate voice notes or files on channels such as Telegram when an agent emits `MEDIA:` during streaming and the provider also includes it in the completed reply.
+> Exact duplicate final payloads are suppressed. If the final payload adds distinct text around media that was already streamed, OpenClaw still sends the new text while keeping the media single-delivery. This prevents duplicate voice notes or files on channels such as Telegram.
 
-完全重复的最终载荷会丢弃。最终载荷只是在已流式的媒体周围加了新文本时，OpenClaw 仍发新文本，但媒体仍只投递一次。这样在 Telegram 这类通道上，agent 流式期间发了 `MEDIA:`、provider 又把它放进完成回复里，也不会重复语音笔记或文件。
+完全重复的最终载荷直接丢弃。如果最终载荷只是在已发过的媒体周围加了新文本，OpenClaw 仍发新文本，但媒体只投递一次。这样在 Telegram 这类通道上就不会出现重复的语音笔记或文件。
 
 ---
 
@@ -132,7 +132,7 @@ OpenClaw 有两层独立的流式：
 
 > ## Coalescing (merge streamed blocks)
 
-## 合并（merge 流块）
+## 合并流块
 
 > When block streaming is enabled, OpenClaw can **merge consecutive block chunks** before sending them out. This reduces "single-line spam" while still providing progressive output.
 
@@ -160,7 +160,7 @@ OpenClaw 有两层独立的流式：
 
 > When block streaming is enabled, you can add a **randomized pause** between block replies (after the first block). This makes multi-bubble responses feel more natural.
 
-块流式开启时，可以在 块回复之间（第一块之后）加一个**随机停顿**。让多气泡响应更自然。
+块流式开启时，可以在块回复之间（第一块之后）加一个**随机停顿**，让多气泡回复看起来更自然。
 
 > * Config: `agents.defaults.humanDelay` (override per agent via `agents.list[].humanDelay`).
 > * Modes: `off` (default), `natural` (800-2500ms), `custom` (`minMs`/`maxMs`).
@@ -222,7 +222,7 @@ OpenClaw 有两层独立的流式：
 
 > `streaming.mode: "block"` is a preview-streaming mode for edit-capable channels such as Discord and Telegram. It does not enable channel block delivery there. Use `streaming.block.enabled` or the legacy `blockStreaming` channel key when you want normal block replies. Microsoft Teams is the exception: it has no draft-preview block transport, so `streaming.mode: "block"` maps to Teams block delivery instead of native partial/progress streaming.
 
-`streaming.mode: "block"` 是一种预览流式模式，用于 Discord、Telegram 这种可编辑的通道。它**不**在那里启用通道块投递。要常规 块回复用 `streaming.block.enabled` 或旧版 `blockStreaming` 通道 key。Microsoft Teams 是例外：它没有草稿预览的块传输，所以 `streaming.mode: "block"` 在 Teams 上映射到 Teams 块投递，不是原生 partial / progress 流式。
+`streaming.mode: "block"` 是一种预览流式模式，用于 Discord、Telegram 这类支持编辑的通道。它**不会**启用这些通道的块投递。要开常规块回复，用 `streaming.block.enabled` 或旧版 `blockStreaming` 通道 key。Microsoft Teams 是例外：Teams 没有草稿预览的块传输，所以 `streaming.mode: "block"` 在 Teams 上映射到块投递，而非原生 partial / progress 流式。
 
 > ### Channel mapping
 
@@ -252,7 +252,7 @@ OpenClaw 有两层独立的流式：
 Slack 专属：
 
 - `channels.slack.streaming.mode="partial"` 时，`channels.slack.streaming.nativeTransport` 切换 Slack 原生流式 API 调用（默认 `true`）。
-- Slack 原生流式和 Slack assistant thread 状态需要一个 reply thread 目标。顶层 DM 没那种 thread 风格的预览，但仍能用 Slack 草稿预览消息和 edit。
+- Slack 原生流式和 Slack assistant thread 状态需要一个 reply thread 目标。顶层 DM 没有 thread 风格的预览，但仍能用 Slack 草稿预览消息和编辑。
 
 > Legacy key migration:
 >
@@ -282,9 +282,9 @@ Slack 专属：
 Telegram：
 
 - 在 DM 和群 / topic 上用 `sendMessage` + `editMessageText` 更新预览。
-- 最终文本原地编辑活跃预览；长最终把这条消息用作第一段，剩下的另发。
+- 最终文本原地编辑当前预览消息；文本过长时，复用这条消息装第一段，多出来的另发。
 - `progress` 模式把工具进度放进一个可编辑的状态草稿，完成时清掉草稿，最终答案走正常投递。
-- 已完成文本确认前最终编辑 失败时，OpenClaw 用正常最终投递并清理过期预览。
+- 最终编辑在文本确认前失败时，OpenClaw 走正常最终投递并清理过期预览。
 - Telegram 块流式显式开启时，预览流式跳过（避免双流）。
 - `/reasoning stream` 可以把推理写到临时预览里，最终投递后删除。
 
@@ -317,8 +317,8 @@ Slack：
 - `block` 用追加风格的草稿预览。
 - `progress` 用状态预览文本，最后给最终答案。
 - 没有 reply thread 的顶层 DM 用草稿预览消息和 edit，而不是 Slack 原生流式。
-- 原生和草稿预览流式那一轮抑制块回复 —— 一条 Slack 回复只走一条投递路径。
-- 最终的媒体 / 错误 payload 和 progress 最终不会创建一次性草稿；只有能 编辑预览的文本 / 最终块才 推出挂起草稿文本。
+- 这一轮如果走了原生流式或草稿预览流式，块回复就会被抑制——每条 Slack 回复只走一条投递路径。
+- 最终的媒体/错误载荷和 progress 最终消息不会创建临时草稿；只有文本/块类型的最终消息（能编辑预览的那种）才会推出挂起的草稿文本。
 
 > Mattermost:
 >
@@ -348,7 +348,11 @@ Matrix：
 
 > Preview streaming can also include **tool-progress** updates - short status lines like "searching the web", "reading file", or "calling tool" - that appear in the same preview message while tools are running, ahead of the final reply. In Codex app-server mode, Codex preamble/commentary messages use this same preview path, so short "I am checking..." progress notes can stream into the editable draft without becoming part of the final answer. This keeps multi-step tool turns visually alive rather than silent between the first thinking preview and the final answer.
 
-预览流式还可以包含**工具进度**更新 —— 像 "searching the web"、"reading file"、"calling tool" 这种短状态行 —— 工具运行期间出现在同一条预览消息里，先于最终回复。在 Codex app-server 模式下，Codex preamble / 注释消息走同一条预览路径，"I am checking..." 这种简短进度备注会流进可编辑草稿，但不会进最终答案。这让多步工具轮次在视觉上活着，不会在第一次思考预览和最终答案之间一片寂静。
+预览流式还可以包含**工具进度**更新——像"searching the web"、"reading file"、"calling tool"这种短状态行——工具运行期间出现在同一条预览消息里，先于最终回复。在 Codex app-server 模式下，Codex preamble/注释消息走同一条预览路径，"I am checking..."这种简短进度备注会流进可编辑草稿，但不会成为最终答案的一部分。这让多步工具轮次始终有视觉反馈，不会在第一次思考预览和最终答案之间陷入沉默。
+
+> Long-running tools may emit typed progress before they return. For example, `web_fetch` arms a five-second timer when it starts: if the fetch is still pending, the preview can show `Fetching page content...`; if the fetch finishes or is canceled before then, no progress line is emitted. The later final tool result is still delivered normally to the model.
+
+耗时较长的工具可能在返回之前就发出带类型的进度信息。比如 `web_fetch` 启动时会设一个五秒计时器：如果请求还没完成，预览可以显示 `Fetching page content...`；如果请求在五秒内完成或被取消，就不发进度行。后续的最终工具结果仍正常交给模型。
 
 > Supported surfaces:
 >
@@ -359,14 +363,14 @@ Matrix：
 > * To keep preview streaming but hide tool-progress lines, set `streaming.preview.toolProgress` to `false` for that channel. To keep tool-progress lines visible while hiding command/exec text, set `streaming.preview.commandText` to `"status"` or `streaming.progress.commandText` to `"status"`; the default is `"raw"` to preserve released behavior. This policy is shared by draft/progress channels that use OpenClaw's compact progress renderer, including Discord, Matrix, Microsoft Teams, Mattermost, Slack draft previews, and Telegram. To disable preview edits entirely, set `streaming.mode` to `off`.
 > * Telegram selected quote replies are an exception: when `replyToMode` is not `"off"` and selected quote text is present, OpenClaw skips the answer preview stream for that turn so tool-progress preview lines cannot render. Current-message replies without selected quote text still keep preview streaming. See [Telegram channel docs](/channels/telegram) for details.
 
-支持的面：
+支持的平台：
 
 - **Discord**、**Slack**、**Telegram**、**Matrix** 在预览流式开启时默认把工具进度和 Codex preamble 更新流到实时预览编辑里。Microsoft Teams 在个人聊天里用它的原生 progress 流。
 - Telegram 自 `v2026.4.22` 起默认带工具进度预览更新；保持开启就是保留发布行为。
 - **Mattermost** 已经把工具活动折进它的单一草稿预览消息（见上面）。
-- 工具进度的编辑跟随当前预览流式模式;预览流式是 `off`、或块流式接管该消息时,工具进度就不发了。Telegram 上 `streaming.mode: "off"` 是"只发最终":通用进度闲聊也被压住、不会作为独立状态消息投递;但批准提示、媒体载荷、错误仍正常路由。
-- 要保留预览流式但隐藏工具进度行，把通道的 `streaming.preview.toolProgress` 设成 `false`。要保留工具进度行但隐藏命令 / exec 文本，把 `streaming.preview.commandText` 设成 `"status"`，或 `streaming.progress.commandText` 设成 `"status"`；默认 `"raw"`，保留发布行为。这条策略由用 OpenClaw 紧凑进度渲染器的草稿 / progress 通道共享，含 Discord、Matrix、Microsoft Teams、Mattermost、Slack 草稿预览、Telegram。要完全关闭预览 edit，把 `streaming.mode` 设成 `off`。
-- Telegram selected quote 回复是例外：`replyToMode` 不是 `"off"` 且消息带 selected quote 文本时，OpenClaw 这一轮跳过答案预览流，因此工具进度预览行无法渲染。当前消息的回复没有 selected quote 文本时仍走预览流式。细节见 [Telegram 通道文档](/channels/telegram)。
+- 工具进度编辑跟随当前预览流式模式；预览流式是 `off` 或块流式已接管该消息时，工具进度就不发了。Telegram 上 `streaming.mode: "off"` 表示"只发最终"：通用进度信息也会被压住，不会作为独立状态消息投递；但批准提示、媒体载荷、错误仍正常路由。
+- 要保留预览流式但隐藏工具进度行，把通道的 `streaming.preview.toolProgress` 设成 `false`。要保留工具进度行但隐藏命令/exec 文本，把 `streaming.preview.commandText` 设成 `"status"`，或 `streaming.progress.commandText` 设成 `"status"`；默认 `"raw"`，保留发布行为。这条策略适用于所有使用 OpenClaw 紧凑进度渲染器的通道，包括 Discord、Matrix、Microsoft Teams、Mattermost、Slack 草稿预览和 Telegram。要完全关闭预览编辑，把 `streaming.mode` 设成 `off`。
+- Telegram selected quote 回复是例外：`replyToMode` 不是 `"off"` 且消息带 selected quote 文本时，OpenClaw 这一轮跳过答案预览流，工具进度预览行不会显示。没有 selected quote 文本的当前消息回复仍走预览流式。细节见 [Telegram 通道文档](/channels/telegram)。
 
 > Keep progress lines visible but hide raw command/exec text:
 >
@@ -452,7 +456,7 @@ Matrix：
 > * [Retry](/concepts/retry) - retry behavior on delivery failure
 > * [Channels](/channels) - per-channel streaming support
 
-- [消息生命周期重构](/concepts/message-lifecycle-refactor)：目标共享预览、edit、stream、收尾设计
+- [消息生命周期重构](/concepts/message-lifecycle-refactor)：目标共享预览、编辑、流式、收尾设计
 - [进度草稿](/concepts/progress-drafts)：长轮次期间可见的、会更新的"工作中"消息
 - [消息](/concepts/messages)：消息生命周期和投递
 - [重试](/concepts/retry)：投递失败时的重试行为
