@@ -1048,7 +1048,7 @@ type MessageReceiveAdapter<TRaw = unknown> = {
 
 > Before preflight authorization, core must run the shared OpenClaw echo predicate whenever `origin.decode` returns OpenClaw-origin metadata. The receive adapter supplies platform facts such as bot author and room shape; core owns the drop decision and ordering so channels do not reimplement text filters.
 
-预检授权之前，`origin.decode` 一旦返回 OpenClaw 来源元数据，核心就必须跑共享的回声断言。接收适配器只管提供平台事实（是不是机器人发的、房间是什么形态等），核心来做丢弃决策——这样各通道就不用自己实现文本过滤了。
+预检授权之前，`origin.decode` 一旦返回 OpenClaw 来源元数据，核心就必须跑共享的回声断言。接收适配器只管提供平台事实——是不是机器人发的、房间是什么形态。核心来做丢弃决策，各通道不用自己实现文本过滤。
 
 > Origin adapter:
 >
@@ -1700,7 +1700,7 @@ type DeliveryFailureKind =
 - `channel.inbound.run` 简单适配器仍能记录和发送。
 - 旧版已组装事件投递不会自动变成持久化的，除非通道显式选择加入。
 - `channel.inbound.runPreparedReply` 桥仍能记录和收尾。
-- 公共兼容辅助默认调用调用方拥有的投递回调，不在这些回调之前做通用发送。
+- 公共兼容辅助默认调调用方自己的投递回调，不在这些回调之前做通用发送。
 - 持久化降级投递在重启后重放整个投射载荷数组，不能在早期崩溃后遗漏后续载荷的记录。
 - 持久化已组装事件投递把平台消息 ID 返回给带缓冲的派发器。
 - 自定义投递钩子在持久化投递禁用或不可用时仍返回平台消息 ID。
