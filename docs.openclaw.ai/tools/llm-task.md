@@ -1,5 +1,21 @@
 # LLM task
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Agent 想调另一个 LLM 做子任务——但不是聊天，是"给输入、要 JSON 输出"
+
+场景：Lobster 工作流某一步需要"从这段文本提取结构化数据"。不需要对话、不需要工具、不需要历史——就是"输入 → JSON 输出"。
+
+`llm-task` 就干这一件事：调一次 LLM，强制 JSON 输出，可选 Schema 验证。没有对话上下文，没有工具注入，纯函数调用语义。
+
+为什么不直接内联到主 Agent 的上下文里？因为主 Agent 的上下文已经很贵了。用一次独立的便宜模型调用来做子任务，主模型的上下文不受污染，还能用 Schema 保证输出格式正确。
+
+跟微服务拆分一个意思：能独立处理的逻辑就拆出去，别挤在一个大进程里。
+
+---
+
 > `llm-task` is an **optional plugin tool** that runs a JSON-only LLM task and
 > returns structured output (optionally validated against JSON Schema).
 

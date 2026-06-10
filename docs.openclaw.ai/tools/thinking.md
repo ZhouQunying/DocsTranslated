@@ -1,5 +1,25 @@
 # Thinking levels
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 不是所有问题都需要"深度思考"——但怎么让用户控制？
+
+"今天星期几"不需要推理链。"帮我设计一个分布式锁"需要。如果所有请求都用最高推理级别——慢、贵、有时反而更差（简单问题过度思考会hallucinate）。
+
+Thinking levels 让用户（或 Agent 自己）按需调节推理深度。`/t low` = 快速回答，`/t max` = 全力推理。
+
+### 有意思的设计：provider 映射层
+
+不同模型 provider 对"推理级别"的实现完全不同——Claude 用 `thinking` 参数，OpenAI 用 `reasoning_effort`，有的模型根本不支持。
+
+OpenClaw 在中间加了一层映射：用户说 `high`，系统查当前模型的 profile，翻译成那个 provider 能理解的参数。用户不需要知道底层用的是什么模型。
+
+跟操作系统的设备驱动一个意思：应用只说"打印"，驱动层负责翻译成具体打印机能听懂的协议。
+
+---
+
 ## 做什么
 
 > - Inline directive in any inbound body: `/t <level>`, `/think:<level>`, or `/thinking <level>`.
@@ -50,16 +70,16 @@
   - `adaptive`、`xhigh`、`max` 只对支持它们的 provider / 模型 profile 暴露。给不支持的级别打指令会被拒绝,并提示该模型的可选项。
   - 已存的不支持级别会按 provider profile 的层级重映射。`adaptive` 在非自适应模型上回退到 `medium`;`xhigh` 和 `max` 回退到所选模型支持的最大非 `off` 级别。
   - Anthropic Claude 4.6 模型在没显式设思考级别时默认 `adaptive`。
-  - Anthropic Claude Opus 4.7 **不**默认自适应思考。它的 API effort 默认由 provider 拥有,除非你显式设思考级别。
+  - Anthropic Claude Opus 4.7 **不**默认自适应思考。它的 API effort 默认由 provider 管理,除非你显式设思考级别。
   - Anthropic Claude Opus 4.7 把 `/think xhigh` 映射到自适应思考加 `output_config.effort: "xhigh"`,因为 `/think` 是思考指令、`xhigh` 是 Opus 4.7 的 effort 设置。
-  - Anthropic Claude Opus 4.7 还暴露 `/think max`,映射到同一条 provider 拥有的 max effort 路径。
+  - Anthropic Claude Opus 4.7 还暴露 `/think max`,映射到同一条 provider 持有的 max effort 路径。
   - 直连 DeepSeek V4 模型暴露 `/think xhigh|max`;两个都映射到 DeepSeek 的 `reasoning_effort: "max"`,更低的非 off 级别映射到 `high`。
   - OpenRouter 转 DeepSeek V4 模型暴露 `/think xhigh`,发 OpenRouter 支持的 `reasoning_effort` 值。已存的 `max` 覆盖回退到 `xhigh`。
   - Ollama 支持思考的模型暴露 `/think low|medium|high|max`;`max` 映射到原生 `think: "high"`,因为 Ollama 原生 API 只接受 `low`、`medium`、`high` 三个 effort 字符串。
   - OpenAI GPT 模型按各模型在 Responses API 上的 effort 支持映射 `/think`。`/think off` 只在目标模型支持时发 `reasoning.effort: "none"`;否则 OpenClaw 直接省略关掉推理的载荷,而不是发不支持的值。
   - 自定义 OpenAI 兼容目录条目可以通过把 `models.providers.<provider>.models[].compat.supportedReasoningEfforts` 设成含 `"xhigh"` 来启用 `/think xhigh`。这用的是同一份 compat 元数据,跟出站 OpenAI 推理 effort 载荷映射一致,所以菜单、会话校验、agent CLI、`llm-task` 跟传输行为一致。
   - 过期的 OpenRouter Hunter Alpha 配置 ref 跳过代理推理注入,因为这条已退役的路径可能通过推理字段返回最终答案文本。
-  - Google Gemini 把 `/think adaptive` 映射到 Gemini provider 拥有的动态思考。Gemini 3 请求省略固定的 `thinkingLevel`,Gemini 2.5 请求发 `thinkingBudget: -1`;固定级别仍按该模型家族最接近的 Gemini `thinkingLevel` 或预算映射。
+  - Google Gemini 把 `/think adaptive` 映射到 Gemini provider 持有的动态思考。Gemini 3 请求省略固定的 `thinkingLevel`,Gemini 2.5 请求发 `thinkingBudget: -1`;固定级别仍按该模型家族最接近的 Gemini `thinkingLevel` 或预算映射。
   - MiniMax(`minimax/*`)在 Anthropic 兼容流式路径上默认 `thinking: { type: "disabled" }`,除非你在模型参数或请求参数里显式设思考。这避免了 MiniMax 非原生 Anthropic 流式格式中泄漏的 `reasoning_content` 增量。
   - Z.AI(`zai/*`)只支持二选一思考(`on`/`off`)。任何非 `off` 级别都被当作 `on`(映射到 `low`)。
   - Moonshot(`moonshot/*`)把 `/think off` 映射到 `thinking: { type: "disabled" }`,把任何非 `off` 级别映射到 `thinking: { type: "enabled" }`。思考开启时,Moonshot 只接受 `tool_choice` 为 `auto|none`;OpenClaw 把不兼容的值归一化成 `auto`。
@@ -173,7 +193,7 @@
 - 只含指令的消息切换会话插件 trace 输出,回复 `Plugin trace enabled.` / `Plugin trace disabled.`。
 - 内联指令只影响这条消息;否则按会话 / 全局默认。
 - 不带参数发 `/trace`(或 `/trace:`)看当前 trace 级别。
-- `/trace` 比 `/verbose` 窄:它只暴露插件拥有的 trace / 调试行,如主动记忆调试摘要。
+- `/trace` 比 `/verbose` 窄:它只暴露插件持有的 trace / 调试行,如主动记忆调试摘要。
 - Trace 行可以在 `/status` 里露出,也可以作为跟在正常 assistant 回复后的跟进诊断消息出现。
 
 ## 推理可见性(/reasoning)
@@ -225,7 +245,7 @@
 - 选另一个级别会通过 `sessions.patch` 立即写入会话覆盖;不等下一次发送,也不是一次性的 `thinkingOnce` 覆盖。
 - 第一个选项永远是"清除覆盖"。它显示 `Inherited: <解析出的级别>`,包括继承的思考被关掉时显示 `Inherited: Off`。
 - 显式选择用各自级别的直接标签,有 provider 标签时保留 provider 标签(例如 provider 标过 `max` 的选项显示 `Maximum`)。
-- 选择器用 gateway session 行 / 默认返回的 `thinkingLevels`,`thinkingOptions` 作为旧版标签列表保留。浏览器 UI 不维护自己的 provider 正则列表;插件拥有具体模型的级别集。
+- 选择器用 gateway session 行 / 默认返回的 `thinkingLevels`,`thinkingOptions` 作为旧版标签列表保留。浏览器 UI 不维护自己的 provider 正则列表;插件持有具体模型的级别集。
 - `/think:<级别>` 仍然能用,更新同一份存的会话级别,所以聊天指令和选择器保持同步。
 
 ## Provider profile

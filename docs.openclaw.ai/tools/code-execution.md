@@ -1,5 +1,21 @@
 # Code execution
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 为什么不用本地 `exec` 跑 Python？
+
+本地 exec 跑 Python 当然可以。但有两个问题：一是需要本地装 Python + 依赖；二是代码在你的机器上跑，安全风险大（Agent 写的代码可能有 bug 或恶意）。
+
+`code_execution` 把代码发到 xAI 的远程沙箱跑。结果返回纯文本。你的机器上什么都没执行。
+
+跟 Jupyter Hub 的设计一样：代码在远程容器里跑，用户只看到输出。本地环境干净、安全。
+
+代价是：依赖网络、受 xAI API 限制、不能访问本地文件。适合"纯计算分析"场景，不适合"操作本地环境"场景。
+
+---
+
 > `code_execution` runs sandboxed remote Python analysis on xAI's Responses API. It is registered by the bundled `xai` plugin (under the `tools` contract) and dispatches to the same `https://api.x.ai/v1/responses` endpoint used by `x_search`.
 
 `code_execution` 在 xAI 的 Responses API 上跑沙箱化的远程 Python 分析。它由内置的 `xai` 插件(在 `tools` 契约下)注册,发到跟 `x_search` 同一个端点 `https://api.x.ai/v1/responses`。
@@ -167,7 +183,7 @@ Use web_search to gather the latest AI benchmark numbers, then use code_executio
 
 > When the tool runs without auth, it returns a structured `missing_xai_api_key` error pointing at the auth-profile, env var, and config options. The error is JSON, not a thrown exception, so the agent can self-correct:
 
-工具在没认证的情况下跑,会返回一个结构化的 `missing_xai_api_key` 错误,指向认证 profile、环境变量、配置三个选项。错误是 JSON,不是抛异常,所以 agent 能自我纠正:
+工具没认证就跑时,会返回结构化的 `missing_xai_api_key` 错误,指向认证 profile、环境变量、配置三个选项。错误是 JSON 不是抛异常,agent 能自我纠正:
 
 ```json
 {

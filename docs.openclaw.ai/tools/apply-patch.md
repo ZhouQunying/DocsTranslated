@@ -1,5 +1,19 @@
 # apply_patch tool
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 为什么不直接让 Agent 用 `edit` 改文件？
+
+`edit` 工具一次改一个文件的一处。Agent 要改 5 个文件各两处 = 10 次工具调用 = 10 轮 token 消耗。而且中间某次失败了，前几次已经改了——半成品状态。
+
+`apply_patch` 的做法：Agent 生成一份结构化 patch（类似 `git diff` 格式），一次调用把所有修改原子地应用。要么全成功，要么全不动。
+
+跟数据库事务一个道理：多个操作要么一起提交，要么一起回滚。单次 `edit` 是裸写，`apply_patch` 是事务。
+
+---
+
 > Apply file changes using a structured patch format. This is ideal for multi-file
 > or multi-hunk edits where a single `edit` call would be brittle.
 
