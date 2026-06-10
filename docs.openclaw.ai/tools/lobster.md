@@ -1,5 +1,33 @@
 # Lobster
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 问题：让 LLM 编排多步操作——既贵又不确定
+
+Agent 要做"拉代码 → 跑测试 → 如果通过就部署"这种流程。如果每一步都让 LLM 决定下一步干什么——每次决策都花 token、每次都可能走歪。而且中途如果需要人确认，LLM 不知道怎么"暂停等人"。
+
+Lobster 的直觉：**把确定性的步骤从 LLM 拿出来，写成声明式 DSL**。LLM 负责"决定跑哪个工作流"，Lobster 负责"按顺序把步骤跑完"。
+
+### 一次调用代替多次
+
+没有 Lobster 时：LLM 调工具 A → 看结果 → 决定调工具 B → 看结果 → 再调工具 C。三轮 LLM 调用、三轮 token 消耗。
+
+有 Lobster 时：LLM 调一次 Lobster，传一个步骤列表。Lobster 按顺序执行，中间不回模型。三步变一步。省 token、快、确定。
+
+跟 SQL 存储过程 vs 应用层逐条操作一个意思：能在数据库里跑完的逻辑就别拉到应用层一条一条处理。
+
+### 审批检查点：工作流怎么"暂停等人"？
+
+Lobster 步骤里可以插 `approval` 节点。到了这一步，工作流暂停，生成一个审批请求发给人。人点了"同意"，工作流从断点继续。
+
+关键设计：**恢复靠 token 而不是靠上下文**。工作流暂停时把状态序列化成一个恢复令牌，存在本地。人批准后拿令牌续跑——不用把整个上下文重新喂给 LLM。
+
+跟 OAuth 的 state 参数一个思路：无状态的恢复靠 token 携带上下文。
+
+---
+
 > Lobster is a workflow shell that lets OpenClaw run multi-step tool sequences as a single, deterministic operation with explicit approval checkpoints.
 
 Lobster 是一个工作流壳层,让 OpenClaw 把多步工具序列作为单一、确定性的操作来运行,带显式的审批检查点。

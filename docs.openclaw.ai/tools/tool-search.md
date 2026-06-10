@@ -1,5 +1,32 @@
 # Tool Search
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 100 个工具全塞进 system prompt——token 爆炸。怎么办？
+
+传统做法：把所有工具的 JSON Schema 塞进 system prompt。10 个工具没问题。100 个？每次调模型白白多付几千 token，而且大部分工具这次根本用不上。
+
+Tool Search 的解法是**懒加载**：
+
+1. 只给模型一个精简的"工具目录"（每个工具一行描述，不含完整 schema）
+2. 模型搜索："我需要一个能发邮件的工具"
+3. 系统返回匹配的工具详细 schema
+4. 模型拿到 schema 后正式调用
+
+跟数据库索引一个思路：不把全表扫一遍，先查索引定位，再取具体行。
+
+### 为什么不直接裁剪 system prompt？
+
+因为你不知道模型这次需要哪些工具。如果按场景预判裁剪——猜错了模型就会"找不到工具"。Tool Search 让模型自己声明需要什么，保证不会猜错。
+
+### 限制：只在 PI-agent 里
+
+Codex 这种原生 harness 自己管工具注册，不走 OpenClaw 的工具层。所以 Tool Search 只对 PI-agent（纯提示词驱动的 agent）有效。这是个架构边界：原生集成 vs 提示词集成走不同的工具发现路径。
+
+---
+
 > Tool Search is an experimental OpenClaw PI-agent feature. It gives PI agents one
 > compact way to discover and call large tool catalogs. It is useful when the run
 > has many available tools but the model is likely to need only a few of them.
@@ -40,7 +67,7 @@ return await openclaw.tools.call(tool.id, {
 > Codex owns the stable native code mode, native tool search, deferred dynamic
 > tools, and nested tool calls.
 
-Codex harness 运行**不会**收到这些 OpenClaw Tool Search 实验性控制。OpenClaw 把产品能力作为动态工具传给 Codex,稳定的原生 code 模式、原生工具检索、延迟动态工具、嵌套工具调用归 Codex 自己拥有。
+Codex harness 运行**不会**收到这些 OpenClaw Tool Search 实验性控制。OpenClaw 把产品能力作为动态工具传给 Codex,稳定的原生 code 模式、原生工具检索、延迟动态工具、嵌套工具调用归 Codex 自己管理。
 
 ## 一轮怎么跑
 

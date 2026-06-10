@@ -1,5 +1,29 @@
 # Trajectory bundles
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Agent 出了问题——怎么事后查它到底做了什么？
+
+Agent 自主跑了 20 步工具调用，最后给了一个错误结果。对话历史只有最终输出。你想知道："第 7 步调的什么？为什么第 12 步突然换了方向？"
+
+这就是飞行记录仪（flight recorder）。飞机无论出不出事都在录黑匣子——出事了才去查。OpenClaw 的 trajectory 一样：每个会话的每一步都在记录，但平时不看它。出问题时 `/export-trajectory` 打个包给你。
+
+### 结构化时间线 vs 原始日志
+
+不是简单地 dump 所有 stdout。每个事件有类型（工具调用、模型响应、系统事件）、时间戳、因果链（哪个工具调用触发了哪个结果）。
+
+跟分布式链路追踪（Jaeger/Zipkin）一个思路：不是看日志里 grep 关键字，而是能按请求维度看完整的调用链。
+
+### 脱敏和打包
+
+导出时自动脱敏：API key、用户敏感信息被替换。这样你能把 trajectory 发给别人帮你 debug，不用担心泄露凭证。
+
+打包格式是自包含的：不依赖运行环境，别人拿到包就能完整回放时间线。跟 Firefox crash report 的设计意图一样——用户一键导出，开发者拿到就能复现。
+
+---
+
 > Trajectory capture is OpenClaw's per-session flight recorder. It records a
 > structured timeline for each agent run, then `/export-trajectory` packages the
 > current session into a redacted support bundle.

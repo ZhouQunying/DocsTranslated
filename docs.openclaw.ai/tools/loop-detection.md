@@ -1,5 +1,33 @@
 # Tool-loop detection
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Agent 陷入死循环——同一个工具调了 10 遍还在调。怎么掐？
+
+场景：Agent 调一个工具失败了，它决定重试。又失败。又重试。LLM 看不到"我已经试过 10 次了"（因为上下文可能被压缩了），于是无限循环。这不是假设——上下文压缩后特别容易出现。
+
+### 两道独立的防线
+
+**第一道：滚动历史检测**。看最近 N 次工具调用，发现重复模式就告警或中止。这防的是"原始上下文里就能看到循环"的情况。默认关——因为合法的重试（比如轮询任务状态）也会触发。
+
+**第二道：压缩后守卫**。这是更关键的那道。上下文压缩后，历史被截断了，Agent 看不到自己之前的尝试。守卫的做法：压缩发生后启动监控，如果看到 (工具名, 参数, 结果) 这个三元组完全重复——说明 Agent 在重复完全相同的操作——立刻中止。
+
+为什么用三元组？因为光看工具名和参数不够——`read_file("log.txt")` 可能每次返回不同内容（正常的轮询）。三个都一样才说明真的是死循环。
+
+### 跟电路断路器的关系
+
+这就是断路器（Circuit Breaker）模式的变体：
+
+- 正常状态 → 工具调用自由通过
+- 压缩触发 → 断路器"半开"，开始监控
+- 检测到三元组重复 → 断路器"断开"，中止运行
+
+区别是：传统断路器看的是失败率，这里看的是行为重复率。但本质一样——防止系统在必然失败的操作上无限重试。
+
+---
+
 > OpenClaw has two cooperating guardrails for repetitive tool-call patterns:
 >
 > 1. **Loop detection** (`tools.loopDetection.enabled`) — disabled by default. Watches the rolling tool-call history for repeated patterns and unknown-tool retries.

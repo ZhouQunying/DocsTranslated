@@ -1,5 +1,29 @@
 # Tokenjuice
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 跑了 `npm install`——输出 500 行日志塞回给模型？
+
+Agent 调 `exec` 跑个命令，stdout 吐了 500 行。这些全部作为 tool result 返回给 LLM——浪费 token，而且模型根本不需要看完整日志（它只关心"成功还是失败"和关键错误信息）。
+
+Tokenjuice 做的事：**命令跑完之后、结果返回给 LLM 之前，用一个小模型把输出压缩**。500 行日志变成"安装成功，新增 12 个包"。
+
+### 中间件钩子模式
+
+Tokenjuice 是一个 plugin，用 `before_prompt_build` 钩子插入执行管道。位置很关键：命令已经跑完了（不影响执行），但还没送回 LLM（能省 token）。
+
+跟 HTTP 响应中间件一样：请求已经处理完了，但在返回给客户端之前做一次变换（压缩、脱敏、格式化）。
+
+### 为什么不直接截断？
+
+截断（只取前 N 行）可能丢掉最关键的信息（错误通常在最后面）。Tokenjuice 用语义理解来压缩——它知道哪些行重要、哪些是噪音。代价是多调一次小模型。
+
+取舍很清楚：多花一点小模型的钱（便宜），省下大量主模型的 token（贵）。
+
+---
+
 > `tokenjuice` is an optional bundled plugin that compacts noisy `exec` and `bash`
 > tool results after the command has already run.
 
