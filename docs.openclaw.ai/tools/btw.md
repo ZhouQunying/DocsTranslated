@@ -1,5 +1,31 @@
 # BTW side questions
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Agent 正在写代码，你想问一句"这啥意思"——怎么不打断它？
+
+场景：Agent 跑了一个 10 分钟的任务，你中途想问一句"这个变量是什么意思"。如果正常发消息，这条问答就进了会话历史，后续 Agent 调模型时带着它当上下文——上下文被污染了。如果等 Agent 跑完再问，你可能忘了。
+
+核心直觉：**临时的 fork**。拍个快照、跑个独立查询、答完就扔。主历史线完全不受影响。
+
+### 怎么做到"看得见但不存在"？
+
+关键在 Gateway 的事件类型分离。普通回复走 `chat` 事件，客户端看到了会存进历史。BTW 的回复走 `chat.side_result`——客户端照样显示给你，但不往 `chat.history` 里写。重新加载后它就消失了。
+
+跟数据库里的 dirty read 是一个思路：你能看到还没提交的数据，但它不会被持久化。
+
+### Codex 场景的更复杂变体
+
+普通会话直接跑一次独立 LLM 调用就行。但 Codex 有 OAuth、线程上下文、原生工具这些状态。直接跑个裸调用会丢掉这些。
+
+所以 Codex 场景的做法是**线程 fork**：从当前活跃线程派生一个临时子线程。子线程继承了权限和工具接口，但加了护栏——"不要把继承的父线程工作当成你的指令"。跑完后子线程销毁，父线程完全不知道这事发生过。
+
+跟 Unix fork 一个味道：子进程拿到父进程的内存快照，但改的是自己的副本。
+
+---
+
 > `/btw` lets you ask a quick side question about the **current session** without
 > turning that question into normal conversation history. `/side` is an alias.
 
