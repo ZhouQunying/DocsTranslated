@@ -1,5 +1,77 @@
 # Message lifecycle refactor（消息生命周期重构）
 
+## 架构精读
+
+> 本节提炼这篇 RFC 的核心设计决策，把 OpenClaw 的实现跟通用分布式系统模式关联起来。跳过不影响阅读后续翻译。
+
+### 这篇文档在说什么
+
+一句话：把 OpenClaw 散落各处的"收消息→回消息"逻辑，重构成一套**统一的消息生命周期**。核心是四个正交关注点——接收（receive）、发送（send）、实时（`live`）、状态（state）。
+
+### 它要解决的根本问题
+
+**消息丢失**。具体场景：Telegram 轮询已确认 → 助手文本已生成 → 进程在 sendMessage 之前崩溃 → 最终回复永远丢失。这不是 Telegram 特有的——任何"先确认收到、后才发送回复"的流程都有这个窗口。
+
+### 核心设计模式：WAL（预写日志）
+
+数据库在修改数据之前先写日志，保证崩溃后可恢复。OpenClaw 的做法完全类似：
+
+1. **写意图**：决定要发一条消息时，先把"发送意图"（DurableSendIntent）持久化到本地存储
+2. **执行 I/O**：调平台 API 发消息
+3. **提交回执**：平台确认成功后，把回执写回意图记录
+4. **恢复**：重启时扫描所有未提交的意图，重放或对账
+
+这给了 OpenClaw "至少一次"投递保证。只有能证明幂等或能对账的适配器才能做到"恰好一次"。
+
+### 危险边界：unknown_after_send
+
+文档反复强调的场景：平台 API 返回成功，但进程在写回执之前挂了。这时 OpenClaw 不知道消息到底发出去没——盲目重发可能重复，不重发可能丢失。解法是让适配器声明 `reconcileUnknownSend`，先对账再决定。
+
+这跟支付系统的"掉单"问题一模一样：扣款成功但订单状态没更新，需要对账。
+
+### 四个正交概念
+
+| 概念 | 职责 | 类比 |
+|------|------|------|
+| `receive` | 接收：标准化→去重→路由→记录→派发→确认 | MQ 的 consumer pipeline |
+| `send` | 发送：写意图→渲染→发送→提交回执 | MQ 的 producer + WAL |
+| `live` | 预览/编辑/进度/流式的统一生命周期 | 有状态连接的会话层 |
+| `state` | 持久化意图、回执、幂等、恢复、锁、去重 | 事务管理器 |
+
+### "回复是关系，不是 API 根"
+
+这是整篇文档最重要的范式转换。旧设计里 `reply()` 是所有发送的入口。新设计里 `send()` 是入口，`reply` 只是消息上的一种关系（`MessageRelation`）——跟 `followup`、`broadcast`、`system` 并列。这让定时通知、审批提示、子 Agent 结果都能走同一条发送路径。
+
+### 能力声明式适配器
+
+通道不靠 if-else 分支区分行为，而是**声明自己有什么能力**（`MessageCapabilities`）。核心根据声明决定路由。这是典型的**策略模式 + 能力协商**——跟 HTTP 内容协商、USB 设备描述符是一个思路。
+
+### 迁移策略：渐进式安全切换
+
+8 个阶段，核心原则是"默认不变，显式加入"：
+
+- `disabled`（默认）→ `best_effort` → `required`
+- 每个通道单独迁移，测试验证后才切换
+- 旧入口保持行为不变，新功能只在新路径启用
+- 任何通道启用持久化之前必须满足 6 个前置条件
+
+这跟大型系统的灰度发布是一个思路：绝不一刀切。
+
+### 术语速查
+
+| 文档术语 | 含义 |
+|----------|------|
+| DurableSendIntent | 持久化发送意图——WAL 里的一条记录 |
+| Receipt | 回执——平台 API 返回的消息 ID 等确认信息 |
+| unknown_after_send | 发送后未知——平台可能成功但本地没记录 |
+| reconcile | 对账——查平台真实状态来解决未知状态 |
+| fail closed | 默认拒绝——写不进意图就拒绝发送 |
+| ReceiveAckPolicy | 接收确认策略——控制什么时候告诉平台"我收到了" |
+| MessageOrigin | 消息来源标签——防止 OpenClaw 自己的输出被当成用户输入 |
+| RenderedMessageBatch | 渲染后的消息批次——一次投递可能包含多条消息 |
+
+---
+
 > This page is the target design for replacing scattered channel inbound, reply dispatch, preview streaming, and outbound delivery helpers with one durable message lifecycle.
 
 本页是一份**目标设计文档**：用一套持久化的消息生命周期，替换掉目前散落在各处的通道接收、回复派发、预览流、外发投递等辅助逻辑。

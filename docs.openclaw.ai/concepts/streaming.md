@@ -1,5 +1,37 @@
 # Streaming and chunking
 
+## 架构精读
+
+> 本节提炼流式机制的设计约束和模式。跳过不影响阅读后续翻译。
+
+### 核心约束
+
+聊天平台**不支持 token 级别的流式输出**。浏览器里的 ChatGPT 能逐字蹦出来，是因为用了 SSE（Server-Sent Events）。但 Telegram / Discord / Slack 的 API 只支持"发一条消息"和"编辑一条消息"——没有"往一条消息追加一个字"这种原子操作。
+
+### 三种应对模式
+
+这是一个**约束驱动的设计谱系**：
+
+| 模式 | 机制 | 用户感知 | 代价 |
+|------|------|----------|------|
+| 块流式 | 模型输出攒够一块就发一条新消息 | 像连发几条短消息 | API 调用多，消息碎 |
+| 预览流式 | 发一条消息，反复编辑更新内容 | 像打字机效果 | 编辑 API 有限速 |
+| 进度草稿 | 发一条状态消息，显示当前在干什么 | 像进度条 | 不展示文本内容 |
+
+三种模式不是互斥的——同一条回复可以先用进度草稿显示"正在搜索..."，再用预览流式展示生成中的文本，最后编辑成最终答案。
+
+### 适配器模式
+
+每个通道的限制不同（Telegram 编辑有频率限制、Discord 有字符上限、Slack 有原生流支持），所以同一段内容需要**不同的投递策略**。这是典型的**适配器模式**：核心产出内容，适配器决定怎么送达。
+
+### 关键设计决策
+
+- `blockStreamingBreak`：按 `text_end`（每段完成就发）还是 `message_end`（整条消息完成才发）切分块
+- 预览更新频率由 `previewDebounceMs` 控制——太快会被平台限速，太慢用户觉得卡
+- 预览过期（`staleAfterMs`）后发新消息而不是继续编辑——因为用户可能已经滚走了
+
+---
+
 > OpenClaw has two separate streaming layers:
 >
 > * **Block streaming (channels):** emit completed **blocks** as the assistant writes. These are normal channel messages (not token deltas).

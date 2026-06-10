@@ -1,5 +1,35 @@
 # Steering queue
 
+## 架构精读
+
+> 本节提炼转向队列的时序模型和设计取舍。跳过不影响阅读后续翻译。
+
+### 核心机制：模型边界注入
+
+Steering 的注入点是**模型边界**——当前轮的工具调用全部执行完毕之后、下一次 LLM 调用之前。这个时间窗口里，排队的用户消息被追加为 user messages，下一次模型调用就能看到。
+
+为什么选这个边界？两个约束：
+1. **不能打断工具调用**：工具可能有副作用（写文件、调 API），中断会留下脏状态
+2. **必须保持工具结果配对**：工具结果必须跟请求它的 assistant 消息配对，否则模型会困惑
+
+### 响应性 vs. 连贯性
+
+这是 steering 的核心取舍：
+
+- **响应性**：用户的新消息越快被 Agent 看到越好（steer 模式）
+- **连贯性**：Agent 正在做的事情不应该被打断或混淆（followup / collect 模式）
+
+默认选 steer（响应性优先）是因为大多数场景里用户发的是补充信息（"对了，文件在 /tmp 下"），不是矛盾指令。
+
+### 两种实现路径
+
+- **OpenClaw 内部队列**：自然缓冲到模型边界，一次性注入所有排队消息
+- **Codex app-server**：暴露 `turn/steer` API，OpenClaw 在防抖窗口后打包发送
+
+两者语义一致，投递机制不同。这是**接口统一、实现分离**的典型案例。
+
+---
+
 > When a normal prompt arrives while a session run is already streaming, OpenClaw tries to send that prompt into the active runtime by default when the queue mode is `steer`. No config entry and no queue directive are required for that default behavior. OpenClaw and the native Codex app-server harness implement the delivery details differently.
 
 会话运行已经在流式时常规 prompt 到达，队列模式是 `steer` 时 OpenClaw 默认尝试把这个 prompt 送进活跃 runtime。这个默认行为不需要配置或队列指令。OpenClaw 和原生 Codex app-server harness 在投递细节上各不相同。

@@ -1,5 +1,37 @@
 # Command queue
 
+## 架构精读
+
+> 本节提炼命令队列的并发控制模式。跳过不影响阅读后续翻译。
+
+### 核心问题
+
+多个用户同时发消息给 Agent，每条都立刻触发 LLM 调用会怎样？资源竞争（同一个会话文件被并发读写）、上游限速（API 调用过密）、语义混乱（Agent 同时处理矛盾的指令）。
+
+### 通路感知的 FIFO
+
+解法是**两级串行化**，类似操作系统的线程调度：
+
+1. **会话级**：每个会话同一时间只有一个 Agent 运行（`session:<key>` 通路），防止同一会话的并发冲突
+2. **全局级**：所有会话运行再排进全局队列（`main` 通路），整体并行度受 `maxConcurrent` 限制
+
+额外通路（`cron`、`subagent`）让后台任务独立排队，不阻塞用户的实时消息。
+
+### 四种模式 = 四种中断处理策略
+
+| 模式 | 类比 | 适用场景 |
+|------|------|----------|
+| `steer` | CPU 中断注入——正在执行的进程收到新信号 | 默认。用户补充信息给正在跑的 Agent |
+| `followup` | 消息队列——先排队、后处理 | 每条消息需要独立完整处理 |
+| `collect` | 批处理——攒一批再处理 | 多条消息合并成一个上下文更高效 |
+| `interrupt` | kill -9——杀掉当前进程、跑新的 | 用户改主意了，之前的不要了 |
+
+### 输入中状态的 UX 技巧
+
+排队等待时立刻发"输入中"状态（typing indicator），让用户感觉 Agent 在处理。实际上 Agent 可能还在队列里等——但用户不需要知道这个实现细节。这是**感知延迟优化**的经典手法。
+
+---
+
 > We serialize inbound auto-reply runs (all channels) through a tiny in-process queue to prevent multiple agent runs from colliding, while still allowing safe parallelism across sessions.
 
 我们用一个小型进程内队列把所有通道的接收自动回复运行串行化，避免多个 agent 运行打架，同时跨会话仍然能安全并行。
