@@ -1,5 +1,41 @@
 # Exec tool
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 给 AI 一个 shell 权限——最危险也最强大的工具
+
+这是 OpenClaw 里唯一真正"什么都能干"的工具。`write` 写文件、`edit` 改文件——它们是受限的。但 `exec` 跑 shell 命令，理论上能 `rm -rf /`。问题是：没有 shell 的 Agent 就是个聊天机器人。有了 shell 它才能装包、跑测试、部署代码。
+
+所以设计的核心张力是：**怎么给 Agent 足够的能力而不让它把系统搞炸**。
+
+### 三种"在哪里跑"：隔离层级的选择
+
+`host` 参数决定命令在哪个环境执行：
+
+- **sandbox**：容器隔离。炸了只炸容器。
+- **gateway**：OpenClaw 进程所在的宿主机。有全部权限。
+- **node**：远程配对节点。可能在另一台机器上。
+
+`auto`（默认）的解析逻辑很关键：**有沙箱就留在沙箱，没沙箱就上 gateway**。说白了——如果你没配沙箱，Agent 默认就在宿主机上裸跑。这是"开箱即用优先于安全"的设计选择，文档自己标了重要提示。
+
+### 为什么安全默认是"全放行"？
+
+反直觉：`security` 对 gateway/node 默认是 `full`（啥都能跑），`ask` 默认是 `off`（不问用户）。等于 Agent 默认能在你机器上跑任何命令。
+
+这是个取舍判断：OpenClaw 面向的是"运维自己部署在自己机器上"的场景，不是"把 Agent 暴露给不信任用户"的场景。默认严格 = 每条命令都要审批 = 没人用。所以选择了"默认信任，需要时收紧"。
+
+想收紧时有三层叠加：`tools.exec.security` + `~/.openclaw/exec-approvals.json` + elevated 闸门。生效策略取三者中最严的那个。
+
+### 后台执行的巧思：yieldMs
+
+长命令（编译、部署）可能跑几分钟。如果同步等，Agent 这段时间干不了别的。`yieldMs` 的做法是：跑超过 10 秒自动转后台，Agent 继续干别的。命令结束时入队通知，Agent 下次心跳处理它。
+
+跟 IDE 里"编译转后台"一个体验——你不需要盯着编译看。
+
+---
+
 > Run shell commands in the workspace. `exec` is a mutating shell surface: commands can create, edit, or delete files wherever the selected host or sandbox filesystem permits. Disabling OpenClaw filesystem tools such as `write`, `edit`, or `apply_patch` does not make `exec` read-only.
 
 在工作区里跑 shell 命令。`exec` 是一个会改文件的 shell 接口:在所选宿主或沙箱文件系统允许的范围内,命令可以创建、编辑、删除文件。关掉 OpenClaw 的文件系统工具(如 `write`、`edit`、`apply_patch`)**不会**让 `exec` 变成只读。
@@ -198,7 +234,7 @@ openclaw config set 'agents.list[0].tools.exec.node' "node-id-or-name"
 
 > Control UI: the Nodes tab includes a small "Exec node binding" panel for the same settings.
 
-Control UI:Nodes 标签页里有一个小的 "Exec node binding" 面板,做同样的设置。
+Control UI:Nodes 标签页里有一个小的"Exec 节点绑定"面板,做同样的设置。
 
 ## 会话覆盖(`/exec`)
 
@@ -241,7 +277,7 @@ Control UI:Nodes 标签页里有一个小的 "Exec node binding" 面板,做同�
 > result explicitly says chat approvals are unavailable or manual approval is the
 > only path.
 
-要审批时,exec 工具立即返回 `status: "approval-pending"` 和一个审批 id。审批通过(或拒绝 / 超时)后,Gateway 只为通过的运行发出命令进度和完成系统事件(`Exec running` / `Exec finished`)。被拒或超时的审批是终态,不会用拒绝系统事件唤醒 agent 会话。在有原生审批卡片 / 按钮的通道上,agent 应该优先依赖那套原生 UI;只有当工具结果明确说"聊天审批不可用"或"手动审批是唯一路径"时,才带上手动 `/approve` 命令。
+要审批时,exec 工具立即返回 `status: "approval-pending"` 和审批 id。审批通过(或拒绝 / 超时)后,Gateway 只为通过的运行发出命令进度和完成系统事件(`Exec running` / `Exec finished`)。被拒或超时的审批是终态,不会用拒绝事件唤醒 agent 会话。有原生审批卡片的通道上,agent 优先用原生 UI;只有工具结果明确说"聊天审批不可用"时才带 `/approve` 命令。
 
 ## 白名单 + safe bins
 
