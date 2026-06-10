@@ -1,5 +1,21 @@
 # PDF tool
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Agent 想读 PDF——但不是每个模型都能直接吃 PDF 字节
+
+问题很直接：用户甩了个 PDF 过来让 agent 分析。Anthropic 和 Google 的 API 能直接吃 PDF 字节,其他 provider 不行。
+
+`pdf` 工具的策略：先判断当前模型是不是原生支持 PDF 的 provider。是的话,直接把原始字节喂过去——最忠实、最省事。不是的话,走"抽取回退"：先用 PDF 库把文本抠出来,需要的话再把页面转成图片,让视觉模型看图。
+
+跟浏览器渲染一个意思：原生支持的格式直接渲染；不支持的先转成通用格式再处理。
+
+另一个关键点：整条回退链是"认证感知"的。你配了 Anthropic 但没给 key——那它不算数,继续往下找。说白了：有模型不等于能用,能认证才算一个合格候选。
+
+---
+
 > `pdf` analyzes one or more PDF documents and returns text.
 
 `pdf` 分析一份或多份 PDF 文档,返回文本。
@@ -171,7 +187,7 @@ provider 是 `anthropic` 和 `google` 时走原生模式。工具直接把原始
 - 页面图片抽取用 `4,000,000` 像素预算。
 - 目标模型不支持图片输入、又抽不出文本时,工具报错。
 - 文本抽取成功、但图片抽取需要在纯文本模型上调视觉时,OpenClaw 丢掉渲染的图片,只用抽出的文本继续。
-- 抽取回退用内置的 `document-extract` 插件。插件拥有 `pdfjs-dist`;`@napi-rs/canvas` 只在能用图片渲染回退时才用。
+- 抽取回退用内置的 `document-extract` 插件。插件内含 `pdfjs-dist`;`@napi-rs/canvas` 只在能用图片渲染回退时才用。
 
 ## 配置
 

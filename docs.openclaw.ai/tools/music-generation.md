@@ -1,5 +1,19 @@
 # Music generation
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 生成音乐要几十秒甚至几分钟——agent 这时候干啥？
+
+不能让 agent 干等着。`music_generate` 用"后台任务 + 唤醒"模式：调用后立刻返回任务 id,agent 继续回别的消息。曲子好了,OpenClaw 唤醒 agent:"你的音乐出来了,用 message 工具发给用户吧。"
+
+跟外卖平台一样：你下单后 app 不卡住你,你可以继续浏览。做好了推送通知你取餐。
+
+另一个细节：用户会话不活跃时(比如关了聊天窗口),agent 没法通过 message 工具投递。OpenClaw 的兜底：直接发一条幂等消息,只包含还没送达的音频。已送达的不重发——幂等性保证不会重复。
+
+---
+
 > The `music_generate` tool lets the agent create music or audio through the
 > shared music-generation capability with configured providers — ComfyUI,
 > fal, Google, MiniMax, and OpenRouter today.

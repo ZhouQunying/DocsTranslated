@@ -1,5 +1,21 @@
 # Media overview
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 图片、视频、音乐、TTS、STT——怎么统一管？
+
+表面上是五种媒体能力,但底层就两个模式：同步和异步。TTS 几秒钟回来,贴到回复里就行——同步。图片、视频、音乐都可能跑几分钟——异步。
+
+异步的统一模式：提交请求 → 拿到任务 id → agent 该干嘛干嘛 → provider 出结果了唤醒 agent → agent 通过 message 工具把成品发给用户。
+
+关键设计：如果 agent 被唤醒时用户的会话已经不活跃了怎么办？OpenClaw 有一条"幂等直接回退"路径——绕过 agent,直接把缺的媒体送达,且只送"message 工具还没投递过的"那部分。这保证用户不会收不到,也不会收两遍。
+
+跟电商订单一样：正常路径是"客服通知你取货"；客服联系不上你,系统直接发短信告诉你。
+
+---
+
 > OpenClaw generates images, videos, and music, understands inbound media
 > (images, audio, video), and speaks replies aloud with text-to-speech. All
 > media capabilities are tool-driven: the agent decides when to use them based
@@ -107,7 +123,7 @@ OpenClaw 能生成图片、视频、音乐,能理解收到的媒体(图片、音
 > media-understanding pass reuses that transcript instead of making a second
 > STT call for the same audio.
 
-配置好之后,Deepgram、DeepInfra、ElevenLabs、Mistral、OpenAI、OpenRouter、SenseAudio、xAI 都能通过批量 `tools.media.audio` 路径转录收到的音频。通道插件为了 @ 触发或命令解析对语音笔记做预先处理时,会在入站上下文上打"已转录附件"标记,这样共享的媒体理解流程会复用这份转录,不会对同一份音频再发一次 STT 调用。
+配置好之后,Deepgram、DeepInfra、ElevenLabs、Mistral、OpenAI、OpenRouter、SenseAudio、xAI 都能通过批量 `tools.media.audio` 路径转录收到的音频。通道插件为 @ 触发或命令解析预处理语音笔记时,会在入站上下文上打"已转录"标记。共享的媒体理解流程看到标记就复用这份转录,不会对同一份音频再发 STT。
 
 > Deepgram, ElevenLabs, Mistral, OpenAI, and xAI also register Voice Call
 > streaming STT providers, so live phone audio can be forwarded to the selected

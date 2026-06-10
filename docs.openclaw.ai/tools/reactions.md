@@ -1,5 +1,21 @@
 # Reactions
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 同一个"加 emoji"动作,七八个通道行为全不一样——怎么抽象？
+
+Slack 能撤所有反应,Telegram 也能但要求参数不一样,Nextcloud Talk 干脆不支持撤……agent 不可能为每个通道写一套逻辑。
+
+`react` 动作的策略是"优雅降级"：agent 只发统一的 `{action: "react", emoji: "thumbsup"}`。各通道适配层翻译成本地 API 调用,不支持的操作直接拒绝并报明确错误(不是默默吞掉)。
+
+跟 CSS 的渐进增强一个道理：你写一份样式,现代浏览器全渲染,老浏览器忽略它不认识的属性但不崩。
+
+`trackToolCalls: true` 是一个巧妙设计：把一条已反应的消息变成"进度载体",后续同一轮里的工具进度反应都往这条消息上加。用户看到的是一条消息上 emoji 在变化,而不是一堆通知刷屏。
+
+---
+
 > The agent can add and remove emoji reactions on messages using the `message`
 > tool with the `react` action. Reaction behavior varies by channel and transport.
 
