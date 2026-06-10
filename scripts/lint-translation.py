@@ -85,7 +85,9 @@ LABEL_PATTERNS = [
 
 
 def strip_inline_code(text: str) -> str:
-    return re.sub(r"`[^`]+`", "", text)
+    text = re.sub(r"`[^`]+`", "", text)
+    text = re.sub(r"\]\([^)]+\)", "]()", text)
+    return text
 
 
 def check_forbidden_english(classified) -> list[str]:
