@@ -1,5 +1,31 @@
 # Elevated mode
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 沙箱装不了系统包——怎么让 Agent 临时出去跑？
+
+场景：Agent 跑在沙箱容器里，需要执行 `apt install` 或访问宿主的 GPU。沙箱里做不了这事。你也不想彻底关掉沙箱——大部分时候它的隔离是你要的。
+
+这就是 elevated 解决的问题：**不关沙箱，但允许特定命令"逃出去"在宿主上跑**。
+
+### 三个级别、一个关键区分
+
+- `on` / `ask`：逃出沙箱，但命令仍然过审批流程（白名单 + 用户确认）
+- `full`：逃出沙箱 + 跳过审批。等于 Agent 在宿主上裸跑。
+- `off`：回到沙箱。
+
+关键：elevated 只管"在哪里跑"这一个维度。它**不覆盖**工具策略里的其他限制（比如被禁的工具还是被禁的）。说白了——elevated 是开门，不是给钥匙。进了门之后你能做什么，还是由审批策略说了算（除非你开到 `full`，那审批也跳了）。
+
+### 为什么不直接关沙箱？
+
+关沙箱 = 永久的。所有命令都在宿主跑，没有回头路。elevated 是可切换的——这次操作需要宿主权限就 `on`，完了就 `off` 回沙箱。运维可以在配置里把 elevated 锁死成 `off`，Agent 压根没法请求提权。
+
+三层控制叠加：全局配置允不允许 → 运行时 Agent 允不允许 → 发消息的人在不在白名单里。三个 AND 都过了才放行。
+
+---
+
 > When an agent runs inside a sandbox, its `exec` commands are confined to the
 > sandbox environment. **Elevated mode** lets the agent break out and run commands
 > outside the sandbox instead, with configurable approval gates.

@@ -1,5 +1,42 @@
 # Exec approvals
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Agent 想跑 `git push`——谁来决定放不放行？
+
+exec.md 讲了"在哪里跑"，elevated.md 讲了"怎么逃出沙箱"。这篇讲的是最后一道关：**具体这条命令到底让不让跑**。
+
+这三层组合起来才是完整的安全栈：sandbox 隔离 → elevated 开门 → approvals 审批。缺任何一层都不完整。
+
+### 双重策略源、取严
+
+有两个地方配审批策略：
+
+1. **`tools.exec.*`**：在 OpenClaw 配置里，跟着会话 / Agent 走
+2. **`~/.openclaw/exec-approvals.json`**：在宿主机器上，跟着那台物理机走
+
+生效策略 = 两者中更严的那个。凭什么？因为它们代表不同角色：配置是"Agent 运维"说了算，JSON 文件是"宿主机主人"说了算。两边都同意才放行。
+
+这跟 Android 的权限模型一样：app manifest 声明要用摄像头（开发者意图），但用户还得单独授权（机主意图）。
+
+### 信任模型：谁是可信发起方？
+
+审批要有人点"同意"。谁有资格点？
+
+Gateway 认证的用户 = 可信操作员。他们能审批所有命令。但 Agent 也可能从聊天通道收到消息——这些消息的发送者不一定可信。所以审批有个 `allowFrom` 白名单：只有白名单里的发送者的审批才算数。
+
+这防的是：恶意用户在群聊里发 `/approve` 试图放行危险命令。
+
+### "记住这个命令"：allow-always 的设计
+
+每次命令都要用户确认太烦。`allow-always` 让用户说"以后这条命令不用问我了"。但记住的是**精确的命令文本**——不是"所有 git 命令"，而是"这条具体的 `git push origin main`"。
+
+安全和便利之间的妥协点：不是按工具粒度（太粗），也不是每次都问（太烦），而是按具体命令粒度。
+
+---
+
 > Exec approvals are the **companion app / node host guardrail** for letting
 > a sandboxed agent run commands on a real host (`gateway` or `node`). A
 > safety interlock: commands are allowed only when policy + allowlist +
