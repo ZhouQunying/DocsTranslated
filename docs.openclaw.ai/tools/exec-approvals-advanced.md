@@ -1,5 +1,37 @@
 # Exec approvals — advanced
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### `cat` 和 `jq` 明显无害——每次都要审批太蠢了。怎么自动放行？
+
+exec-approvals.md 讲了审批大框架。但实际使用中有一类命令只从 stdin 读数据、不碰文件系统、不联网——`cat`、`jq`、`head`、`wc` 这种。每次都问用户是反人类的。
+
+`safeBins` 就是解法：**声明一组"仅 stdin"的安全二进制，直接放行**。
+
+### 关键约束：不查文件系统
+
+判断二进制是否在信任目录时，**不做 `stat()` 或 `which`**。只做纯字符串前缀匹配——路径开头是不是 `/bin/` 或 `/usr/bin/`。
+
+为什么？文件系统查询本身就是漏洞。攻击者可以造 `/tmp/bin/cat`，如果你 `which cat` 解析过去就被骗了。纯前缀匹配 = 确定性 = 不依赖运行时 = 无法被欺骗。
+
+跟编译器常量折叠一个思路：能在静态阶段确定的东西，比运行时判断安全得多。
+
+### Shell 管道：`echo foo | jq .bar` 怎么审批？
+
+管道里每段独立判断。`echo` 在 safe list？过。`jq` 在 safe list？过。整条管道就过了。
+
+但 `echo foo | bash` 不行——`bash` 不在 safe list（它能执行任意代码），前面再安全也没用。一条管道的安全性由最弱一环决定。
+
+### 审批怎么到用户手里？直接在聊天里点
+
+Discord 上审批变成带按钮的 embed；Telegram 变成 inline keyboard；Matrix 变成 reaction 快捷键。不用打开别的界面——审批请求就在对话里，点一下完事。
+
+跟 GitHub PR 里直接 approve 一个意思：把审批 UI 嵌到用户已有的操作面里。
+
+---
+
 > Advanced exec-approval topics: the `safeBins` fast-path, interpreter/runtime
 > binding, and approval-forwarding to chat channels (including native delivery).
 > For the core policy and approval flow, see [Exec approvals](/tools/exec-approvals).
@@ -192,7 +224,7 @@ shell 包装器(`bash|sh|zsh ... -c/-lc`)的请求作用域 env 覆盖被收窄�
 - 精确的 argv / cwd / env 上下文总会绑定。
 - 直接 shell 脚本和直接运行时文件形式,会尽力绑定到一份具体本地文件快照。
 - 常见的、仍能解析到一份直接本地文件的包管理器包装形式(如 `pnpm exec`、`pnpm node`、`npm exec`、`npx`)在绑定前先解包。
-- 解释器 / 运行时命令里 OpenClaw 无法识别"正好一份具体本地文件"时(如包脚本、eval 形式、运行时特定的 loader 链、模糊的多文件形式),受审批支撑的执行被拒,不会假装拥有它没有的语义覆盖。
+- 解释器 / 运行时命令里 OpenClaw 无法识别"正好一份具体本地文件"时(如包脚本、eval 形式、运行时特定的 loader 链、模糊的多文件形式),受审批支撑的执行被拒——不会假装持有它没有的语义覆盖。
 - 那种工作流,优先用沙箱、独立宿主边界、或显式信任白名单 / 完整工作流 —— 运维自己接受更宽的运行时语义。
 
 > When approvals are required, the exec tool returns immediately with an approval id. Use that id to
@@ -460,7 +492,7 @@ FAQ:[聊天审批为啥有两份 exec 审批配置?](/help/faq-first-run#why-are
 > can still send the approval and result to the owner's Telegram DM when Telegram is the configured
 > primary private interface. The group chat only gets a short acknowledgement.
 
-敏感的仅所有者群命令(如 `/diagnostics` 和 `/export-trajectory`)对审批提示和最终结果用私密所有者路由。OpenClaw 先在所有者跑命令的同一接口上试私密路径。该接口没有私密所有者路径时,回退到 `commands.ownerAllowFrom` 里第一个可用的所有者路径 —— 这样 Telegram 是配置好的主私密接口时,一条 Discord 群命令仍能把审批和结果发到所有者的 Telegram DM。群聊只收到一条短的确认。
+敏感的仅所有者群命令(如 `/diagnostics`、`/export-trajectory`)对审批和结果走私密所有者路由。OpenClaw 先在所有者发命令的同一接口上试私密路径。该接口没有私密路径时,回退到 `commands.ownerAllowFrom` 里第一个可用路径。比如 Telegram 是主私密接口时,Discord 群命令仍能把审批发到 Telegram DM。群聊只收到一条短确认。
 
 > Telegram defaults to approver DMs (`target: "dm"`). You can switch to `channel` or `both` when you
 > want approval prompts to appear in the originating Telegram chat/topic as well. For Telegram forum

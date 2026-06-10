@@ -1,5 +1,44 @@
 # Image generation
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 用户说"画一张猫"——但你配了 5 个图片 API，用哪个？
+
+Agent 有一个 `image_generate` 工具。但实际画图的可能是 DALL-E、Midjourney、Stable Diffusion 或十几个其他 provider。每个能力不同（有的能编辑、有的只能生成；有的支持指定尺寸、有的不行）。
+
+核心问题：**多 provider 怎么选、怎么兜底**。
+
+### 多 provider 备选链
+
+选择顺序是确定的：
+
+1. 用户在命令里指定了具体 provider → 用那个
+2. 没指定 → 按配置的 primary provider 试
+3. primary 失败 → 按 fallback 列表依次试
+4. 全失败 → 用 auto-detection（看哪个 provider 的认证凭证存在且可用）
+
+跟 DNS 解析的递归查询一个思路：优先本地缓存（显式指定）→ 配置的上游（primary）→ 逐个备选（fallback）→ 自动发现（auto）。
+
+### 为什么图片生成是异步的？
+
+图片生成可能跑 30 秒以上。同步等 = Agent 整个会话卡住。所以用后台任务模式：
+
+1. 工具调用立即返回一个 task id
+2. Agent 继续处理其他事
+3. 图片生成完毕时唤醒 Agent，图片自动发给用户
+
+跟 CI/CD pipeline 一样：提交后不站在那里等编译完，给你个 build id，完了通知你。
+
+### 凭证感知的候选过滤
+
+不是所有配置了的 provider 都能用——可能 API key 过期了、可能余额用完了。所以选 provider 之前先做**认证预检**：只把"凭证有效"的 provider 放进候选列表。失败不是在调 API 时才发现，而是在选谁之前就过滤掉了。
+
+这是**fail-fast**的应用：越早发现不可用越好，避免浪费时间在注定失败的尝试上。
+
+---
+
 > The `image_generate` tool lets the agent create and edit images using your
 > configured providers. In chat sessions, image generation runs asynchronously:
 > OpenClaw records a background task, returns the task id immediately, and wakes

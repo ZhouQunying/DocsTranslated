@@ -1,5 +1,36 @@
 # Diffs
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Agent 需要看代码 diff——但 diff 可能有几百 KB。怎么给它看而不撑爆上下文？
+
+场景：用户让 Agent review 一个 PR。diff 内容可能 500 行。直接塞进对话 = 浪费大量 token。而且 diff 是临时的——review 完就没用了。
+
+解法：**不把 diff 放进对话，而是生成一个可访问的"产物"，Agent 需要时自己去取**。
+
+### 两种输出模式的设计选择
+
+- **viewer 模式**：生成一个本地 HTML 页面（带语法高亮的 diff 视图），通过 localhost URL 访问。Agent 给用户发链接或截图。适合人看。
+- **file 模式**：把 diff 写成临时文件，Agent 能读取内容做分析。适合 Agent 程序化处理。
+
+为什么两种？因为"人看 diff"和"Agent 分析 diff"是完全不同的需求。人要高亮和折叠；Agent 要纯文本和结构化数据。
+
+### 安全设计：为什么 localhost-only + CSP + tokenized path？
+
+viewer 模式启动了一个本地 HTTP 服务器。它包含用户代码。如果不加保护：
+
+- 非 localhost 可访问 → 局域网内的人能看到你的代码
+- 没有 CSP → diff 里的 `<script>` 标签可能被执行（XSS）
+- 路径可预测 → 恶意脚本能批量扫描已有 diff
+
+所以三层防御：只绑 127.0.0.1 + Content-Security-Policy 禁脚本执行 + 路径里带随机 token。
+
+跟临时分享链接的设计一样：不可枚举 + 短生命周期 + 最小权限。
+
+---
+
 > `diffs` is an optional plugin tool with short built-in system guidance and a companion skill that turns change content into a read-only diff artifact for agents.
 
 `diffs` 是一个可选的插件工具,带一段简短的内置系统指引,以及一个配套技能,用来把变更内容变成只读的 diff 产物给 agent 用。
@@ -429,7 +460,7 @@ openclaw plugins install diffs
 
 > `viewerBaseUrl` (string) — Plugin-owned fallback for returned viewer links when a tool call does not pass `baseUrl`. Must be `http` or `https`, no query/hash.
 
-`viewerBaseUrl`(string)—— 工具调用没传 `baseUrl` 时,插件拥有的查看器链接回退。必须 `http` 或 `https`,不带 query/hash。
+`viewerBaseUrl`(string)—— 工具调用没传 `baseUrl` 时,插件持有的查看器链接回退。必须 `http` 或 `https`,不带 query/hash。
 
 ```json5
 {
