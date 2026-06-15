@@ -1,0 +1,38 @@
+# Qianfan (千帆)
+
+Qianfan (千帆)
+
+百度千帆提供 ERNIE 和其他模型的访问。
+
+## Getting started / 入门
+
+```bash
+export QIANFAN_API_KEY="..."
+openclaw onboard
+# Choose "Qianfan (千帆)"
+```
+
+## Configuration / 配置
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "qianfan/model-name"
+      }
+    }
+  }
+}
+```
+
+## Model routing / 模型路由
+
+OpenClaw routes `qianfan/*` models through the Qianfan (千帆) API.
+
+OpenClaw 通过 Qianfan (千帆) API 路由 `qianfan/*` 模型。
+
+## Related / 相关
+
+- [Provider directory](/providers) — 所有提供者列表
+- [Models](/providers/models) — 模型配置
