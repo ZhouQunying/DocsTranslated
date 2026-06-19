@@ -1,5 +1,28 @@
 # HTTP API / HTTP API
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### OpenAPI 规范——为什么暴露 schema？
+
+ClawHub 在 `/api/v1/openapi.json` 暴露 OpenAPI 规范（原 Swagger）。这跟 Stripe、GitHub、Twilio 等 API-first 公司一样——不是内部文档，而是公开的机器可读 schema。
+
+优势有三：
+- **自动客户端生成**：开发者可以用 openapi-generator 生成 TypeScript/Python/Go 客户端，不需要手写 HTTP 调用
+- **实时文档**：API 变更时 schema 同步更新，不会有过时文档
+- **验证契约**：客户端可以验证响应是否符合 schema，检测 API 破坏性变更
+
+代价是 schema 必须严格维护——每次 API 变更都要更新 OpenAPI 文件。但这是 API-first 设计的基本要求。
+
+### 旧版端点保留——向后兼容的策略
+
+`/api/...` 和 `/api/cli/...` 旧版路径保留用于兼容性。这跟 Kubernetes 的 API 版本策略一样——v1 和 v1beta1 可以并存，旧客户端不会被破坏。
+
+但旧版端点不保证新功能。`DEPRECATIONS.md` 记录了哪些端点被弃用、什么时候移除。这是渐进式迁移——给客户端时间升级，而非一刀切破坏。
+
+---
+
 Base URL: `https://clawhub.ai` (default).
 
 基础 URL:`https://clawhub.ai`(默认)。
