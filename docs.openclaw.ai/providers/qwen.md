@@ -1,5 +1,15 @@
 # Qwen (通义千问)
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### DashScope API——阿里云模型服务的统一入口
+
+Qwen Cloud 通过 DashScope API 访问阿里巴巴的 Qwen 模型。DashScope 是阿里云的统一模型服务平台，类似 AWS Bedrock 在 AWS 生态中的角色。对 OpenClaw agent 来说，Qwen 的价值是**中文场景优化**——Qwen 模型在中文理解和生成上表现优异，适合面向中文用户的 agent 工作流。
+
+---
+
 Qwen Cloud provides access to Alibaba's Qwen model family through the DashScope API.
 
 Qwen Cloud 通过 DashScope API 提供阿里巴巴 Qwen 模型系列的访问。
