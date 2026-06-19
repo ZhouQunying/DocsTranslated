@@ -1,5 +1,21 @@
 # Ollama
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 三种模式——为什么同一个 provider ID 覆盖本地和云端？
+
+Ollama 在 OpenClaw 中有三种使用模式：Cloud + Local、Cloud only、Local only。但更关键的是 `ollama-cloud` 被注册为**一等托管 provider ID**。
+
+这跟 Docker 的"本地 daemon vs Docker Hub"是一个思路。Docker CLI 用同一个 `docker` 命令操作本地容器和远程 registry。本地和云端共享接口，但路由不同。OpenClaw 的 `ollama/*` 走本地主机，`ollama-cloud/*` 走云端——同一生态，不同路由。
+
+设计意图是**渐进式迁移**。开发者在本地用 Ollama 开发和测试（零成本），然后在生产环境切换到 Ollama Cloud（托管、高可用）。切换只需要改 model ID 前缀，不需要改代码或配置。
+
+代价是 `ollama` 和 `ollama-cloud` 共享模型名称但走不同路径，可能造成混淆。所以文档建议"当你想要仅云端路由而不共享本地 ollama provider id 时"显式使用 `ollama-cloud/*`。
+
+---
+
 OpenClaw integrates with Ollama's native API (`/api/chat`) for hosted cloud models and local/self-hosted Ollama servers. You can use Ollama in three modes:
 
 OpenClaw 集成 Ollama 的原生 API(``/api/chat``)用于托管云端模型和本地/自托管 Ollama 服务器。你可以在三种模式下使用 Ollama:
