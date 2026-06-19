@@ -1,5 +1,22 @@
 # Telemetry / 遥测
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 安装计数——为什么需要遥测？
+
+ClawHub 的遥测只做一件事：计算**聚合安装计数**。这跟 npm 的下载统计、Docker Hub 的 pull count、PyPI 的下载统计一样——给发布者和用户提供"这个包有多流行"的信号。
+
+但 ClawHub 的遥测比 npm 更克制：
+- **只在 CLI 登录时收集**——匿名用户不发送遥测
+- **只在 `clawhub install` 时发送**——`openclaw skills install` 不发送
+- **只发送包 slug**——不发送用户身份、机器信息、安装路径
+
+这是隐私优先的设计。npm 的遥测更宽泛（所有 npm 命令都发送），ClawHub 只在最必要的时机收集最少数据。代价是安装计数可能偏低（只统计通过 `clawhub install` 安装的、已登录用户的安装），但这是隐私 vs 准确性的合理取舍。
+
+---
+
 ClawHub uses minimal CLI telemetry to compute aggregate install counts.
 
 ClawHub 使用最小化的 CLI 遥测计算聚合安装计数。
