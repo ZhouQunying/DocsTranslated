@@ -1,5 +1,15 @@
 # TTS
 
+> **架构精读**
+>
+> **问题**：14 个语音提供者，各有各的认证方式、音频格式、计费模型。OpenClaw 怎么在它们之间做路由，又怎么保证飞书收到 Ogg/Opus 语音消息、电话收到 PCM/Ulaw 流、其他平台收到音频附件？
+>
+> **类比：CDN 边缘节点选择 + 媒体转码管道**。CDN 根据用户位置、延迟、成本在多个边缘节点间选择最优路径。OpenClaw 的 TTS 路由做类似的事：根据目标渠道（飞书/Matrix/Telegram/WhatsApp 要原生语音消息，电话要 PCM/Ulaw，其他要附件）、提供者能力（是否支持 Opus、是否支持流式）、认证状态（哪个 API key 已配置）在 14 个提供者间选择。选定后，音频经过提供者特定的转码管道变成目标格式。
+>
+> **关键洞察**：TTS 和 Talk 的 realtime 路径是分离的。Talk 的 `realtime` 模式在提供者内部直接合成语音（比如 OpenAI Realtime API），不走这条 TTS 路径。这条路径是"文本转音频附件"，Talk 是"实时语音对话"。两者共享提供者注册表，但执行路径完全不同。这意味着你可以在 Talk 用 OpenAI Realtime，在 TTS 用 ElevenLabs——互不干扰。
+>
+> **回退机制**：如配置了多个提供者，选定的优先使用，其他作为回退。这类似数据库连接池的主从切换——主节点挂了，从节点顶上。但回退是按提供者注册表顺序，不是按健康检查结果。如果 ElevenLabs API 超时，它不会自动切到 OpenAI；只有当 ElevenLabs 完全未配置或认证失败时才会回退。
+
 OpenClaw 可将出站回复转换为音频，支持 **14 个语音提供者**，并在飞书、Matrix、Telegram 和 WhatsApp 上交付原生语音消息，在其他平台上交付音频附件，为电话和 Talk 提供 PCM/Ulaw 流。
 
 TTS 是 Talk 的 `stt-tts` 模式的语音输出部分。提供者原生的 `realtime` Talk 会话在实时提供者内部合成语音而不调用此 TTS 路径，`transcription` 会话则不合成助手语音响应。
