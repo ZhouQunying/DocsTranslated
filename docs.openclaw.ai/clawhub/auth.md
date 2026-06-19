@@ -1,5 +1,32 @@
 # Auth / 认证
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 为什么用 GitHub 作为身份提供者？
+
+ClawHub 不自建用户系统，而是用 GitHub OAuth 作为身份提供者。这跟 Vercel、Netlify、Cloudflare Pages 的做法一样——把认证外包给已有大量开发者的平台。
+
+优势有三：
+- **零注册摩擦**：开发者已有 GitHub 账户，不需要创建新账户
+- **身份验证**：GitHub 已验证邮箱、手机号，ClawHub 不需要重复验证
+- **社交图谱**：可以直接用 GitHub 的 star、follow 关系做推荐
+
+代价是依赖外部平台——GitHub 封号则 ClawHub 也登不了。但这是合理的风险外包：GitHub 的账户安全投入远超 ClawHub 能自建的。
+
+### CLI token vs Web session——两种认证机制
+
+Web 登录用 GitHub OAuth session（浏览器 cookie）。CLI 登录用 ClawHub API token（持久化到本地文件）。
+
+两者是不同的认证机制：
+- **Web session**：短期、绑定浏览器、自动刷新
+- **API token**：长期、绑定机器、手动轮换
+
+CLI 用 token 是因为 CLI 没有浏览器环境，不能弹 GitHub OAuth 页面（虽然有 device flow 变体，但 token 更简单）。token 存在 `~/.clawhub/config.json`，跟 `~/.npmrc` 存 npm token 是一个模式。
+
+---
+
 ClawHub uses GitHub for web sign-in. The CLI uses ClawHub API tokens created through that signed-in account.
 
 ClawHub 使用 GitHub 进行 Web 登录。CLI 使用通过该已登录账户创建的 ClawHub API token。
