@@ -1,5 +1,27 @@
 # Skill format / 技能格式
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### SKILL.md 作为唯一入口——为什么不是一个 manifest.json？
+
+技能的核心是 `SKILL.md`——一个带 YAML frontmatter 的 Markdown 文件。没有单独的 `manifest.json`、`package.json` 或 `metadata.yaml`。所有元数据（名称、描述、需求、环境变量）都在 frontmatter 里。
+
+这跟 Helm chart 的 `Chart.yaml` + `values.yaml` 分离不同，更像 Dockerfile 的"一个文件搞定一切"思路。但更极端——Dockerfile 至少还有 `COPY`、`RUN` 等指令，SKILL.md 是纯文本 + 元数据。
+
+优势是**简单**——人类可以直接读 Markdown 理解技能做什么，机器可以解析 frontmatter 获取元数据。不需要两套工具（一套读 manifest，一套读文档）。代价是 frontmatter 可能很长（复杂技能有很多元数据），但这比维护多个文件好。
+
+### 允许的文件类型——为什么限制为文本？
+
+技能文件夹只允许基于文本的文件（Markdown、YAML、JSON、脚本等），不允许二进制文件（图片、编译后的代码、压缩包）。
+
+这是因为技能在 agent 的上下文窗口内执行——agent 需要**读取**技能内容来理解和使用它。二进制文件对 agent 不可读。如果技能需要图片，应该通过 URL 引用而非嵌入。
+
+这跟 Kubernetes ConfigMap 的限制类似——ConfigMap 只能存文本数据（YAML/JSON），二进制数据需要用 Secret 的 base64 编码。但技能更严格——连 base64 都不允许，纯文本 only。
+
+---
+
 ## On disk / 磁盘上
 
 A skill is a folder.
