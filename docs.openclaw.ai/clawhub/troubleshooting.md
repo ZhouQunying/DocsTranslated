@@ -1,5 +1,19 @@
 # Troubleshooting / 故障排除
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### CLI 登录的本地回调服务器——OAuth device flow 的变体
+
+`clawhub login` 在浏览器登录期间启动一个**短暂存在的本地回调服务器**（`http://127.0.0.1:<port>/callback`）。浏览器完成 GitHub OAuth 后，GitHub 把授权码重定向到这个本地 URL，CLI 接收授权码并换取 token。
+
+这跟标准的 OAuth device flow 不同。Device flow 是"设备轮询服务器直到用户授权"（适合电视、IoT 设备）。ClawHub 用的是"本地 HTTP 服务器接收回调"（适合有浏览器的开发环境）。
+
+如果回调从不到达（防火墙、VPN、代理），或者在无头环境（CI/CD、Docker、远程服务器）没有浏览器，就需要**token-based auth**——在 Web UI 创建 API token，然后通过 `clawhub login --token` 传入。这绕过了 OAuth 流程，直接用 token 认证。
+
+---
+
 ## `clawhub login` opens a browser but never completes / `clawhub login` 打开浏览器但从未完成
 
 The CLI starts a short-lived local callback server during browser login.
