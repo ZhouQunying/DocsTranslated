@@ -1,5 +1,29 @@
 # Parallel Search
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### LLM 优化的摘录——跟传统 snippet 有什么区别？
+
+传统搜索引擎返回的 snippet 是给**人**看的——标题、URL、摘要片段，你需要自己判断相关性、点进去细读。
+
+Parallel 返回的是给 **AI agent** 看的摘录——经过 LLM 优化的密集文本块，去掉了 HTML 噪声、导航栏、广告，只保留核心内容。agent 拿到后可以直接用于推理和生成，不需要二次提取。
+
+这跟 Brave 的 `llm-context` 模式、Exa 的内容提取是同一个思路——把"搜索"和"读取"合并成一步。但 Parallel 更进一步：它的索引本身就是为 AI agent 构建的，不是从通用搜索引擎适配过来的。
+
+### 免费 vs 付费——两个层级的设计逻辑
+
+Parallel 提供两个层级：
+- **`parallel-free`**：免费，无需账户或 API 密钥。通过 Search MCP（Model Context Protocol）接入。速率限制较低，适合开发测试和轻量使用。
+- **`parallel`**：付费，需要 `PARALLEL_API_KEY`。更高的速率限制、目标调优选项，适合生产环境。
+
+OpenClaw 在未配置其他网页搜索提供者时自动选择 `parallel-free`，使 `web_search` 无需设置即可工作。这是"开箱即用"的设计——用户安装 OpenClaw 后立即能用搜索功能，不需要先注册 API 密钥。
+
+但 OpenAI Responses 模型会绕过 Parallel——如果 `tools.web.search.provider` 未设置，OpenAI 模型使用 OpenAI 原生网页搜索。要强制路由到 Parallel，需显式设置 `tools.web.search.provider: "parallel-free"` 或 `"parallel"`。
+
+---
+
 OpenClaw 捆绑了两个 [Parallel](https://parallel.ai/) `web_search` 提供者：
 
 - **Parallel Search (Free)**（`parallel-free`）——Parallel 的免费 [Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp)。无需账户或 API 密钥。未配置其他网页搜索提供者时 OpenClaw 自动选择它，使 `web_search` 无需设置即可工作
