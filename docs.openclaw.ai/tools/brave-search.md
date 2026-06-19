@@ -1,5 +1,33 @@
 # Brave Search
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### `web` vs `llm-context`——两种传输模式什么时候该选哪个？
+
+Brave 提供两种 API 端点：标准网页搜索（`web`）和 LLM Context API（`llm-context`）。两者返回的数据结构完全不同。
+
+`web` 模式返回传统搜索结果——标题、URL、摘要片段。agent 拿到的是一个"目录"，需要自己决定点哪个链接、读哪个页面。这跟人类用 Google 搜索的体验一样：看摘要判断相关性，点开感兴趣的细读。
+
+`llm-context` 模式返回预提取的文本块和来源——Brave 已经帮你读过页面了，直接把关键内容抽出来给你。这跟 RAG（检索增强生成）管道里的"chunk retrieval"是一个思路：不是给 LLM 一堆链接让它自己点，而是直接给它提取好的文本片段。
+
+选择逻辑：
+- agent 需要"浏览多个结果做判断"（比如"调研一下 X 技术的现状"）→ 用 `web`，给 agent 选择权
+- agent 需要"找到 X 的具体答案"（比如"PostgreSQL 的 vacuum 怎么工作"）→ 用 `llm-context`，省掉二次 `web_fetch` 调用
+
+### LLM Context API 为什么省掉一次工具调用？
+
+传统流程：`web_search`（拿链接列表）→ agent 选 1-2 个最相关的 → `web_fetch`（读页面内容）→ agent 基于内容回答。两次工具调用，两次延迟。
+
+LLM Context 流程：`web_search`（拿已提取的文本块）→ agent 直接基于文本块回答。一次工具调用，一次延迟。
+
+代价是失去了"浏览多个结果"的灵活性——Brave 替你选了哪些页面值得读，你只能接受它的选择。如果 Brave 的提取质量不好（漏了关键段落、抽错了页面），agent 拿到的就是噪声。
+
+这是 RAG 系统的经典权衡：预处理越多，运行时越快；但预处理错了，纠正成本也高。
+
+---
+
 OpenClaw 支持 Brave Search API 作为 `web_search` 提供者。
 
 ## 获取 API 密钥
