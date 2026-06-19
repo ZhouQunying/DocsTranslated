@@ -1,5 +1,31 @@
 # ClawHub
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 技能和插件注册表——跟 npm / PyPI 有什么区别？
+
+ClawHub 是 OpenClaw 技能和插件的公共注册表，角色跟 npm（Node.js）、PyPI（Python）、Docker Hub（容器）一样。但 AI agent 的"包"跟传统软件的包有一个本质区别：**技能和插件在 agent 的上下文窗口内执行**，能访问对话历史、工具调用链、用户数据。npm 包装在你的 Node.js 进程里，PyPI 包装在你的 Python 进程里——它们能访问的是文件系统和网络。ClawHub 的包装在 agent 的推理链里，能访问的是对话内容和 agent 能力。
+
+这让信任模型完全不同。传统包管理器的安全边界是操作系统——恶意包能做的最坏的事是读你的文件或发网络请求。ClawHub 的安全边界是 agent 的工具权限——恶意技能能做的最坏的事是操纵 agent 行为（提示注入）、泄露对话数据、或滥用工具调用。
+
+### 两个 CLI 的分离——为什么不是合一？
+
+OpenClaw 把 CLI 拆成两个：`openclaw`（消费端：搜索、安装、更新）和 `clawhub`（发布端：认证、发布、同步、删除）。
+
+这跟 Terraform 的分离是一个思路：`terraform` CLI 做 `plan`/`apply`（消费模块），Registry API 做发布和版本管理。消费者不需要知道发布者的认证机制；发布者不需要知道消费者的运行时环境。
+
+合一的代价是**权限膨胀**——一个既消费又发布的 CLI 需要同时持有两种身份凭证。分离后，普通用户只需要 `openclaw`（无需 GitHub 认证），发布者额外安装 `clawhub`（需要 GitHub OAuth）。最小权限原则。
+
+### 发现、安装、更新的闭环
+
+`openclaw skills search` → `openclaw skills install` → `openclaw skills update --all` 是一个完整的生命周期闭环。跟 `apt search` → `apt install` → `apt upgrade` 是同一个模式。
+
+但 agent 技能没有传统意义上的"依赖解析"——npm 需要解 `package.json` 的依赖树，ClawHub 不需要。因为技能是自包含的（一个 SKILL.md 文件 + 可能的附件），不依赖其他技能。这大幅简化了注册表的设计——不需要版本冲突解决、不需要依赖锁定、不需要 `node_modules` 地狱。
+
+---
+
 ClawHub is the public registry for OpenClaw skills and plugins.
 
 ClawHub 是 OpenClaw 技能和插件的公共注册表。
