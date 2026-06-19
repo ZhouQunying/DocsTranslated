@@ -1,5 +1,31 @@
 # Ollama Web Search
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 本地自托管 vs 直接托管——两种模式适合什么场景？
+
+Ollama Web Search 有两种部署模式：
+
+**本地自托管**（默认）：Ollama 实例跑在本机或内网，搜索请求不出本机。需要 `ollama signin` 但不需要 API 密钥。适合隐私敏感场景——搜索查询（可能含敏感业务信息）不经过第三方服务器。
+
+**直接托管**：指向 `https://ollama.com` + API 密钥。Ollama 官方托管服务，无需维护本地实例。适合不想管基础设施的场景——开发测试、个人使用、快速原型。
+
+这跟本地 DNS vs 远程 DNS 是一个思路。本地 DNS（如 dnsmasq）查询不出内网，隐私好但需要维护；远程 DNS（如 8.8.8.8）零维护但查询经过 Google。选择取决于隐私 vs 便利的权衡。
+
+### 自动检测顺序——为什么排在 DuckDuckGo 后面？
+
+OpenClaw 的自动检测顺序里，DuckDuckGo 排第 100（第一个无需密钥的回退），Ollama 排第 110。如果两者都没配 API 密钥，DuckDuckGo 优先。
+
+但 Ollama 的优势是：
+- **更稳定**：官方 API，有 SLA、有结构化返回、有错误码。DuckDuckGo 是 HTML 抓取，改页面结构就断。
+- **本地模式零成本**：自托管 Ollama 不产生 API 费用（只有计算资源成本）。DuckDuckGo 虽然也零成本，但稳定性差。
+
+生产环境如果需要无需密钥的提供者，Ollama 本地模式比 DuckDuckGo 更可靠。
+
+---
+
 OpenClaw 支持 **Ollama Web Search** 作为捆绑的 `web_search` 提供者。它使用 Ollama 的网页搜索 API，返回带标题、URL 和摘要的结构化结果。
 
 对于本地或自托管 Ollama，此设置默认不需要 API 密钥。但需要：
