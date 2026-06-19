@@ -1,6 +1,18 @@
 # Claude Max API proxy
 
-Claude Max API proxy
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 订阅计划当 API——绕过按量计费
+
+Claude Max API proxy 通过 Claude Max 订阅计划路由请求，而非 Anthropic 的按量计费 API。这跟 github-copilot 的认证复用是一个思路——利用已有的订阅基础设施。
+
+设计意图是**成本可预测性**。API 按量计费意味着账单不可预测——agent 的高频调用可能产生意外的高额账单。Claude Max 订阅是固定月费，无论调用多少次。对于高频 agent 使用，订阅计划比按量计费便宜得多。
+
+代价是订阅计划有速率限制和使用政策。如果 agent 的调用模式违反了订阅条款（如自动化过度使用），可能被限制或封禁。
+
+---
 
 Claude Max API proxy 通过 Claude Max 订阅路由请求。
 
