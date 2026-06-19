@@ -1,5 +1,32 @@
 # ClawHub CLI
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Skills vs Plugins——两种包的安装路径为什么不同？
+
+`openclaw skills install <slug>` 安装到工作区的 `skills/` 目录——它们是**本地文本文件**，agent 在推理时读取。安装目标是文件系统路径。
+
+`openclaw plugins install clawhub:<package>` 安装到 Node.js 模块路径——它们是**可执行代码包**，需要被 Gateway 加载和运行。安装目标是 Node.js 运行时。
+
+这导致两种包的解析机制完全不同：
+- Skills 通过 slug 解析到 ClawHub 注册表记录，下载文件到 `skills/`
+- Plugins 通过 `clawhub:` 前缀识别安装源，走 npm 兼容的包解析流程
+
+`clawhub:` 前缀是一个显式信号——告诉 OpenClaw"从 ClawHub 解析这个包，而不是从 npm 或其他源"。这避免了歧义：`openclaw plugins install foo` 可能指 npm 上的 `foo`，也可能指 ClawHub 上的 `foo`。`clawhub:foo` 消除歧义。
+
+### `--global` vs 本地安装——作用域选择
+
+技能安装默认到工作区 `skills/`（本地），加 `--global` 到共享托管目录（全局）。这跟 npm 的 `--global` 是一个思路：
+
+- **本地安装**：只在当前工作区生效，不同工作区可以有不同版本的同一技能
+- **全局安装**：所有工作区共享，适合通用技能（如通用编码助手）
+
+全局 vs 本地的冲突解决策略跟 Node.js 的模块解析一样：本地优先。工作区的 `skills/` 目录里有同名技能时，全局版本被覆盖。
+
+---
+
 OpenClaw 为 ClawHub 提供两个命令行入口:
 
 - `openclaw skills` 和 `openclaw plugins` 在 OpenClaw 内部安装和管理 ClawHub 包
