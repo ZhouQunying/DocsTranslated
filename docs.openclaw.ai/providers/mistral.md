@@ -1,5 +1,17 @@
 # Mistral
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 开放权重 + 商业 + 多模态——一个 provider 三种模式
+
+Mistral 同时提供开放权重模型（可自托管）和商业 API 模型，还通过 Voxtral 提供音频转录。这跟 Meta 的 Llama 策略是一个思路——用开放权重建立生态，用商业模型变现。
+
+对 OpenClaw agent 来说，Mistral 的独特价值是**灵活部署**。同一个 `mistral/*` 前缀可以指向 Mistral 的 API（商业模型），也可以指向自托管的 Mistral 开源模型（通过 vLLM/Ollama）。这让 agent 在开发和生产之间无缝切换——开发时用 API 快速迭代，生产时自托管降低成本。
+
+---
+
 Mistral provides high-performance open-weight and commercial models through its API.
 
 Mistral 通过其 API 提供高性能开放权重和商业模型。
