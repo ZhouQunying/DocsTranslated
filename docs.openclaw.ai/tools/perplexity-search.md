@@ -1,5 +1,31 @@
 # Perplexity Search
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 两种模式——结构化结果 vs AI 合成答案
+
+Perplexity 在 OpenClaw 中有两种工作模式，返回的数据结构完全不同：
+
+**Search API 模式**（默认）：返回结构化结果——`{title, url, snippet}`。跟 Brave 的标准搜索模式一样，给 agent 一个"目录"，agent 自己决定点哪个链接。支持丰富的过滤：国家、语言、时间范围、域名限制、内容类型。
+
+**AI 合成模式**（旧版兼容）：返回 AI 生成的答案带引用。跟 Gemini/Grok/Kimi 一样，Perplexity 帮你总结好了。这是为了兼容已有的 Sonar/OpenRouter 设置——如果你之前用 OpenRouter 接 Perplexity Sonar，OpenClaw 检测到 `sk-or-...` 密钥或自定义 `baseUrl` 时自动切到这个模式。
+
+选择逻辑：
+- 新部署 → 用 Search API 模式（默认），灵活、可控
+- 已有 OpenRouter/Sonar 设置 → AI 合成模式自动生效，无需改配置
+
+### OpenRouter 兼容性——为什么不强制迁移？
+
+OpenRouter 是一个模型聚合平台，让你用一个 API 密钥访问多个提供者的模型。很多用户已经通过 OpenRouter 接了 Perplexity Sonar。
+
+OpenClaw 的设计是**不强制迁移**——检测到你用 OpenRouter 密钥时，自动切到兼容路径。这降低了迁移成本：你不需要重新注册 Perplexity 账户、生成新密钥、改配置。保持 `provider: "perplexity"` 和 `OPENROUTER_API_KEY` 就行。
+
+这是向后兼容的设计哲学——新用户提供新路径，老用户保持旧路径。代价是代码复杂度增加（需要维护两条路径），但用户迁移摩擦降到零。
+
+---
+
 OpenClaw 支持 Perplexity Search API 作为 `web_search` 提供者。返回带 `title`、`url` 和 `snippet` 字段的结构化结果。
 
 为兼容性考虑，OpenClaw 也支持旧版 Perplexity Sonar/OpenRouter 设置。如使用 `OPENROUTER_API_KEY`、在 `plugins.entries.perplexity.config.webSearch.apiKey` 中使用 `sk-or-...` 密钥、或设置了 `plugins.entries.perplexity.config.webSearch.baseUrl` / `model`，提供者切换到聊天补全路径，返回带引用的 AI 合成答案而非结构化 Search API 结果。
