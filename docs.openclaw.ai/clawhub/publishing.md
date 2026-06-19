@@ -1,5 +1,31 @@
 # Publishing / 发布
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 发布验证管道——五层检查保证包质量
+
+发布流程不是简单的"上传文件"。ClawHub 在存储版本前跑五层验证：
+
+1. **认证检查**：token 是否可以为该 owner 发布
+2. **元数据验证**：名称、版本、描述是否符合格式
+3. **文件验证**：文件列表是否完整、大小是否超限
+4. **源信息验证**：源归属是否声明、是否与已有包冲突
+5. **安全检查**：自动化扫描是否通过
+
+任何一层失败，整个发布被拒绝——**原子性验证**。这跟 Kubernetes 的 admission controller 是一个思路：pod 创建前必须通过所有 admission webhook（认证、配额、策略、安全），任一拒绝则 pod 不创建。
+
+### "审核中"状态——为什么新版本可能不可安装？
+
+新版本在审核完成前可能不会出现在正常的安装和下载界面。这是一个**软发布**机制——包已经存储，但不对公众可见，直到安全扫描和人工审核通过。
+
+这跟 npm 的"unlisted"和 Apple App Store 的"审核中"是同一个设计意图：给平台时间检测恶意内容，但不阻止发布者的工作流。发布者可以立即看到自己的包（用于诊断），但消费者看不到——直到审核通过。
+
+代价是发布到可用的延迟增加（几分钟到几小时）。但对于安全敏感的包注册表，这个延迟是必要的——防止恶意包在被检测前被大量安装。
+
+---
+
 Publishing sends a skill folder or plugin package to ClawHub under the owner you choose. ClawHub checks that your token can publish for that owner, validates the metadata, name, version, files, and source information, then stores the release and starts automated security checks.
 
 发布将你选择的 owner 下的技能文件夹或插件包发送到 ClawHub。ClawHub 检查你的 token 是否可以为该 owner 发布,验证元数据、名称、版本、文件和源信息,然后存储版本并启动自动化安全检查。
