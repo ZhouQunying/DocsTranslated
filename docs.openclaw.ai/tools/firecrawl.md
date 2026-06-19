@@ -1,5 +1,28 @@
 # Firecrawl
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 三种角色——什么时候该用哪个？
+
+Firecrawl 在 OpenClaw 中扮演三种角色：`web_search` 提供者、显式插件工具（`firecrawl_search` 和 `firecrawl_scrape`）、`web_fetch` 的备选提取器。这跟瑞士军刀是一个思路——能做很多事，但专用工具在各自场景下更高效。
+
+选择逻辑：
+- **需要反反爬抓取 JS 重站点**（新闻、社交媒体、Cloudflare 保护的页面）→ 用 `firecrawl_scrape`，显式调用
+- **需要搜索+抓取一体化**（搜关键词同时拿到页面内容）→ 用 `firecrawl_search`
+- **`web_fetch` 失败需要回退**（Readability 提取失败，站点反爬）→ Firecrawl 自动接手，无需 agent 干预
+
+### 机器人规避——为什么是核心价值？
+
+很多站点（特别是新闻、社交媒体、电商）会阻止普通 HTTP 抓取。Cloudflare、DataDome、PerimeterX 等反爬服务检测 User-Agent、请求频率、JavaScript 指纹，发现是机器人就返回 403 或 CAPTCHA。
+
+Firecrawl 用无头浏览器（Playwright/Puppeteer）+ 反检测技术（随机化 User-Agent、模拟人类行为、住宅代理 IP）绕过这些限制。代价是更慢（需要启动浏览器、等待页面渲染）、更贵（Firecrawl 按页面计费，比普通 API 贵 5-10 倍）。
+
+所以 OpenClaw 的策略是**分层回退**：先试 `web_fetch`（HTTP GET + Readability，快、便宜），失败了再回退到 Firecrawl（慢、贵但能拿到内容）。这跟数据库连接池的"先试主库，失败切从库"是一个思路——不是所有查询都需要最贵的路径。
+
+---
+
 OpenClaw 可以三种方式使用 **Firecrawl**：
 
 - 作为 `web_search` 提供者
