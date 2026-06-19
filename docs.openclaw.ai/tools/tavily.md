@@ -1,5 +1,31 @@
 # Tavily
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 专为 AI 设计——跟通用搜索 API 有什么区别？
+
+Tavily 跟 Parallel、Exa 一样，是专为 AI 应用设计的搜索 API。传统搜索 API（Google、Bing）是为人设计的——返回 HTML 页面链接，人点进去读。Tavily 返回为 LLM 消费优化的结构化结果——去掉了 HTML 噪声，直接给文本内容。
+
+但 Tavily 更进一步：它支持**可配置搜索深度**（`basic` vs `advanced`）和**主题过滤**（`news`、`finance`、`general`）。这跟数据库的查询优化器选择执行计划是一个思路——不同查询需要不同的检索策略。简单事实查询用 `basic`（快、便宜），深度调研用 `advanced`（慢、贵但更全）。
+
+### 两种暴露方式——什么时候该用哪个？
+
+Tavily 在 OpenClaw 中有两种暴露方式：
+
+**作为 `web_search` 提供者**：agent 调用 `web_search`，OpenClaw 路由到 Tavily。适合需要统一搜索接口的场景——agent 不关心底层是哪个提供者。
+
+**作为显式工具 `tavily_search` 和 `tavily_extract`**：agent 直接调用 Tavily 专属工具。适合需要利用 Tavily 特有能力（如 AI 生成摘要、URL 内容提取包括 JS 渲染页面）的场景。
+
+选择逻辑：
+- 需要跨提供者统一接口 → `web_search`（OpenClaw 路由）
+- 需要 Tavily 专属能力（深度提取、AI 摘要）→ `tavily_search` / `tavily_extract`（直接调用）
+
+`tavily_extract` 的独特价值是能提取 JavaScript 渲染的页面内容——普通 HTTP GET 拿到的是空壳 HTML，Tavily 用无头浏览器渲染后再提取。这跟 Firecrawl 的反反爬能力类似，但 Tavily 更专注于内容提取而非反检测。
+
+---
+
 [Tavily](https://tavily.com) 是专为 AI 应用设计的搜索 API。OpenClaw 以两种方式暴露它：
 
 - 作为通用搜索工具 `web_search` 的提供者
