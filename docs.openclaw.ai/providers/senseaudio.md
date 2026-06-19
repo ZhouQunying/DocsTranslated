@@ -1,6 +1,14 @@
 # SenseAudio
 
-SenseAudio
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 音频处理——超越语音的音频能力
+
+SenseAudio 提供语音和音频处理能力。跟 Deepgram（专注语音转文本）和 ElevenLabs（专注文本转语音）不同，SenseAudio 覆盖更广泛的音频处理场景——包括音频增强、降噪、分离等。对 OpenClaw agent 来说，这是**通用音频处理**的工具层。
+
+---
 
 SenseAudio 提供语音和音频处理。
 
