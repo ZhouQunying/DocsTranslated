@@ -1,5 +1,31 @@
 # Kimi Search
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Kimi vs Gemini vs Grok——三个 AI 合成提供者的差异在哪？
+
+三者都返回 AI 合成答案带引用，但底层索引和合成能力不同：
+
+- **Gemini**：Google 搜索索引 + Gemini 模型合成。英文技术文档覆盖最全，学术内容最强。
+- **Grok**：xAI 网页搜索 + X/Twitter 实时数据。社交媒体视角独有，实时事件反应最快。
+- **Kimi**：Moonshot 网页搜索索引 + Kimi 模型合成。中文内容覆盖最优，中文查询理解最准。
+
+这不是"哪个更好"的问题，而是"哪个更适合当前查询"的问题。搜英文技术文档（"PostgreSQL vacuum 原理"）用 Gemini；搜实时社交媒体讨论（"iPhone 16 发布用户反应"）用 Grok；搜中文内容（"阿里云百炼 Wan 模型 API"）用 Kimi。
+
+跟 Google、Bing、DuckDuckGo 搜同一关键词结果排序不同是一个道理——各自的索引、排名算法、内容偏好不同。多提供者并存不是冗余，而是覆盖互补。
+
+### 双区域端点——为什么需要 `.ai` 和 `.cn`？
+
+Kimi 支持两个 API 区域：`https://api.moonshot.ai/v1`（国际端点）和 `https://api.moonshot.cn/v1`（中国大陆端点）。
+
+这是为了网络可达性。中国大陆访问 `.ai` 端点需要跨境网络，延迟高且不稳定；访问 `.cn` 端点走国内网络，延迟低且稳定。海外用户反之——`.ai` 端点更近。
+
+OpenClaw 在 `openclaw configure --section web` 时询问用户选哪个区域，并持久化到配置中。这不是"自动选择最优端点"（那需要持续的延迟探测和故障切换），而是"用户显式选择"——简单可靠，适合静态部署环境。
+
+---
+
 OpenClaw 支持 Kimi 作为 `web_search` 提供者，使用 Moonshot 网页搜索生成带引用的 AI 合成答案。
 
 ## 获取 API 密钥
