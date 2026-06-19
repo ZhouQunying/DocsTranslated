@@ -1,6 +1,14 @@
 # Deepgram
 
-Deepgram
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 语音输入通道——agent 的"耳朵"
+
+Deepgram 提供高精度语音转文本（STT）和文本转语音（TTS）。如果 ElevenLabs 是 agent 的"嘴巴"（语音输出），Deepgram 就是 agent 的"耳朵"（语音输入）。对 OpenClaw agent 来说，Deepgram 实现了**语音到语音**的完整工作流——用户说话，Deepgram 转文本，agent 处理，ElevenLabs 生成回复语音。
+
+---
 
 Deepgram 提供高精度语音转文本和文本转语音。
 
