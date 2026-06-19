@@ -1,5 +1,27 @@
 # Quickstart / 快速开始
 
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 消费端 vs 发布端——为什么需要两条工作流？
+
+Quickstart 页面展示了 ClawHub 的两条独立工作流：
+
+**消费端**（用户安装技能）：`openclaw skills search` → `openclaw skills install` → `openclaw skills update`。这是只读路径——从注册表拉取元数据和文件，不需要认证。跟 `apt search` → `apt install` → `apt upgrade` 一个思路。
+
+**发布端**（作者发布技能）：`clawhub login` → `clawhub publish` → `clawhub sync`。这是写路径——需要 GitHub OAuth 认证，推送文件到注册表。跟 `npm login` → `npm publish` 一个思路。
+
+分离的核心原因是**认证边界**。消费端不需要知道发布者的身份；发布端需要验证作者身份。如果合一（比如所有操作都走 `openclaw`），要么每个用户都要 GitHub 认证（过度权限），要么发布操作没有认证（安全风险）。
+
+### Skill slug 作为唯一标识
+
+`openclaw skills install <skill-slug>` 里的 slug 是全局唯一的——类似 npm 的包名、Docker Hub 的镜像名。注册表保证同一 slug 不会有两个不同的技能。这是注册表的基本契约：名字 → 唯一实体。
+
+跟域名系统（DNS）的约束一样：同一个域名不能指向两个不同的 IP。注册表的职责就是维护这个一对一映射，并处理版本迭代（同一 slug 的不同版本）。
+
+---
+
 ClawHub is a registry for OpenClaw skills and plugins.
 
 ClawHub 是 OpenClaw 技能和插件的注册表。
