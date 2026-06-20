@@ -1,6 +1,14 @@
 # Qwen OAuth / Portal
 
-Qwen OAuth / Portal
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 浏览器 OAuth——不需要 API key 的认证路径
+
+Qwen OAuth 通过浏览器登录认证，不需要申请 DashScope API key。这跟 models.md 中的 `google-gemini-cli` 变体是一个思路——**降低入门摩擦**。对于想快速试用 Qwen 但不想注册 DashScope 账号的用户，OAuth 登录是最快路径。
+
+---
 
 Qwen OAuth 通过浏览器登录为 Qwen Cloud 提供认证。
 
