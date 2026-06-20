@@ -4,24 +4,33 @@
 
 > 跳过不影响阅读翻译正文。
 
-### 多实例隔离——同一台机器跑多个 Gateway
+### 多实例隔离
 
-OpenClaw 支持在同一台机器上运行多个 Gateway 实例,每个实例有独立的:
-- **配置目录**: 每个 Gateway 读自己的 `openclaw.json`
-- **数据目录**: 每个 Gateway 存自己的 session、auth、workspace
-- **监听端口**: 每个 Gateway 绑定不同端口,不冲突
+**问题**: 同一台机器跑多个 Gateway,如何隔离?
 
-**为什么需要多实例?** 几个常见场景:
-- **开发 vs 生产**: 开发用的 Gateway 连测试模型,生产用的连正式模型,不能混
-- **多租户**: 一台服务器上给多个用户/团队各跑一个 Gateway,数据隔离
-- **不同用途**: 一个 Gateway 跑 coding agent,另一个跑 customer support agent,各自的配置和权限不同
+**方案**: 每个 Gateway 独立:
+- **配置目录**: `--config-dir` 参数
+- **数据目录**: session、auth、workspace
+- **监听端口**: 不同端口
 
-**怎么隔离?** 通过不同的 `--config-dir` 参数启动。每个 Gateway 读自己的配置目录,互不干扰。这跟 Docker 的 `--data-root` 是一个思路——多个 Docker daemon 可以跑在同一台机器上,通过不同的 data root 目录隔离。
+**洞察**: 通过不同 `--config-dir` 启动,每个 Gateway 读自己的配置,互不干扰。
 
-### gateway.tls——Gateway 自己终结 TLS
+**权衡**:
+- ✓ 隔离: 数据不共享
+- ✗ 资源: 多个 Gateway 消耗更多资源
 
-Gateway 可以直接配置 TLS(Transport Layer Security,HTTPS 的加密层),不需要额外的反向代理(如 nginx/Caddy)来做 TLS 终结:
+**模式**: Docker `--data-root`——多个 daemon 用不同 data root 目录隔离。
 
+**场景**:
+- 开发 vs 生产: 测试模型 vs 正式模型
+- 多租户: 每个用户/团队一个 Gateway
+- 不同用途: coding agent vs support agent
+
+### gateway.tls
+
+**问题**: Gateway 需要反向代理 (nginx) 来做 TLS 终结吗?
+
+**方案**: Gateway 可以直接终结 TLS:
 ```json
 {
   gateway: {
@@ -33,34 +42,45 @@ Gateway 可以直接配置 TLS(Transport Layer Security,HTTPS 的加密层),不�
 }
 ```
 
-**为什么 Gateway 自己终结 TLS?** 简化部署。传统架构是 nginx 终结 TLS → 转发明文到后端,需要两个进程。Gateway 直接终结 TLS,一个进程搞定。适合简单部署(单机、小规模),不需要引入 nginx 这个额外组件。
+**洞察**: Gateway 自己终结 TLS = 一个进程搞定,不需要 nginx。
 
-**什么时候不用 Gateway 终结 TLS?** 大规模部署时,用反向代理(如 Caddy、nginx、ALB)更好——反向代理可以做负载均衡、rate limiting、WAF,这些是 Gateway 不擅长的。文档的 EasyRunner 方案就是用 Caddy 终结 TLS,Gateway 不配 TLS。
+**权衡**:
+- ✓ 简单: 不需要额外组件
+- ✗ 功能少: 没有负载均衡、rate limiting、WAF
 
-### gateway.reload——热更新行为配置
+**何时不用 Gateway 终结 TLS**: 大规模部署,用反向代理 (Caddy、nginx、ALB)。
 
-`gateway.reload` 控制配置热更新的行为:
-- **检测间隔**: 多久检查一次配置文件变更(默认几秒)
-- **自动 reload**: 检测到变更后是否自动热更新(默认 true)
-- **reload 策略**: 哪些字段可以热更新,哪些需要重启
+### gateway.reload
 
-**为什么需要配置 reload 行为?** 因为自动 reload 不一定适合所有场景:
-- **生产环境**: 可能想手动 reload(改完配置后,确认无误再 reload),避免误操作
-- **开发环境**: 自动 reload 更方便,改了配置立刻生效,不用手动操作
-- **CI/CD 部署**: 配置文件由自动化工具管理,可能需要先跑测试再 reload
+**问题**: 配置热更新的行为如何控制?
 
-**这跟 systemd 的 `daemon-reload` 是一个思路**——改了 systemd unit 文件后,需要 `systemctl daemon-reload` 让 systemd 重新读取配置。OpenClaw 的 reload 也是同样: 配置文件改了,需要 reload 让 Gateway 重新读取。区别是 OpenClaw 可以自动 reload,systemd 必须手动。
+**方案**: `gateway.reload` 控制:
+- **检测间隔**: 多久检查一次配置文件变更
+- **自动 reload**: 检测到变更后是否自动热更新
+- **reload 策略**: 哪些字段可热更新
 
-### 配置 schema 的 lookup 机制——字段级文档
+**洞察**: 生产环境可能想手动 reload (改完确认无误再 reload),开发环境自动 reload 更方便。
 
-OpenClaw 的 `config.schema.lookup` 功能让你查询任意配置字段的文档:
+**权衡**:
+- ✓ 自动: 方便,改了立刻生效
+- ✗ 风险: 可能误操作
 
+**模式**: systemd `daemon-reload`——改了 unit 文件后需 `systemctl daemon-reload`。区别: OpenClaw 可自动 reload,systemd 必须手动。
+
+### 配置 schema lookup
+
+**问题**: 配置字段太多,文档覆盖不全?
+
+**方案**: `openclaw config.schema.lookup` 查询字段文档:
 ```bash
 openclaw config.schema.lookup agents.defaults.model.primary
 ```
+返回: 类型、默认值、说明、示例。
 
-返回这个字段的类型、默认值、说明、示例。
+**洞察**: Schema lookup 从代码直接提取字段定义,保证文档跟代码一致。
 
-**为什么需要这个?** 因为配置文件有几十上百个字段,文档再详细也不可能覆盖所有字段的每个细节。Schema lookup 从代码里直接提取字段定义(类型、默认值、校验规则),保证文档跟代码一致。不会出现"文档说默认值是 A,但代码里默认值是 B"的不一致问题。
+**权衡**:
+- ✓ 准确: 文档 = 代码
+- ✓ 完整: 所有字段都有文档
 
-**这跟 IDE 的 hover 提示是一个思路**——IDE 在你 hover 到一个变量上时,显示类型、文档、示例。OpenClaw 的 schema lookup 也是同样: 查询一个字段,显示类型、默认值、说明。不用翻文档,直接问系统。
+**模式**: IDE hover 提示——hover 到变量上,显示类型、文档、示例。
