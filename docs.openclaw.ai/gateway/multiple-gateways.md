@@ -6,92 +6,99 @@
 
 ### 大多数场景用一个 Gateway 就够了
 
-文档强调: **Most setups should use one Gateway**(大多数设置应该用一个 Gateway),因为单个 Gateway 可以:
-- 处理多个 messaging 连接(Slack、Discord、WhatsApp 同时连接)
-- 运行多个 agent(coding agent、support agent 共存)
-- 管理多个 session(每个 agent 的每个对话都有独立 session)
+**问题**: 多 Gateway 增加复杂度 (配置管理、资源消耗、调试困难)?
 
-**为什么强调一个 Gateway?** 因为多 Gateway 会增加复杂度:
-- **配置管理**: 每个 Gateway 有自己的配置,需要分别维护
-- **资源消耗**: 每个 Gateway 占用内存和 CPU,多 Gateway 消耗更多资源
-- **调试困难**: 问题可能出在 Gateway 之间的交互,比单 Gateway 更难调试
+**方案**: **大多数场景用一个 Gateway**,单个 Gateway 可以:
+- 处理多个 messaging 连接 (Slack、Discord、WhatsApp)
+- 运行多个 agent (coding、support)
+- 管理多个 session
 
-如果单个 Gateway 能满足需求,就不要用多 Gateway。过度工程 = 不必要的复杂度。
+**洞察**: 如果单个 Gateway 能满足需求,就不要用多 Gateway。过度工程 = 不必要的复杂度。
+
+**权衡**:
+- ✓ 简单: 一个配置、一个进程、一个状态
+- ✗ 限制: 不适合强隔离、资源限制、故障域场景
 
 ### 什么时候需要多 Gateway?
 
-几个场景需要多 Gateway:
+**问题**: 什么场景需要多 Gateway?
 
-**强隔离**(stronger isolation):
-- 不同租户的数据必须完全隔离(如 SaaS 场景,每个客户一个 Gateway)
-- 一个 Gateway 崩溃不能影响其他 Gateway(如关键任务的 Gateway 跟实验性 Gateway 分开)
+**方案**: 三个场景:
+- **强隔离**: 不同租户数据必须完全隔离 (SaaS),一个 Gateway 崩溃不能影响其他
+- **资源限制**: 一个 Gateway 的资源消耗不能影响其他
+- **故障域**: 一个 Gateway 挂了,另一个可以继续工作
 
-**资源限制**(resource limits):
-- 一个 Gateway 的资源消耗不能影响其他 Gateway(如高负载的 Gateway 跟低负载的 Gateway 分开)
-- 不同 Gateway 需要不同的资源配置(如一个 Gateway 用高配机器,另一个用低配机器)
+**洞察**: 多 Gateway = 隔离,但也 = 复杂度。
 
-**故障域**(failure domains):
-- 一个 Gateway 挂了,另一个 Gateway 可以继续工作(如主 Gateway 跟备份 Gateway)
+**权衡**:
+- ✓ 隔离: 数据、资源、故障域隔离
+- ✗ 复杂: 配置管理、资源消耗、调试困难
 
-### Rescue bot——主 Gateway 挂了的后备
+### Rescue bot
 
-文档建议配置一个 **rescue bot**(救援机器人),当主 Gateway 挂时,rescue bot 可以:
+**问题**: 主 Gateway 挂了,用户无法通过主 Gateway 调试问题?
+
+**方案**: 配置 **rescue bot** (救援机器人),独立的 Gateway:
 - 诊断主 Gateway 的问题
 - 应用配置修复
 - 重启主 Gateway
 
-**为什么需要 rescue bot?** 因为主 Gateway 挂了,用户无法通过主 Gateway 调试问题(因为 Gateway 不响应)。Rescue bot 是独立的 Gateway,不受主 Gateway 影响,可以用来修复主 Gateway。
+**洞察**: Rescue bot 不受主 Gateway 影响,可以用来修复主 Gateway。
 
-**这跟 Kubernetes 的 control plane 高可用**是一个思路——多个 control plane 节点,一个挂了,其他的可以继续工作。OpenClaw 的 rescue bot 也是同样: 主 Gateway 挂了,rescue bot 可以继续工作,修复主 Gateway。
+**权衡**:
+- ✓ 可用: 主 Gateway 挂了也能诊断
+- ✗ 资源: 需要额外的 Gateway
 
-### 端口间隔——至少 20 个端口
+**模式**: Kubernetes control plane 高可用——多个 control plane 节点,一个挂了其他的可以继续工作。
 
-多 Gateway 场景下,每个 Gateway 使用不同的端口,文档建议**至少间隔 20 个端口**:
+### 端口间隔
 
+**问题**: 多 Gateway 场景下,每个 Gateway 使用不同的端口,端口太近可能冲突?
+
+**方案**: **至少间隔 20 个端口**:
 ```
 Gateway A: 1455
-Gateway B: 1475 (不是 1456)
-Gateway C: 1495 (不是 1476)
+Gateway B: 1475
+Gateway C: 1495
 ```
 
-**为什么间隔 20?** 因为:
-- Gateway 可能使用多个端口(如主端口 + WebSocket 端口 + metrics 端口)
-- 如果端口太近(如 1455 和 1456),可能冲突
-- 间隔 20 保证每个 Gateway 有足够的端口空间
+**洞察**: Gateway 可能使用多个端口 (主端口 + WebSocket + metrics),间隔 20 保证有足够的端口空间。
 
-**这跟 Docker container 的端口映射**是一个思路——多个 container 映射到 host 的不同端口,需要避免冲突。OpenClaw 的多 Gateway 也是同样: 每个 Gateway 用不同的端口,间隔足够大,避免冲突。
+**权衡**:
+- ✓ 安全: 防止端口冲突
+- ✗ 浪费: 占用更多端口
 
-### 配置目录隔离——每个 Gateway 独立的配置
+**模式**: Docker container 端口映射——多个 container 映射到不同端口,需要避免冲突。
 
-多 Gateway 场景下,每个 Gateway 必须有独立的配置目录:
+### 配置目录隔离
 
+**问题**: 多 Gateway 共享配置会互相干扰?
+
+**方案**: 每个 Gateway 必须有**独立的配置目录**:
 ```bash
-# Gateway A
 openclaw gateway start --config-dir ~/.openclaw-instance-a
-
-# Gateway B
 openclaw gateway start --config-dir ~/.openclaw-instance-b
 ```
 
-**为什么需要独立配置?** 因为:
-- 每个 Gateway 可能有不同的模型配置(如一个用 GPT-4,另一个用 Claude)
-- 每个 Gateway 可能有不同的 channel 配置(如一个连 Slack,另一个连 Discord)
-- 每个 Gateway 可能有不同的 agent 配置(如一个跑 coding agent,另一个跑 support agent)
+**洞察**: 每个 Gateway 可能有不同的模型、channel、agent 配置,共享会互相干扰。
 
-如果共享配置,两个 Gateway 会互相干扰(如一个 Gateway 修改了配置,另一个 Gateway 也受影响)。
+**权衡**:
+- ✓ 隔离: 配置不共享
+- ✓ 灵活: 每个 Gateway 配不同的模型、channel、agent
 
-**这跟 Docker 的 --data-root 是一个思路**——多个 Docker daemon 用不同的 data root 目录,隔离容器和镜像。OpenClaw 的多 Gateway 也是同样: 用不同的配置目录,隔离配置和状态。
+**模式**: Docker `--data-root`——多个 daemon 用不同 data root 目录隔离。
 
-### 状态隔离——每个 Gateway 独立的数据
+### 状态隔离
 
-多 Gateway 场景下,每个 Gateway 有独立的数据:
+**问题**: 多 Gateway 共享状态会数据不一致?
+
+**方案**: 每个 Gateway 有**独立的数据**:
 - **Session 数据库**: 每个 Gateway 存自己的 session
 - **Auth 数据库**: 每个 Gateway 存自己的 auth profile
 - **Workspace**: 每个 Gateway 有自己的工作目录
 
-**为什么需要状态隔离?** 因为:
-- 不同 Gateway 的 session 不应该共享(如 coding agent 的 session 不应该出现在 support agent 的 Gateway 里)
-- 不同 Gateway 的 auth 可能不同(如一个用用户 A 的 API key,另一个用用户 B 的 API key)
-- 不同 Gateway 的 workspace 可能不同(如一个处理项目 A,另一个处理项目 B)
+**洞察**: 每个 Gateway 是独立的实体,不互相干扰。
 
-状态隔离保证: 每个 Gateway 是独立的实体,不互相干扰。
+**权衡**:
+- ✓ 隔离: 数据不共享
+- ✓ 一致: 每个 Gateway 自己的状态
