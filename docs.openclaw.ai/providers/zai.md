@@ -1,6 +1,14 @@
 # Z.AI (GLM)
 
-Z.AI (GLM)
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### GLM 模型系列——智谱 AI 的 API 入口
+
+Z.AI 提供 GLM（General Language Model）模型系列。智谱 AI（Zhipu AI）是中国头部大模型公司，GLM 模型在中文理解和知识问答上表现优异。对 OpenClaw agent 来说，Z.AI 是**中文场景的又一个高质量选择**。
+
+---
 
 Z.AI 提供 GLM 模型系列的访问。
 
