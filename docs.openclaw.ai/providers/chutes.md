@@ -1,6 +1,14 @@
 # Chutes
 
-Chutes
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 开源模型的云端推理——又一个无服务器选择
+
+Chutes 为开源模型提供云端推理，定位类似 DeepInfra 和 Together AI。对 OpenClaw agent 来说，多个同类 provider 的价值是**故障转移和价格竞争**——当某个 provider 不可用或价格不合适时，可以快速切换。
+
+---
 
 Chutes 为开源模型提供云端推理。
 
