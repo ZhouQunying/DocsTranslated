@@ -6,9 +6,9 @@
 
 ### SwiftUI 嵌入 Web UI——hybrid native/web 架构
 
-macOS menu bar app 用 **SwiftUI view** 嵌入 WebChat UI（WKWebView）。这跟 Slack/Electron 的 hybrid 架构是一个思路——native shell 提供系统集成（menu bar、notification、hotkey），web content 提供业务逻辑（chat UI、markdown 渲染）。OpenClaw 选择 hybrid 而不是纯 native，是因为 WebChat 已有完整实现，重写 native 成本高、维护负担重。
+macOS menu bar app 用 **SwiftUI view** 嵌入 WebChat UI（WKWebView）。选择 hybrid 而不是纯 native 的原因是**成本**：WebChat 已有完整的 chat UI 实现（消息渲染、markdown、code block），重写 native 版本成本高、还要维护两套。Hybrid 架构让 native shell 提供系统集成（menu bar、notification、hotkey），web content 提供业务逻辑（chat UI），各取所长。
 
-Hybrid 的好处是**一套 UI 多端复用**。WebChat 在 browser 和 macOS app 里是同一套代码，bug fix 一次生效。缺点是 web view 不如 native view 流畅，但对 chat UI 来说性能要求不高。
+好处是**一套 UI 多端复用**。WebChat 在 browser 和 macOS app 里是同一套代码，bug fix 一次生效。缺点是 web view 不如 native view 流畅，但对 chat UI 来说性能要求不高——用户不期望 chat 有 60fps 动画。
 
 ### Lobster menu 集成——plugin 式 UI 扩展
 

@@ -6,7 +6,9 @@
 
 ### macOS 26+ 硬要求——平台 API 的依赖
 
-Voice Wake（"Hey OpenClaw"）和 push-to-talk 要求 macOS 26 或更新。老版本 macOS 不支持这些特性。这跟 iOS 的 API availability 是一个思路——iOS 16 引入了 Lock Screen widgets，iOS 15 用不了。OpenClaw 的 Voice Wake 依赖 macOS 26 的新 API（可能是语音识别或低延迟音频），老版本只能 fallback 到手动触发。
+Voice Wake（"Hey OpenClaw"）和 push-to-talk 要求 macOS 26 或更新。老版本 macOS 不支持这些特性。这不是"建议 macOS 26"，而是**硬依赖**——Voice Wake 依赖 macOS 26 新引入的语音识别或低延迟音频 API，老版本系统没有这些 API，代码编译都过不了。
+
+这跟 browser API 的兼容性是一个思路。WebRTC 要求现代浏览器（Chrome/Firefox/Safari 最新版），IE 不支持不是因为"IE 太旧"，而是 IE 根本没有 WebRTC API。OpenClaw 的 Voice Wake 也是这样：macOS 26 之前没有对应的语音 API，不是 fallback 到旧 API，而是根本没有。
 
 ### Stuck overlay recovery——circuit breaker 模式
 

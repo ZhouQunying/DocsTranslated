@@ -6,9 +6,9 @@
 
 ### App 通过 Gateway 获取 skills——thin client 模式
 
-macOS app **不解析** skills 配置，而是通过 Gateway 获取 skills 列表。这跟 SPA 的 API client 是一个思路——前端不解析业务逻辑，调后端 API 获取数据。OpenClaw 的 macOS app 是 thin client：UI 展示 skills，但 skill 定义、权限检查、执行调度都在 Gateway。
+macOS app **不解析** skills 配置，而是通过 Gateway 获取 skills 列表。这是 thin client 模式——app 只做 UI 展示，skill 的定义解析、权限检查、执行调度全在 Gateway。好处是**逻辑集中**：Gateway 更新 skill 格式，所有客户端（macOS app、WebChat、CLI）自动生效，不需要各自适配。
 
-Thin client 的好处是**逻辑集中**。Skill 的解析和执行在 Gateway，app 只是展示层。Gateway 更新了 skill 格式，app 不需要改。这跟 Kubernetes 的 client-go 库是一个思路：client 不解析 API schema，只序列化/反序列化，schema 演进由 server 控制。
+这跟 API gateway 后面的 microservices 是一个思路。Client 不关心后端有多少 service、数据怎么存，只调 gateway 的统一 API。OpenClaw 的 app 也是这样：不关心 skill 怎么定义、怎么执行，只调 Gateway 的 skill API 获取列表和触发执行。
 
 ### Gateway 拥有 skill catalog——control plane vs data plane
 

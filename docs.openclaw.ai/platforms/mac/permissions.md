@@ -17,7 +17,7 @@ Ad-hoc 签名（`codesign -s -`）不依赖 Apple Developer 证书，但每次�
 - 用户需要重新授权 Accessibility、Screen Recording 等
 - Dev 体验很差，但 production build 没问题（Developer ID 签名稳定）
 
-这跟 JWT token rotation 是一个思路。Token 每次 rotation 都生成新 token，旧 token 失效。Ad-hoc 签名也是这样：每次构建都是"新身份"，旧权限失效。Dev 模式接受这个代价，production 用稳定签名避免。
+这跟 SSH host key 是一个思路。你连一个 server，SSH 记住了 host key fingerprint。下次 server 换了 key（重新生成），SSH 就警告"REMOTE HOST IDENTIFICATION HAS CHANGED"，必须手动确认。TCC 也是这样：代码身份换了（ad-hoc 重新签名），macOS 就忘了之前的授权。Dev 模式接受这个代价（每次 build 重新授权），production 用稳定签名避免。
 
 ### System Settings 的 node entry——权限的聚合视图
 

@@ -18,4 +18,4 @@ Custom scheme 的好处是**抽象层**。实际路径可以变（如从 `~/Libr
 
 ### Built-in scaffold——graceful degradation
 
-如果 Canvas 根目录没有 `index.html`，app 显示 built-in scaffold page。这跟 Nginx 的 default page 是一个思路——没有配置 server block 时，Nginx 显示 welcome page，不是 404。OpenClaw 的 scaffold 也是 graceful degradation：agent 还没创建 Canvas UI 时，用户看到引导页（"Canvas 是什么、怎么用"），而不是空白或错误。
+如果 Canvas 根目录没有 `index.html`，app 显示 built-in scaffold page。这跟 SPA 的 loading state 是一个思路——应用启动时显示 skeleton screen 或 loading spinner，不是白屏。OpenClaw 的 scaffold 也是同样的 UX 原则：agent 还没创建 Canvas UI 时，用户看到引导页（"Canvas 是什么、怎么用"），而不是空白或错误。首次体验（first-run experience）是产品设计的关键。

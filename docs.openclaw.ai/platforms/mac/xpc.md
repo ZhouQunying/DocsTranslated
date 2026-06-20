@@ -14,6 +14,8 @@ UDS 的选择不是随意的。TCP loopback（`127.0.0.1`）也可以本地通�
 
 Gateway 和 node 之间的 transport 可能是 WebSocket 或 Unix socket，取决于 node 是本地还是远程。这跟 gRPC 的 transport 抽象是一个思路——gRPC 可以用 HTTP/2、Unix socket、in-process，业务逻辑不关心 transport。OpenClaw 也是这样：node 协议不依赖特定 transport，本地用 UDS，远程用 WebSocket。
 
-### PeekabooBridge 的 UI automation——bridge pattern
+### PeekabooBridge 的 UI automation——进程隔离 = 安全边界
 
-PeekabooBridge 是独立的 UI automation 进程，通过 IPC 和 app 通信。这跟 Selenium WebDriver 的 bridge 架构是一个思路。Selenium 的 browser driver 是独立进程，通过 WebDriver 协议和 test runner 通信。OpenClaw 的 PeekabooBridge 也是这样：独立的 UI automation broker，通过 Unix socket 和 app 通信。分离的好处是**权限隔离**——PeekabooBridge 需要 Accessibility 权限，app 不需要。
+PeekabooBridge 是独立的 UI automation 进程，通过 IPC 和 app 通信。这不是代码组织的选择，而是**安全边界**。UI automation 进程有高权限（Accessibility、Screen Recording），如果 agent 代码能直接访问 Peekaboo 的进程内存，就能绕过权限检查执行任意 UI 操作。把高权限 broker 放在独立进程，agent 只能通过 IPC 协议通信，即使 agent 代码被攻破，攻击者也受限于 IPC 协议的能力边界。
+
+这跟 Chrome 的多进程架构是一个思路。Chrome 的 renderer 进程沙盒化，即使渲染的网页有恶意代码，也逃不出 renderer 进程。Peekaboo 的独立进程也是沙盒——高权限操作被限制在 broker 进程内，agent 进程没有这些权限。

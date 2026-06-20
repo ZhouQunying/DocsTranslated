@@ -11,7 +11,9 @@ OpenClaw 有三条桌面控制路径：
 2. **PeekabooBridge**（UI automation broker）
 3. **Browser automation**（Playwright/Puppeteer via CLI node）
 
-三条路径**故意保持分离**。这跟微服务的 bounded context 是一个思路——每个服务负责一个明确的业务领域，不重叠。OpenClaw 的三条路径也是：原生能力处理系统级操作（如 AppleScript 控制 Finder），Peekaboo 处理 macOS UI 自动化（如点击按钮），browser automation 处理 web 操作（如填表单）。
+三条路径**故意保持分离**。它们分别对应三种控制层级：操作系统 UI（原生能力）、应用 UI（Peekaboo）、Web UI（browser automation）。Agent 要操作什么就选什么路径——操作 Finder 用 AppleScript，点击 macOS app 按钮用 Peekaboo，填 web 表单用 browser automation。
+
+这跟 Kubernetes 的多层控制是一个思路。kubectl 操作集群资源，Helm 操作 release，GitOps 操作 Git 仓库。三个工具各自在不同抽象层工作，不重叠。OpenClaw 的三条路径也是这样：各自在不同 UI 层级工作，agent 根据目标选择路径。
 
 分离的好处是**权限最小化**。Browser automation 不需要 Accessibility 权限，Peekaboo 不需要 browser 控制。每条路径只申请自己需要的权限，符合 least privilege 原则。
 

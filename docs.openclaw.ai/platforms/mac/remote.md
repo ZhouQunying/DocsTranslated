@@ -10,7 +10,7 @@ Remote mode 支持两种传输：
 1. **SSH tunnel**：通过 SSH 端口转发连接远程 Gateway
 2. **WebSocket**：直接 WebSocket 连接（需要 wss://）
 
-这跟 VPN vs 直连是一个思路。SSH tunnel 像 VPN——加密、认证、但多一层封装。WebSocket 直连更快，但需要自己处理 TLS 和认证。OpenClaw 让用户选择：SSH tunnel 适合已有 SSH 基础设施的环境，WebSocket 适合现代部署。
+这跟 SOCKS proxy vs HTTPS 直连是一个思路。SSH tunnel 像 SOCKS proxy——复用已有通道、加密、但多一层跳转。WebSocket 直连更直接，但需要 Gateway 暴露 wss:// 端口。OpenClaw 让用户选择：已有 SSH 基础设施（如跳板机）就用 tunnel，现代云部署（Gateway 有公网域名）就用 WebSocket。
 
 ### Browser automation 归 CLI node host——关注点分离
 

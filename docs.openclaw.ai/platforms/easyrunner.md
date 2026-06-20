@@ -29,10 +29,14 @@ labels:
 
 正确做法是配置 trusted proxy——告诉 Gateway "来自这个 IP 的请求是 proxy 转发的，读 X-Forwarded-For 头获取真实客户端 IP"。这跟 AWS ALB 的 trusted proxy 设置是一个思路。ALB 终结 TLS 后，后端实例需要配置信任 ALB 的 IP 段，才能正确解析 X-Forwarded-For。
 
-### 持久化卷——config 和 workspace 分离
+### 持久化卷——身份和产物分离
 
 EasyRunner 用两个持久化卷：
-- `openclaw-config`：`/home/node/.openclaw`，Gateway 配置和状态
+- `openclaw-config`：`/home/node/.openclaw`，Gateway 的配置、凭证、状态
 - `openclaw-workspace`：`/workspace`，agent 的项目数据
 
-这跟 Kubernetes PV 的分离策略是一个思路。Kubernetes 把 etcd 数据、应用数据、日志分别用不同 PV，备份策略不同（etcd 必须备份，日志可以丢弃）。OpenClaw 也是这样：config 必须备份（丢了要重新配置），workspace 按需备份（agent 的项目数据可能重要也可能不重要）。
+这两个卷的核心区别是**丢失后的恢复成本**。Config 丢了，Gateway 的身份、凭证、设置全没了，等于一个全新的 Gateway 要重新配置。Workspace 丢了，只是 agent 的工作产物没了，Gateway 本身还在。
+
+这跟数据库的元数据和数据分离是一个思路。PostgreSQL 的 system catalog（`pg_catalog`）记录 schema 定义，用户表记录业务数据。Catalog 丢了，数据库不知道自己有什么表、什么索引，数据还在但没法访问。OpenClaw 的 config 就是它的 catalog——丢了它不知道自己是谁、连哪些 provider、信任哪些 node。
+
+备份策略因此不同：config 必须高频备份（每次配置变更都该备份），workspace 按需备份。这跟 Terraform 的 state 文件是一个思路。Terraform 的 `.tfstate` 记录基础设施状态，丢了要重新 import 所有资源。Terraform 代码可以从 Git 恢复，但 state 丢了就是真丢了。OpenClaw 的 config 也是这样——代码（workspace）可以重建，身份（config）丢了就要重新配置。
