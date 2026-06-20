@@ -1,6 +1,14 @@
 # NVIDIA
 
-NVIDIA
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### GPU 厂商的推理服务——从卖硬件到卖服务
+
+NVIDIA 通过 NIM（NVIDIA Inference Microservice）提供模型推理。这跟 AWS（卖云计算）同时卖 EC2 GPU 实例是一个思路——硬件厂商向上游延伸，从"卖 GPU"变成"卖 GPU 上运行的推理服务"。对 OpenClaw agent 来说，NVIDIA NIM 提供了**GPU 优化推理**——NVIDIA 自己的推理栈比第三方更懂自家硬件。
+
+---
 
 NVIDIA 通过其 NIM 微服务和 API 目录提供推理。
 
