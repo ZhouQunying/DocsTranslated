@@ -1,6 +1,14 @@
 # GMI Cloud
 
-GMI Cloud
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### GPU 加速推理——专注硬件性能
+
+GMI Cloud 为开源模型提供 GPU 加速推理。在多个开源推理 provider 中，GMI 的差异化是硬件配置和性能优化。对 OpenClaw agent 来说，选择 GMI 还是其他 provider 取决于**具体的性能需求和价格比较**。
+
+---
 
 GMI Cloud 为开源模型提供 GPU 加速推理。
 
