@@ -1,6 +1,14 @@
 # OpenCode
 
-OpenCode
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Zen + Go 双运行时——编码 agent 的执行引擎
+
+OpenCode 提供 Zen 和 Go 两种运行时。双运行时让 agent 可以根据任务选择执行环境——Zen 适合快速交互，Go 适合需要编译和高性能的场景。对 OpenClaw agent 来说，OpenCode 是**编码任务的专用执行引擎**。
+
+---
 
 OpenCode 通过其 Zen 和 Go 运行时提供 AI 代码辅助。
 
