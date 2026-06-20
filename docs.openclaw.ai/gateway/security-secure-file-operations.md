@@ -1,0 +1,103 @@
+# Secure file operations
+
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Secure file operations (@openclaw/fs-safe)
+
+**问题**: Agent 可能执行恶意文件操作(读 `/etc/passwd`、删 `/usr/bin/ls`)?
+
+**方案**: 用 `@openclaw/fs-safe` 库限制:
+- ✓ 只能操作 workspace、配置目录
+- ✗ 不能访问 `/etc`、`/usr`、`/var` 等系统目录
+
+**洞察**: 文件操作边界 = 把 agent 限制在安全目录内。
+
+**权衡**:
+- ✓ 安全: 防止恶意文件操作
+- ✗ 限制: Agent 不能访问某些合法目录
+
+**模式**: Chroot 模型——进程被限制在特定目录内。
+
+### Root-bounded reads
+
+**问题**: Agent 请求 `/etc/passwd`,如何防止 path traversal?
+
+**方案**: 把所有路径当**相对路径**(相对于根目录):
+- 请求 `/etc/passwd` → 解释为 `~/.openclaw/workspace/etc/passwd` (不存在)
+- 请求 `../../etc/passwd` → 同样解释为相对路径
+
+**洞察**: 根目录限定 = 即使请求绝对路径,也被解释为相对路径。
+
+**权衡**:
+- ✓ 安全: 防止 path traversal
+- ✗ 限制: 不能访问根目录外的文件
+
+**模式**: Web 服务器 document root——只能访问 document root 下的文件。
+
+### Atomic replacement
+
+**问题**: 文件替换过程中系统崩溃,文件损坏?
+
+**方案**: 原子替换:
+1. 写临时文件
+2. 原子性替换原文件 (rename syscall)
+3. 失败则原文件不受影响
+
+**洞察**: 原子性 = 要么完全成功,要么完全失败,没有中间状态。
+
+**权衡**:
+- ✓ 安全: 防止文件损坏
+- ✗ 开销: 需要额外的临时文件
+
+**模式**: 数据库事务——要么提交,要么回滚。
+
+### Archive extraction
+
+**问题**: 恶意归档(含 `../../etc/passwd`、zip bomb)?
+
+**方案**: 安全解压:
+- ✓ 检查路径,防止 path traversal
+- ✓ 限制解压后大小,防止 zip bomb
+- ✓ 限制文件数量,防止 inode 耗尽
+
+**洞察**: 归档解压 = 潜在的安全风险,需要检查。
+
+**权衡**:
+- ✓ 安全: 防止恶意归档
+- ✗ 限制: 某些合法归档可能被拒绝
+
+**模式**: 邮件附件扫描——防止恶意附件。
+
+### Library guardrail,不是 sandbox
+
+**问题**: Secure file operations 是 sandbox 吗?
+
+**方案**: **不是**。是 **library guardrail**(库级别防护):
+- Library guardrail: 代码层面限制(库函数检查路径)
+- Sandbox: 操作系统层面限制(Docker container、chroot)
+
+**洞察**: 库只能限制"用这个库的代码",直接调用系统函数则管不了。
+
+**权衡**:
+- ✓ 轻量: 不需要操作系统支持
+- ✗ 弱: 不能限制直接调用系统函数的代码
+
+**模式**: JavaScript Promise vs Web Worker——Promise 是代码层面,Web Worker 是浏览器层面。
+
+### 信任的代码 + 不信任的路径
+
+**问题**: Agent 代码是信任的,但用户提供的路径是不信任的?
+
+**方案**: 库把代码(信任的)和路径(不信任的)分开:
+- 代码逻辑: "读取用户指定的路径"
+- 库检查: "路径是否在安全目录内"
+
+**洞察**: 分离信任 = 代码信任,路径不信任。
+
+**权衡**:
+- ✓ 安全: 防止恶意路径
+- ✗ 限制: 不能访问安全目录外的文件
+
+**模式**: SQL prepared statement——代码(信任的)和输入(不信任的)分开,防止注入。

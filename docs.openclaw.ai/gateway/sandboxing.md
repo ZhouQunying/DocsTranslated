@@ -1,0 +1,98 @@
+# Sandboxing
+
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Sandboxing
+
+**问题**: Agent 可能执行危险操作 (如 `rm -rf /`),如何限制爆炸半径?
+
+**方案**: 工具在沙箱后端内运行:
+- Agent 请求 `ls` → Docker container 内执行,不在 host 上
+- Agent 请求写文件 → Docker container 内写,不在 host 上
+
+**洞察**: Sandbox = 把 agent 的工具限制在沙箱内,不影响 host。
+
+**权衡**:
+- ✓ 安全: 危险操作被限制在沙箱内
+- ✗ 开销: 沙箱增加延迟和资源消耗
+
+**模式**: Docker container——进程被隔离,不能访问 host。
+
+### Sandbox modes
+
+**问题**: 什么时候用 sandbox?
+
+**方案**: 三种模式:
+- **off**: 不用 sandbox (工具在 host 上运行)
+- **non-main**: 只在非主 session 用 sandbox
+- **all**: 所有 session 都用 sandbox
+
+**洞察**: 根据信任级别选择模式。
+
+**权衡**:
+- ✓ off: 性能最好
+- ✗ off: 最不安全
+- ✓ all: 最安全
+- ✗ all: 性能最差
+
+**模式**: CORS same-origin policy——同源信任,cross-origin 需要检查。
+
+### Sandbox backends
+
+**问题**: 沙箱运行在哪里?
+
+**方案**: 两种后端:
+- **Docker**: 工具在 Docker container 内运行
+- **SSH**: 工具在远程 SSH 服务器上运行
+
+**洞察**: Docker 适合本地开发,SSH 适合生产环境。
+
+**权衡**:
+- ✓ Docker: 不需要额外服务器
+- ✗ Docker: 本地资源消耗
+- ✓ SSH: 集中管理沙箱服务器
+- ✗ SSH: 需要额外服务器
+
+**模式**: Kubernetes node——pod 可以运行在不同 node 上。
+
+### Not a perfect security boundary
+
+**问题**: Sandbox 是完美的安全边界吗?
+
+**方案**: **不是**:
+- Docker 有逃逸漏洞 (如 CVE-2019-5736)
+- SSH 服务器可能被入侵
+- Sandbox 增加攻击成本,但不能完全阻止
+
+**洞察**: Sandbox 是深度防御 (defense in depth),不是银弹。
+
+**权衡**:
+- ✓ 增加成本: 攻击者需要利用 sandbox 漏洞
+- ✗ 不完美: 不能阻止所有攻击
+
+**模式**: 防火墙——能阻止大部分攻击,不能阻止所有。
+
+### 什么时候用 sandboxing?
+
+**问题**: 什么场景应该用 sandbox?
+
+**方案**: 
+**应该用**:
+- 公开的 agent (任何人都能发消息)
+- 处理不可信内容 (用户提供的 URL、文件)
+- 生产环境
+
+**不需要用**:
+- 个人使用的 agent
+- 开发环境
+- 性能敏感场景
+
+**洞察**: 根据场景选择是否使用 sandbox。
+
+**权衡**:
+- ✓ 安全: 高安全场景用 sandbox
+- ✗ 开销: 性能敏感场景不用 sandbox
+
+**模式**: HTTPS——公共网站必须用,个人网站可以不用。

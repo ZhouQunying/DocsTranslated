@@ -1,0 +1,94 @@
+# Operator scopes
+
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### Operator scopes
+
+**问题**: Gateway 操作员 (operator) 能做什么?
+
+**方案**: Scopes 定义操作员权限:
+- `config:read`: 读配置
+- `config:write`: 写配置
+- `gateway:restart`: 重启 Gateway
+- `logs:read`: 查看日志
+- `session:read`: 查看 session
+
+**洞察**: Scopes = 限制操作员权限,减少误操作风险。
+
+**权衡**:
+- ✓ 安全: 最小权限原则
+- ✗ 复杂: 需要管理不同操作员的 scopes
+
+**模式**: AWS IAM policy——定义"用户能做什么"。
+
+### Control-plane guardrail
+
+**问题**: Operator scopes 限制什么?
+
+**方案**: **Control plane** (控制层面),不是 data plane (数据层面):
+- Control plane: 管理 Gateway (配置、重启、日志)
+- Data plane: 处理用户消息 (agent 对话、工具执行)
+
+**洞察**: 管理 Gateway 的人 (操作员) 和使用 Gateway 的人 (用户) 权限分开。
+
+**权衡**:
+- ✓ 分离: 操作员权限 ≠ 用户权限
+- ✗ 复杂: 需要分别管理两种权限
+
+**模式**: Kubernetes RBAC——cluster-scoped vs namespace-scoped。
+
+### Scopes 的定义
+
+**问题**: Scopes 在哪里定义?
+
+**方案**: 在配置文件中:
+```json
+{
+  gateway: {
+    operators: [
+      { user: "admin", scopes: ["config:read", "config:write", "gateway:restart"] },
+      { user: "junior-ops", scopes: ["logs:read", "session:read"] }
+    ]
+  }
+}
+```
+
+**洞察**: 配置文件 = source of truth,可以版本控制、自动化。
+
+**权衡**:
+- ✓ 可审计: 配置在 Git 中
+- ✗ 静态: 修改配置需要重启 Gateway
+
+**模式**: Kubernetes ConfigMap——存储应用配置。
+
+### 一个 Gateway,一个 operator domain
+
+**问题**: 不同操作员需要不同信任级别?
+
+**方案**: 用多个 Gateway,每个 Gateway 有自己的 operator domain。
+
+**洞察**: 一个 Gateway 的所有操作员在同一个信任域内。
+
+**权衡**:
+- ✓ 简单: 不需要复杂的权限管理
+- ✗ 资源: 多个 Gateway 消耗更多资源
+
+**模式**: Kubernetes namespace——每个 namespace 有自己的 RBAC。
+
+### Scopes 的粒度
+
+**问题**: Scopes 是粗粒度还是细粒度?
+
+**方案**: **粗粒度** (coarse-grained):
+- ✓ `config:write` (能写所有配置)
+- ✗ `config:write:agents.defaults.model` (能写特定字段)
+
+**洞察**: 粗粒度 = 简单,大多数场景够用。
+
+**权衡**:
+- ✓ 简单: 不需要细粒度权限管理
+- ✗ 不灵活: 不能限制到特定配置字段
+
+**模式**: Linux 文件权限——读、写、执行,不是"只能读第 10-20 行"。
