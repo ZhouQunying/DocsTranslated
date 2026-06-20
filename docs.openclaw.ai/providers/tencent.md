@@ -1,6 +1,14 @@
 # Tencent Cloud (TokenHub)
 
-Tencent Cloud (TokenHub)
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 腾讯云生态的模型入口——混元和其他模型
+
+腾讯云 TokenHub 提供混元（Hunyuan）和其他模型的访问。这跟 AWS Bedrock 在 AWS 生态中的角色类似——云服务商把自研模型和第三方模型统一到同一个 API 平台。对 OpenClaw agent 来说，腾讯云的价值是**腾讯生态集成**——微信、企业微信等腾讯产品的 agent 工作流。
+
+---
 
 腾讯云 TokenHub 提供混元和其他模型的访问。
 
