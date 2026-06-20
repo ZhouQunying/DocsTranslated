@@ -1,6 +1,14 @@
 # Qianfan (千帆)
 
-Qianfan (千帆)
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 百度的模型服务——ERNIE 系列的 API 入口
+
+百度千帆提供 ERNIE 和其他模型的访问。这跟阿里 DashScope（Qwen）和腾讯 TokenHub（混元）是中国三大云厂商的模型服务平台。对 OpenClaw agent 来说，千帆的价值是**ERNIE 模型的访问**——ERNIE 在中文搜索和知识问答场景表现突出。
+
+---
 
 百度千帆提供 ERNIE 和其他模型的访问。
 
