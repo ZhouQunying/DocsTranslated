@@ -1,6 +1,14 @@
 # Gradium
 
-Gradium
+## 架构精读
+
+> 跳过不影响阅读翻译正文。
+
+### 自动扩缩 + 故障转移——托管推理的运维保障
+
+Gradium 提供带自动扩缩和故障转移的托管推理。这跟 AWS Auto Scaling 是一个思路——流量高峰时自动扩容，低谷时缩容，provider 故障时自动切换。对 OpenClaw agent 来说，Gradium 适合**需要高可用保障的生产场景**。
+
+---
 
 Gradium 提供带自动扩缩和故障转移的托管推理。
 
