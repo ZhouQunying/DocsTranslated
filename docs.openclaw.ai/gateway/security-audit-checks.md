@@ -48,7 +48,7 @@
 **方案**: 每个检查项有唯一检查 ID:
 - `auth-no-authentication`: 没有启用认证
 - `network-public-exposure`: Gateway 暴露在公网
-- `tools-exec-unrestricted`: exec 工具没有限制
+- `tools-exec-unrestricted`: 执行工具没有限制
 
 **洞察**: 检查 ID = 可以针对性配置例外、跟踪修复进度。
 

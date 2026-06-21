@@ -84,4 +84,4 @@
 - ✓ 可控: 手动决定什么时候升级
 - ✗ 慢: 不会自动获得新功能
 
-**模式**: Kubernetes image policy——Always (总是拉取) vs IfNotPresent (本地没有才拉取)。
+**模式**: Kubernetes image 策略——Always (总是拉取) vs IfNotPresent (本地没有才拉取)。
