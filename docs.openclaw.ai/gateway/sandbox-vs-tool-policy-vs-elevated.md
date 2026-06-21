@@ -66,7 +66,7 @@ openclaw sandbox explain --json
 **方案**: `docker.binds` **穿透**沙箱文件系统:
 - 挂载的内容在容器内可见
 - 默认 read-write,建议 `:ro` for source/secrets
-- `scope: "shared"` 忽略 per-agent 挂载
+- `scope: "shared"` 忽略 per-代理 挂载
 - OpenClaw 验证 bind sources 两次 (normalized path + resolved path)
 - 绑定 `/var/run/docker.sock` 等于把宿主机控制权交给沙箱
 
@@ -129,7 +129,7 @@ openclaw sandbox explain --json
 - `group:agents`: `agents_list`, `update_plan`
 - `group:media`: `image`, `image_generate`, `music_generate`, `video_generate`, `tts`
 - `group:openclaw`: 所有内置 OpenClaw 工具
-- `group:plugins`: 所有加载的 plugin-owned 工具
+- `group:plugins`: 所有加载的插件工具
 
 **洞察**: 用工具组批量管理,而不是逐个列出工具。
 

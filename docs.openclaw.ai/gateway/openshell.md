@@ -33,7 +33,7 @@
 **权衡**:
 - ✓ Mirror: 本地编辑可见,类似 Docker 后端
 - ✗ Mirror: 每次执行有 sync 开销
-- ✓ Remote: 低 sync 开销,适合长时间运行的 agent
+- ✓ Remote: 低 sync 开销,适合长时间运行的代理
 - ✗ Remote: 本地编辑不可见,直到 recreate
 
 | | Mirror | Remote |

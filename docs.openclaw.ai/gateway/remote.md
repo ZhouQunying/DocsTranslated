@@ -4,26 +4,26 @@
 
 > 跳过不影响阅读翻译正文。
 
-### 中心化 Gateway——为什么不是分布式？
+### 中心化网关——为什么不是分布式？
 
-Gateway 是唯一的权威节点，持有所有会话、认证、频道和 state。
-Node 不运行 gateway service，只作为外设连接。
-这跟 Git remote 仓库类似——Gateway 是 remote（权威来源），笔记本和 node 是 local（工作副本）。
-区别在于 Git 是分布式的，Gateway 是中心化的：每台主机只运行一个 gateway 实例。
+网关是唯一的权威节点，持有所有会话、认证、频道和 state。
+节点不运行网关服务，只作为外设连接。
+这跟 Git remote 仓库类似——网关是 remote（权威来源），笔记本和节点是 local（工作副本）。
+区别在于 Git 是分布式的，网关是中心化的：每台主机只运行一个网关实例。
 
 ### Loopback-first 安全模型——为什么默认只绑本地？
 
-Gateway WebSocket 默认绑定 loopback（127.0.0.1:18789），不暴露到任何外部网络。
+网关 WebSocket 默认绑定 loopback（127.0.0.1:18789），不暴露到任何外部网络。
 暴露方式分三种：Tailscale Serve（推荐）、LAN/Tailnet bind、SSH tunnel forwarding。
 这跟最小权限原则是一个思路——先关闭一切，再按需开放。
-默认绑定 loopback 保证即使忘记配置防火墙，Gateway 也不会意外暴露。
+默认绑定 loopback 保证即使忘记配置防火墙，网关也不会意外暴露。
 
-### Node 与 Gateway 的角色分离——为什么 node 不跑 gateway？
+### 节点与网关的角色分离——为什么节点不跑网关？
 
-Gateway 负责 agent 逻辑、会话管理、认证和消息路由。
+网关负责代理逻辑、会话管理、认证和消息路由。
 Node 只执行工具调用并返回结果。
 这种分工避免了分布式状态同步的复杂性——所有 state 集中在一处管理。
-每台主机只应运行一个 gateway（除非故意运行隔离配置文件）。
+每台主机只应运行一个网关（除非故意运行隔离配置文件）。
 
 ### 凭证安全链——为什么 URL 覆盖要隔离凭证？
 

@@ -12,18 +12,18 @@ OpenResponses API 采用 item-based 输入模型，而非 Chat Completions 的�
 - 每个 item 有独立的类型和结构
 - 支持多模态内容（图片、文件、PDF）直接作为输入项
 
-这跟 REST API 升级到多部分表单（multipart form）是一个思路——Chat Completions 只接受文本 messages，OpenResponses 可以同时携带文本、图片、文件和工具调用结果。每个 item 都是独立的处理单元，Gateway 按类型分别处理。
+这跟 REST API 升级到多部分表单（multipart form）是一个思路——Chat Completions 只接受文本 messages，OpenResponses 可以同时携带文本、图片、文件和工具调用结果。每个 item 都是独立的处理单元，网关按类型分别处理。
 
-关键设计是**类型驱动的多态输入**。消息走消息处理路径，image 走图片归一化路径，file 走文件解码路径，function_call_output 走工具结果回传路径。不同路径在 Gateway 内部汇聚到同一个 agent run。
+关键设计是**类型驱动的多态输入**。消息走消息处理路径，image 走图片归一化路径，file 走文件解码路径，function_call_output 走工具结果回传路径。不同路径在网关内部汇聚到同一个代理运行。
 
 ### 每次请求无状态——为什么会话是派生的？
 
 OpenResponses 端点默认无状态，每次请求生成新会话密钥。连续性通过两种方式维持：
 
-- `user` 字符串：Gateway 从中派生稳定会话密钥
-- `previous_response_id`：复用同一 agent/user/请求会话作用域内更早 response 的会话
+- `user` 字符串：网关从中派生稳定会话密钥
+- `previous_response_id`：复用同一代理/用户/请求会话作用域内更早 response 的会话
 
-这跟 HTTP 的会话 cookie 是一个思路——协议本身无状态，会话通过客户端提供的标识符派生。好处是 Gateway 不需要维护服务端会话状态（没有内存泄漏风险），坏处是客户端必须正确传递标识符才能维持对话连续性。
+这跟 HTTP 的会话 cookie 是一个思路——协议本身无状态，会话通过客户端提供的标识符派生。好处是网关不需要维护服务端会话状态（没有内存泄漏风险），坏处是客户端必须正确传递标识符才能维持对话连续性。
 
 ### 文件内容注入系统提示——为什么不放用户消息？
 
@@ -49,7 +49,7 @@ URL fetch 有五层安全防线：
 4. 超时（默认 10s）——防止 SSRF 挂起
 5. 可选 hostname 允许列表——精确匹配或通配符子域
 
-关键洞察：hostname 允许列表**不绕过**私有 IP 阻止。即使 `cdn.example.com` 在白名单中，如果 DNS 解析到 10.x.x.x，请求仍然被阻止。这跟浏览器的同源策略 + CORS 是一个思路——两层检查独立执行，一层通过不代表另一层也通过。暴露到互联网的 Gateway 需要在应用层守卫之外加网络出口控制。
+关键洞察：hostname 允许列表**不绕过**私有 IP 阻止。即使 `cdn.example.com` 在白名单中，如果 DNS 解析到 10.x.x.x，请求仍然被阻止。这跟浏览器的同源策略 + CORS 是一个思路——两层检查独立执行，一层通过不代表另一层也通过。暴露到互联网的网关需要在应用层守卫之外加网络出口控制。
 
 ### SSE streaming——为什么用服务器发送事件（SSE）？
 
