@@ -27,9 +27,9 @@
 
 **问题**: Operator scopes 限制什么?
 
-**方案**: **Control plane** (控制层面),不是 data plane (数据层面):
-- Control plane: 管理 Gateway (配置、重启、日志)
-- Data plane: 处理用户消息 (agent 对话、工具执行)
+**方案**: **控制层面** (control plane),不是数据层面 (data plane):
+- 控制层面: 管理 Gateway (配置、重启、日志)
+- 数据层面: 处理用户消息 (agent 对话、工具执行)
 
 **洞察**: 管理 Gateway 的人 (操作员) 和使用 Gateway 的人 (用户) 权限分开。
 
@@ -55,7 +55,7 @@
 }
 ```
 
-**洞察**: 配置文件 = source of truth,可以版本控制、自动化。
+**洞察**: 配置文件 = 权威来源,可以版本控制、自动化。
 
 **权衡**:
 - ✓ 可审计: 配置在 Git 中

@@ -11,7 +11,7 @@
 **方案**: **OpenShell**——managed sandbox backend:
 - OpenClaw 把沙箱生命周期委托给 `openshell` CLI
 - 在远程环境创建,通过 SSH 执行命令
-- 复用 SSH 传输和远程 filesystem bridge
+- 复用 SSH 传输和远程文件系统 bridge
 
 **洞察**: 不是本地 Docker,而是远程 SSH 沙箱。
 
@@ -28,7 +28,7 @@
 - **`mirror`**: 双向同步,每次 exec 前后 sync
 - **`remote`**: 一次性初始化,之后直接操作远程
 
-**洞察**: 选择哪个 workspace 是"source of truth"。
+**洞察**: 选择哪个 workspace 是"权威来源"。
 
 **权衡**:
 - ✓ Mirror: 本地编辑可见,类似 Docker backend
@@ -106,14 +106,14 @@ openclaw sandbox recreate --all
 
 ### Security hardening
 
-**问题**: Symlink swap 或 remounted workspace 可能 redirect reads?
+**问题**: Symlink 替换或 remounted workspace 可能重定向读取?
 
-**方案**: OpenShell pins workspace root fd,每次 read 前 recheck sandbox identity。
+**方案**: OpenShell pins workspace 根文件描述符,每次 read 前 recheck sandbox 身份。
 
-**洞察**: 防止 symlink swap 或 remount 导致 reads 被 redirect 到意外的位置。
+**洞察**: 防止 symlink 替换或 remount 导致 reads 被重定向到意外的位置。
 
 **权衡**:
-- ✓ 安全: 防止 symlink swap 攻击
+- ✓ 安全: 防止 symlink 替换攻击
 - ✓ 可靠: 每次 read 前验证
 
 ### Current limitations

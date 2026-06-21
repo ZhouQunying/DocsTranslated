@@ -11,7 +11,7 @@
 **方案**: 三个控制:
 1. **Sandbox** (`agents.defaults.sandbox.*`): **在哪里运行** (sandbox backend vs host)
 2. **Tool policy** (`tools.*`): **哪些工具可用/允许**
-3. **Elevated** (`tools.elevated.*`): **exec-only escape hatch**,在沙箱外运行
+3. **Elevated** (`tools.elevated.*`): **exec-only 应急出口**,在沙箱外运行
 
 **洞察**: 三个控制分别控制: 运行位置、工具可用性、exec 特权。
 
@@ -63,10 +63,10 @@ openclaw sandbox explain --json
 
 **问题**: Bind mounts 如何影响 sandbox 安全?
 
-**方案**: `docker.binds` **pierces** sandbox filesystem:
+**方案**: `docker.binds` **穿透** sandbox 文件系统:
 - 挂载的内容在 container 内可见
 - 默认 read-write,建议 `:ro` for source/secrets
-- `scope: "shared"` 忽略 per-agent binds
+- `scope: "shared"` 忽略 per-agent 挂载
 - OpenClaw 验证 bind sources 两次 (normalized path + resolved path)
 - 绑定 `/var/run/docker.sock` 等于把 host 控制权交给 sandbox
 
@@ -141,10 +141,10 @@ openclaw sandbox explain --json
 
 **问题**: 如何在 sandboxed 模式下在 host 运行 exec?
 
-**方案**: **Elevated**——exec-only escape hatch:
+**方案**: **Elevated**——exec-only 应急出口:
 - `/elevated on` 或 `exec` with `elevated: true`: 在 sandbox 外运行
 - `/elevated full`: 跳过 exec approvals
-- 如果已经是 direct,elevated 是 no-op
+- 如果已经是直连,elevated 是空操作
 - Elevated **不授予额外工具**,只影响 `exec`
 - Elevated **不 override tool allow/deny**
 
@@ -174,5 +174,5 @@ openclaw sandbox explain --json
 **洞察**: 常见错误: 以为 session 是 main,实际上是 non-main。
 
 **权衡**:
-- ✓ 修复: 可以修复 sandbox jail
+- ✓ 修复: 可以修复 sandbox 监牢
 - ✗ 复杂: 需要理解 sandbox mode 和 session key
