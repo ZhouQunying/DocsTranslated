@@ -40,7 +40,7 @@ MCP server 作为 plugin-owned tool 暴露在 `bundle-mcp` plugin 标识下。�
 }
 ```
 
-这跟 Docker 的 `--privileged` 是一个思路——正常情况下容器隔离，但某些操作需要 host 权限（如 mount filesystem、access hardware）。Elevated exec 完全绕过沙箱。
+这跟 Docker 的 `--privileged` 是一个思路——正常情况下容器隔离，但某些操作需要 host 权限（如挂载文件系统、访问硬件）。Elevated exec 完全绕过沙箱。
 
 代价是安全风险（agent 可以在 host 上执行任意命令）。Per-agent override 只能进一步限制（不能放宽），`/elevated` command 按 session 存储状态。
 

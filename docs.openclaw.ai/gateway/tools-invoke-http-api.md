@@ -30,7 +30,7 @@ POST /v1/chat/completions → agent 推理 → 可能调用 tool → 继续推�
 
 Tool 可用性经过两层过滤：
 
-1. **策略链**（Policy chain，与 Gateway agent 相同）：`tools.profile` → `tools.allow` → `agents.<id>.tools.allow` → group policies → subagent policy
+1. **策略链**（与 Gateway agent 相同）：`tools.profile` → `tools.allow` → `agents.<id>.tools.allow` → group policies → subagent policy
 2. **硬拒绝列表**：即使策略链允许，HTTP endpoint 仍然默认阻止 exec、shell、fs_write 等危险 tool
 
 这跟防火墙 + WAF 是一个思路——防火墙（策略链）控制哪些端口可达，WAF（硬拒绝列表）在应用层阻止已知危险模式。两层独立执行，一层通过不代表另一层也通过。即使你在 policy 中显式允许 `exec`，HTTP endpoint 的硬拒绝列表仍然会阻止它。

@@ -4,7 +4,7 @@
 
 > 跳过不影响阅读翻译正文。
 
-### Heartbeat 的 response contract——为什么 idle 需要 SUCCESS token？
+### Heartbeat 的响应约定——为什么 idle 需要 SUCCESS token？
 
 Heartbeat 的核心设计是响应约定：
 

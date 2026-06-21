@@ -18,7 +18,7 @@ OpenClaw 的 SecretRef 在 activation 时 eager resolve 到内存快照，而非
 }
 ```
 
-这跟 Vault Agent template 是一个思路——启动时一次性解析所有 secret 到内存，运行时从快照读取。好处是 fail-fast（启动时发现问题）和 atomic swap（热重载时原子替换，无中间状态）。
+这跟 Vault Agent template 是一个思路——启动时一次性解析所有 secret 到内存，运行时从快照读取。好处是 fail-fast（启动时发现问题）和原子替换（热重载时无中间状态）。
 
 代价是 secret provider 挂了时，热重载进入 degraded 状态（保留 last-known-good 快照直到恢复）。但这比"每次请求都可能失败"好得多。
 
@@ -42,11 +42,11 @@ exec-based SecretRef（如 `op read`、`vault kv get`）需要显式 `--allow-ex
 
 这跟 Docker `--privileged` 是一个思路——执行外部命令是高风险操作（可以跑任意代码），必须显式授权。默认拒绝防止"apply plan 时意外执行了恶意命令"。
 
-### One-way safety policy——为什么不写 rollback backup？
+### 单向安全策略——为什么不写回退备份？
 
-系统故意不写包含历史明文的 rollback backup。预检和运行时 activation 必须在 commit 前成功。
+系统故意不写包含历史明文的回退备份。预检和运行时 activation 必须在提交前成功。
 
-这跟 Git 的 philosophy 是一个思路——一旦 commit 就不应该回滚到"更差的状态"（明文泄露）。如果 apply 失败，状态保持不变；如果成功，旧明文被 scrub。没有"回滚到明文"的路径。预检和运行时 activation 必须在 commit 前成功。
+这跟 Git 的 philosophy 是一个思路——一旦提交就不应该回滚到"更差的状态"（明文泄露）。如果 apply 失败，状态保持不变；如果成功，旧明文被 scrub。没有"回滚到明文"的路径。预检和运行时 activation 必须在提交前成功。
 
 ---
 
@@ -56,4 +56,4 @@ The system enables additive SecretRefs, allowing administrators to avoid keeping
 
 Secrets are eagerly resolved into an in-memory snapshot during activation rather than lazily on request paths. This approach ensures fail-fast startup behavior and atomic swap reloads to keep provider outages off hot paths.
 
-Secret 在 activation 时 eager resolve 到内存快照，而非在请求路径上 lazy resolve。这种方式确保 fail-fast 启动行为和 atomic swap reload，让 provider 故障不影响热路径。
+Secret 在 activation 时 eager resolve 到内存快照，而非在请求路径上 lazy resolve。这种方式确保 fail-fast 启动行为和原子替换重载，让 provider 故障不影响热路径。

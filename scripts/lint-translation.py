@@ -60,6 +60,10 @@ FORBIDDEN_ENGLISH = [
     "seam", "broker", "lease", "hook", "pool", "archive",
     "provision", "resume", "persist", "register", "claim",
     "cleanup", "fixture", "baseline", "candidate", "seed",
+    # 2026-06-21 新增：架构精读英文混入治理
+    "halt", "commit", "partial", "lockfile", "infrastructure", "severity",
+    "chain", "negotiated", "hardening", "preload", "swap",
+    "filesystem", "jail", "inode", "rollback", "uptime", "traversal",
 ]
 
 FORBIDDEN_PATTERN = re.compile(
