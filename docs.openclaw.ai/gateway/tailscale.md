@@ -6,17 +6,17 @@
 
 ### Loopback + 反向代理——为什么不直接暴露端口？
 
-Gateway 保持 loopback 绑定，Tailscale 处理加密、路由和 header 注入。
+Gateway 保持 loopback 绑定，Tailscale 处理加密、路由和请求头注入。
 三种模式可选：serve（tailnet 内部）、Funnel（公网通道，公网暴露）、off（默认）。
 这跟 Nginx + Let's Encrypt 是一个思路——应用只监听本地，反向代理处理 TLS 和外部路由。
 区别在于 Tailscale Serve 完全自动化，不需要手动配置 `upstream` 和 SSL。
 
-### Identity header 认证——为什么可以免 token？
+### Identity 请求头认证——为什么可以免令牌？
 
-Tailscale Serve + `allowTailscale: true` 时，Control UI 和 WebSocket 可用 identity headers 免 token 认证。
+Tailscale Serve + `allowTailscale: true` 时，Control UI 和 WebSocket 可用身份请求头免令牌认证。
 系统通过检查 forwarded IP 与本地 daemon 来验证用户身份。
-此验证**仅适用于 loopback 流量**，且需要特定的 forwarded protocol 和 host headers。
-HTTP API endpoints 不使用此认证路径，仍依赖传统 gateway auth 方法。
+此验证**仅适用于 loopback 流量**，且需要特定的转发协议和主机请求头。
+HTTP API 端点不使用此认证路径，仍依赖传统 gateway 认证方法。
 
 ### 公网通道暴露——为什么强制密码保护？
 
@@ -25,10 +25,10 @@ HTTP API endpoints 不使用此认证路径，仍依赖传统 gateway auth 方�
 公网通道严格限制 TLS 流量到端口 443、8443、10000。
 这跟 ngrok 是一个思路——公网暴露需要认证保底，否则任何人都能访问你的 agent。
 
-### Service name 路由——为什么按 service 而非 hostname 寻址？
+### Service name 路由——为什么按服务而非主机名寻址？
 
-Serve 模式下可用 `svc:<dns-label>` 格式指定 Tailscale Service name，按 service 名而非机器 hostname 路由流量。
-需要 host 是 tailnet 中已批准的 tagged node。
+Serve 模式下可用 `svc:<dns-label>` 格式指定 Tailscale 服务名称，按服务名而非机器主机名路由流量。
+需要宿主机是 tailnet 中已批准的 tagged node。
 这种方式让服务发现和路由不依赖具体的机器名，更灵活。
 
 ---

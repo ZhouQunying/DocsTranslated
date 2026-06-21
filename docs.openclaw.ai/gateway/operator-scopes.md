@@ -4,28 +4,28 @@
 
 > 跳过不影响阅读翻译正文。
 
-### Operator scopes
+### 操作员作用域
 
-**问题**: Gateway 操作员 (operator) 能做什么?
+**问题**: Gateway 操作员能做什么?
 
-**方案**: Scopes 定义操作员权限:
+**方案**: 作用域定义操作员权限:
 - `config:read`: 读配置
 - `config:write`: 写配置
 - `gateway:restart`: 重启 Gateway
 - `logs:read`: 查看日志
 - `session:read`: 查看 session
 
-**洞察**: Scopes = 限制操作员权限,减少误操作风险。
+**洞察**: 作用域 = 限制操作员权限,减少误操作风险。
 
 **权衡**:
 - ✓ 安全: 最小权限原则
 - ✗ 复杂: 需要管理不同操作员的 scopes
 
-**模式**: AWS IAM policy——定义"用户能做什么"。
+**模式**: AWS IAM 策略——定义"用户能做什么"。
 
 ### Control-plane guardrail
 
-**问题**: Operator scopes 限制什么?
+**问题**: 操作员作用域限制什么?
 
 **方案**: **控制层面** (control plane),不是数据层面 (data plane):
 - 控制层面: 管理 Gateway (配置、重启、日志)
@@ -39,9 +39,9 @@
 
 **模式**: Kubernetes RBAC——cluster-scoped vs namespace-scoped。
 
-### Scopes 的定义
+### 作用域的定义
 
-**问题**: Scopes 在哪里定义?
+**问题**: 作用域在哪里定义?
 
 **方案**: 在配置文件中:
 ```json
@@ -63,11 +63,11 @@
 
 **模式**: Kubernetes ConfigMap——存储应用配置。
 
-### 一个 Gateway,一个 operator domain
+### 一个 Gateway,一个操作员 domain
 
 **问题**: 不同操作员需要不同信任级别?
 
-**方案**: 用多个 Gateway,每个 Gateway 有自己的 operator domain。
+**方案**: 用多个 Gateway,每个 Gateway 有自己的操作员 domain。
 
 **洞察**: 一个 Gateway 的所有操作员在同一个信任域内。
 
@@ -77,9 +77,9 @@
 
 **模式**: Kubernetes namespace——每个 namespace 有自己的 RBAC。
 
-### Scopes 的粒度
+### 作用域的粒度
 
-**问题**: Scopes 是粗粒度还是细粒度?
+**问题**: 作用域是粗粒度还是细粒度?
 
 **方案**: **粗粒度** (coarse-grained):
 - ✓ `config:write` (能写所有配置)

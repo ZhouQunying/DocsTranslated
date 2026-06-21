@@ -20,7 +20,7 @@
 
 **模式**: Docker image tag——`node:20` 可能变化,`node:20.1.0` 总是相同。
 
-### Source 用 pnpm-lock,发布用 shrinkwrap
+### 源代码用 pnpm-lock,发布用 shrinkwrap
 
 **问题**: 开发用 pnpm,但 npm 不认 pnpm-lock.yaml?
 

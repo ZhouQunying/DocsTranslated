@@ -20,9 +20,9 @@ Responses API（`api: "openai-responses"`）将推理过程和最终文本分离
 
 Ollama 的 Linux 安装默认启用 systemd 服务（`Restart=always`），这意味着每次系统启动都会自动运行。在 WSL2 GPU 设置下，服务可能在启动时重新加载上一个模型并钉住主机内存。WSL2 的内存管理机制与原生 Linux 不同，大量内存占用可能导致宿主机资源紧张，进而触发反复重启循环。使用 WSL2 运行 Ollama 时需要特别注意这个兼容性问题。
 
-### 数据主权——为什么区域固定 endpoint 很重要？
+### 数据主权——为什么区域固定端点很重要？
 
-Hosted 模型变体（如 MiniMax/Kimi/GLM）在 OpenRouter 上提供区域固定的 endpoint（如 US-hosted），确保数据流量不离开指定管辖范围。对于有数据合规要求的场景，这比全球任意路由更安全。但 local-only 仍然是最强的隐私路径——数据完全不离开本地机器。
+Hosted 模型变体（如 MiniMax/Kimi/GLM）在 OpenRouter 上提供区域固定的端点（如 US-hosted），确保数据流量不离开指定管辖范围。对于有数据合规要求的场景，这比全球任意路由更安全。但 local-only 仍然是最强的隐私路径——数据完全不离开本地机器。
 
 ---
 

@@ -8,32 +8,32 @@
 
 OpenClaw 的安全边界是"一个 gateway 对应一个受信任的操作员"。
 它明确不是对抗性的多租户安全边界。
-这跟 SSH 的信任模型类似——你信任持有 key 的人，而不是在同一个 SSH server 上隔离多个互不信任的用户。
+这跟 SSH 的信任模型类似——你信任持有密钥的人，而不是在同一个 SSH 服务器上隔离多个互不信任的用户。
 对于对抗性用户，指导是拆分信任边界：独立的 gateway、独立的凭证，最好是独立的 OS 用户或主机。
 
-### 分层防御——为什么假设 model 不可信？
+### 分层防御——为什么假设模型不可信？
 
 访问控制哲学：身份优先 → 作用域其次 → 模型最后。
 假设模型输出可被操纵（提示注入未解决），所以设计为有限的影响范围。
-先验证身份（token/password/trusted-proxy），再限制作用域（tool deny list、workspace 限制），最后才信任 model 输出（exec approvals、sandboxing）。
+先验证身份（令牌/密码/受信任代理）。再限制作用域（工具拒绝列表、工作区限制）。最后才信任模型输出（执行审批、沙箱化）。
 这跟银行金库是一个思路——先验身份，再限权限，最后监控行为。
 
-### Session 隔离——为什么按 channel + peer 拆分？
+### 会话隔离——为什么按频道 + 对端拆分？
 
-`dmScope: "per-channel-peer"` 配置让每个 channel 与 peer 的组合有独立的 session。
+`dmScope: "per-channel-peer"` 配置让每个频道与对端的组合有独立的会话。
 这防止跨用户上下文泄漏，同时保持群聊隔离。
 不同用户的对话不会互相污染——即使他们在同一个 gateway 上。
 
-### Docker 端口发布——为什么绕过 host 防火墙？
+### Docker 端口发布——为什么绕过宿主机防火墙？
 
-Docker 发布的 container 端口绕过 host `INPUT` 链的 iptables 规则。
+Docker 发布的容器端口绕过宿主机 `INPUT` 链的 iptables 规则。
 必须在 `DOCKER-USER` 链中添加过滤规则才能生效。
 这是 Docker 网络架构的已知行为——很多用户在部署时忽略了这一点。
 
 ### 事件响应——四阶段流程是什么？
 
 Contain（遏制）→ Rotate（轮换）→ Audit（审计）→ Collect（收集）。
-先停止进程、关闭暴露、冻结访问；然后轮换所有凭证；再审计 logs 和 config 变更；最后收集时间戳和攻击者输入作为证据。
+先停止进程、关闭暴露、冻结访问；然后轮换所有凭证；再审计日志和配置变更；最后收集时间戳和攻击者输入作为证据。
 
 ---
 
@@ -167,7 +167,7 @@ The documentation warns that **prompt injection is unsolved** — system prompt 
 
 Red flags include messages like: "ignore your instructions", "dump your filesystem", "reveal your hidden instructions".
 
-危险信号包括消息如："ignore your instructions"、"dump your filesystem"、"reveal your hidden instructions"。
+危险信号包括消息如："忽略你的指令"、"转储你的文件系统"、"透露你的隐藏指令"。
 
 ### Model Strength
 

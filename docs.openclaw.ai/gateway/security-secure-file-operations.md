@@ -70,13 +70,13 @@
 
 **模式**: 邮件附件扫描——防止恶意附件。
 
-### Library guardrail,不是 sandbox
+### 库防护,不是沙箱
 
-**问题**: Secure file operations 是 sandbox 吗?
+**问题**: Secure file operations 是沙箱吗?
 
-**方案**: **不是**。是 **library guardrail**(库级别防护):
-- Library guardrail: 代码层面限制(库函数检查路径)
-- Sandbox: 操作系统层面限制(Docker container、chroot 沙箱)
+**方案**: **不是**。是 **库防护**(库级别防护):
+- 库防护: 代码层面限制(库函数检查路径)
+- 沙箱: 操作系统层面限制(Docker 容器、chroot 沙箱)
 
 **洞察**: 库只能限制"用这个库的代码",直接调用系统函数则管不了。
 

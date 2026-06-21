@@ -4,28 +4,28 @@
 
 > 跳过不影响阅读翻译正文。
 
-### DM policy vs group policy——为什么默认策略相反？
+### 私信策略与群组策略——为什么默认策略相反？
 
-Channel 访问控制有两个维度：
+频道访问控制有两个维度：
 
-- **DM policy**：默认 `pairing`（需配对码），可选 `allowlist`/`open`/`disabled`
-- **Group policy**：默认 `allowlist`（需显式允许），可选 `open`/`disabled`
+- **私信策略**：默认 `pairing`（需配对码），可选 `allowlist`/`open`/`disabled`
+- **群组策略**：默认 `allowlist`（需显式允许），可选 `open`/`disabled`
 
-这跟防火墙的 default-deny vs default-allow 是一个思路——DM 是 1 对 1（风险低，默认 pairing 方便但需验证），group 是 1 对多（风险高，默认 allowlist 严格）。
+这跟防火墙的默认拒绝与默认允许是一个思路——私信是 1 对 1（风险低，默认 `pairing` 方便但需验证），群组是 1 对多（风险高，默认 `allowlist` 严格）。
 
-关键设计是**风险分级**。DM 的 pairing code 1 小时过期、pending 请求上限 3 个（防滥用）。Group 必须显式配置允许的 group ID（防"群里任何人跟 bot 说话"）。
+关键设计是**风险分级**。私信的配对码 1 小时过期、待处理请求上限 3 个（防滥用）。群组必须显式配置允许的群组 ID（防“群里任何人跟机器人说话”）。
 
-### Mention gating——为什么群组默认要求 @？
+### 提及门槛——为什么群组默认要求 @？
 
-Group messages 默认要求 mention（native platform @ 或 safe regex pattern），DM 不要求。
+群组消息默认要求提及（原生平台 @ 或安全正则表达式模式），私信不要求。
 
-这跟 Slack bot 默认行为是一个思路——只响应 @ 消息或特定 command，不干扰正常交流。
+这跟 Slack 机器人默认行为是一个思路——只响应 @ 消息或特定命令，不干扰正常交流。
 
-设计原因是**噪音控制 + 隐私保护 + 成本**。群组里 agent 响应所有消息会产生噪音、浪费 LLM 调用、读取无关对话。Mention gating 让用户明确想跟 agent 对话时才激活。
+设计原因是**噪音控制 + 隐私保护 + 成本**。群组里代理响应所有消息会产生噪音、浪费 LLM 调用、读取无关对话。提及门槛让用户明确想跟代理对话时才激活。
 
-### Multi-account——为什么同 channel 需要多 bot 身份？
+### 多账户——为什么同频道需要多机器人身份？
 
-同一 channel 可以配置多个 account：
+同一频道可以配置多个账户：
 
 ```json5
 {
@@ -40,13 +40,13 @@ Group messages 默认要求 mention（native platform @ 或 safe regex pattern�
 }
 ```
 
-这跟 AWS 多 role 是一个思路——不同 agent 用不同 bot 身份（名字/头像），用户一眼就知道在跟谁对话。`accountId` 省略时用 `default`。
+这跟 AWS 多角色是一个思路——不同代理用不同机器人身份（名字/头像），用户一眼就知道在跟谁对话。`accountId` 省略时用 `default`。
 
-代价是需要管理多个 bot token。但这提升了用户体验——coding bot 和 support bot 各有独立身份。
+代价是需要管理多个机器人令牌。但这提升了用户体验——`coding` 机器人和 `support` 机器人各有独立身份。
 
-### 每个 channel 独立 model override——为什么？
+### 每个频道独立模型覆盖——为什么？
 
-`channels.modelByChannel` 可以按 channel ID 指定不同模型：
+`channels.modelByChannel` 可以按频道 ID 指定不同模型：
 
 ```json5
 {
@@ -59,7 +59,7 @@ Group messages 默认要求 mention（native platform @ 或 safe regex pattern�
 }
 ```
 
-这跟 K8s resource request/limit 的 per-pod 配置是一个思路——每个场景用最合适的模型。WhatsApp 用手机/短消息适合快/便宜模型，Slack 用工作/复杂问题适合强/贵模型。
+这跟 K8s 资源请求/限制的按 Pod 配置是一个思路——每个场景用最合适的模型。WhatsApp 用手机/短消息适合快/便宜模型，Slack 用工作/复杂问题适合强/贵模型。
 
 ---
 

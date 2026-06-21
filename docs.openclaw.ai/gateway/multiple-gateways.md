@@ -4,23 +4,23 @@
 
 > 跳过不影响阅读翻译正文。
 
-### Profile namespace 隔离——为什么每个实例需要独立 profile？
+### 配置 namespace 隔离——为什么每个实例需要独立配置？
 
-多实例部署的核心是 profile 隔离。每个 gateway 实例具备独立的：
+多实例部署的核心是配置隔离。每个 gateway 实例具备独立的：
 
 - config dir（配置文件目录）
 - data dir（数据目录）
 - port（监听端口）
 - 认证凭证（认证凭证）
-- channel token（频道令牌）
+- 频道令牌
 
-这跟 K8s 多 cluster 隔离是一个思路——每个 cluster 有自己的 API endpoint、etcd 存储、RBAC 策略。`--profile` 参数是 namespace 边界，隔离每个实例的全部配置空间。
+这跟 K8s 多 cluster 隔离是一个思路——每个 cluster 有自己的 API 端点、etcd 存储、RBAC 策略。`--profile` 参数是 namespace 边界，隔离每个实例的全部配置空间。
 
-### 应急 bot 独立实例——为什么应急系统不能共享资源？
+### 应急机器人独立实例——为什么应急系统不能共享资源？
 
 主 gateway 挂掉时，备份系统必须完全独立才能正常工作。如果共享配置目录或认证凭证，主实例的故障可能级联到备份实例。
 
-Rescue bot 用 `--profile rescue` 部署独立实例：
+Rescue 机器人用 `--profile rescue` 部署独立实例：
 
 - 独立的配置文件和操作记录
 - 独立的 supervised daemon 进程
@@ -46,7 +46,7 @@ Rescue bot 用 `--profile rescue` 部署独立实例：
 |--------|----------|
 | 环境变量 | 防止写冲突 |
 | 配置文件路径 | 防止覆盖其他实例的配置 |
-| 状态目录 | 防止 session/auth 数据冲突 |
+| 状态目录 | 防止会话/认证数据冲突 |
 | 端口 | 防止端口重叠 |
 | Socket | 防止 Unix socket 冲突 |
 
@@ -57,11 +57,11 @@ Rescue bot 用 `--profile rescue` 部署独立实例：
 每个实例需要独立的 Chrome DevTools Protocol 配置：
 
 - 独立的 DevTools management address
-- 独立的 remote endpoint
+- 独立的远程端点
 
-跨部署复制 CDP 配置会导致浏览器 session 冲突——两个 gateway 实例争夺同一个浏览器进程的控制权。
+跨部署复制 CDP 配置会导致浏览器会话冲突——两个 gateway 实例争夺同一个浏览器进程的控制权。
 
-这跟 Chrome profile 隔离是一个思路——每个 Chrome profile 有独立的 DevTools 端口，多个 profile 不能共享同一个 debugging port。
+这跟 Chrome 配置文件隔离是一个思路——每个 Chrome 配置文件有独立的 DevTools 端口，多个配置文件不能共享同一个 debugging port。
 
 ### 手动环境变量启动——为什么需要显式定义？
 

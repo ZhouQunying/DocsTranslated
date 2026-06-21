@@ -4,11 +4,11 @@
 
 > 跳过不影响阅读翻译正文。
 
-### OpenShell backend
+### OpenShell 后端
 
-**问题**: 本地运行 Docker container 资源消耗大,或需要远程沙箱?
+**问题**: 本地运行 Docker 容器资源消耗大,或需要远程沙箱?
 
-**方案**: **OpenShell**——managed sandbox backend:
+**方案**: **OpenShell**——托管沙箱后端:
 - OpenClaw 把沙箱生命周期委托给 `openshell` CLI
 - 在远程环境创建,通过 SSH 执行命令
 - 复用 SSH 传输和远程文件系统 bridge
@@ -25,14 +25,14 @@
 **问题**: 本地 workspace 和远程 workspace 如何同步?
 
 **方案**: 两种模式:
-- **`mirror`**: 双向同步,每次 exec 前后 sync
+- **`mirror`**: 双向同步,每次执行前后 sync
 - **`remote`**: 一次性初始化,之后直接操作远程
 
 **洞察**: 选择哪个 workspace 是"权威来源"。
 
 **权衡**:
-- ✓ Mirror: 本地编辑可见,类似 Docker backend
-- ✗ Mirror: 每次 exec 有 sync 开销
+- ✓ Mirror: 本地编辑可见,类似 Docker 后端
+- ✗ Mirror: 每次执行有 sync 开销
 - ✓ Remote: 低 sync 开销,适合长时间运行的 agent
 - ✗ Remote: 本地编辑不可见,直到 recreate
 
@@ -75,17 +75,17 @@
 }
 ```
 
-**洞察**: 配置 sandbox backend 为 openshell,选择 workspace mode,配置作用域和 workspaceAccess。
+**洞察**: 配置沙箱后端为 openshell,选择 workspace 模式,配置作用域和 workspaceAccess。
 
 **权衡**:
-- ✓ 灵活: 可以配置 mode、作用域、workspaceAccess
+- ✓ 灵活: 可以配置模式、作用域、workspaceAccess
 - ✗ 复杂: 需要配置多个字段
 
 ### Lifecycle management
 
 **问题**: 如何管理 OpenShell 沙箱的生命周期?
 
-**方案**: 通过 sandbox CLI:
+**方案**: 通过沙箱 CLI:
 ```bash
 openclaw sandbox list
 openclaw sandbox explain
@@ -108,7 +108,7 @@ openclaw sandbox recreate --all
 
 **问题**: Symlink 替换或 remounted workspace 可能重定向读取?
 
-**方案**: OpenShell pins workspace 根文件描述符,每次 read 前 recheck sandbox 身份。
+**方案**: OpenShell pins workspace 根文件描述符,每次 read 前 recheck 沙箱身份。
 
 **洞察**: 防止 symlink 替换或 remount 导致 reads 被重定向到意外的位置。
 
@@ -118,14 +118,14 @@ openclaw sandbox recreate --all
 
 ### Current limitations
 
-**问题**: OpenShell backend 有哪些限制?
+**问题**: OpenShell 后端有哪些限制?
 
 **方案**: 已知限制:
-- ✗ Sandbox browser 不支持
+- ✗ 沙箱浏览器不支持
 - ✗ `sandbox.docker.binds` 不适用
-- ✗ Docker-specific runtime knobs 只适用于 Docker backend
+- ✗ Docker-specific runtime knobs 只适用于 Docker 后端
 
-**洞察**: OpenShell 是 SSH backend,不是 Docker backend,某些 Docker 功能不适用。
+**洞察**: OpenShell 是 SSH 后端,不是 Docker 后端,某些 Docker 功能不适用。
 
 **权衡**:
 - ✓ 远程: 可以在远程环境执行

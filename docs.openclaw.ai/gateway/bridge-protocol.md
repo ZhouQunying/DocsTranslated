@@ -49,15 +49,15 @@ Bridge 作为隐式第一版协议，有四个核心局限：
 
 这跟 HTTP/1.0 到 HTTP/2 的演进是一个思路——HTTP/1.0 的各种专有扩展（如 SPDY）被 HTTP/2 的标准机制取代。Bridge 相当于 HTTP/1.0 的专有扩展，WebSocket 协议相当于 HTTP/2 的标准机制。
 
-### 执行生命周期——exec 事件的状态机
+### 执行生命周期——执行事件的状态机
 
 Bridge 的执行生命周期通过三种事件管理：
 
-- `exec.finished`：命令完成（必须包含 session key）
+- `exec.finished`：命令完成（必须包含 会话 key）
 - `exec.started`：命令开始（旧版本）
 - `exec.denied`：命令被阻止（Gateway 视为终态，不触发后续 agent 任务）
 
-这跟 Kubernetes Job 的 status condition 是一个思路——Job 有 `Complete`、`Failed`、`Active` 状态，exec 事件有 `started`、`finished`、`denied` 状态。拒绝 payload 包含原因字段，让调用方知道为什么被拒绝。
+这跟 Kubernetes Job 的 status condition 是一个思路——Job 有 `Complete`、`Failed`、`Active` 状态，执行 事件有 `started`、`finished`、`denied` 状态。拒绝 负载 包含原因字段，让调用方知道为什么被拒绝。
 
 ---
 

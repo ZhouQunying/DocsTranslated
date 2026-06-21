@@ -14,7 +14,7 @@ model: "openclaw/default"      → 配置的默认 agent（稳定别名）
 model: "openclaw/<agentId>"    → 特定 agent
 ```
 
-这跟 GraphQL 网关提供 REST 兼容 endpoint 是一个思路——让现有客户端（OpenAI SDK、Open WebUI、LobeChat）继续工作，但底层走的是 Gateway agent run codepath 而非直接 provider 调用。`model` 字段不是"用哪个模型"，而是"路由到哪个 agent"。
+这跟 GraphQL 网关提供 REST 兼容端点是一个思路——让现有客户端（OpenAI SDK、Open WebUI、LobeChat）继续工作，但底层走的是 Gateway agent run codepath 而非直接 provider 调用。`model` 字段不是"用哪个模型"，而是"路由到哪个 agent"。
 
 ### 安全边界——为什么 operator-access 等同于 owner secret？
 

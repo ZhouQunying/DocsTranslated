@@ -4,13 +4,13 @@
 
 > 跳过不影响阅读翻译正文。
 
-### 安全网设计——为什么 CLI backend 只是 text-only 降级通道？
+### 安全网设计——为什么 CLI 后端只是 text-only 降级通道？
 
-CLI backend 作为 API provider 的降级方案，仅提供文本输入输出能力，不支持直接工具调用注入。这种设计是刻意为之的保守策略：当主 API 提供商宕机或触发限流时，系统自动回退到本地 CLI 继续工作，但功能有所缩减。可以把 CLI backend 理解为数据库连接池中的备用节点——主节点不可用时自动接管，但只提供基础的文本交互，不承载完整的工具调用能力。这是安全网，不是主执行路径。
+CLI 后端作为 API provider 的降级方案，仅提供文本输入输出能力，不支持直接工具调用注入。这种设计是刻意为之的保守策略：当主 API 提供商宕机或触发限流时，系统自动回退到本地 CLI 继续工作，但功能有所缩减。可以把 CLI 后端理解为数据库连接池中的备用节点——主节点不可用时自动接管，但只提供基础的文本交互，不承载完整的工具调用能力。这是安全网，不是主执行路径。
 
-### BundleMCP 桥接——为什么需要 loopback MCP server？
+### BundleMCP 桥接——为什么需要 loopback MCP 服务器？
 
-CLI backend 无法直接接收 OpenClaw 工具调用，但启用 `bundleMcp: true` 后可以启动 loopback HTTP MCP server，将 gateway 工具暴露给 CLI 进程。这个架构类似 service mesh 中的 sidecar proxy——为每个 CLI 进程创建一个独立的 MCP 运行时，使用独立的会话级令牌认证，空闲超时后自动回收。只有启用了 `bundleMcp` 的 backend 才能看到 gateway 工具，其他 backend 只能进行纯文本交互。
+CLI 后端无法直接接收 OpenClaw 工具调用，但启用 `bundleMcp: true` 后可以启动 loopback HTTP MCP 服务器，将 gateway 工具暴露给 CLI 进程。这个架构类似 service mesh 中的 sidecar 代理——为每个 CLI 进程创建一个独立的 MCP 运行时，使用独立的会话级令牌认证，空闲超时后自动回收。只有启用了 `bundleMcp` 的后端才能看到 gateway 工具，其他后端只能进行纯文本交互。
 
 ### Fallback prelude——为什么回退时需要上下文注入？
 
@@ -18,11 +18,11 @@ CLI backend 无法直接接收 OpenClaw 工具调用，但启用 `bundleMcp: tru
 
 ### Native compaction 所有权——为什么要声明 `ownsNativeCompaction`？
 
-Claude Code 等 backend 在内部管理自己的会话记录压缩。如果 OpenClaw 的安全压缩器同时运行，两个独立的压缩机制可能产生冲突——导致数据丢失或不一致。通过声明 `ownsNativeCompaction: true`，backend 告诉 OpenClaw："我自己处理压缩，你不要干预。"OpenClaw 的压缩路径返回空操作，避免了双重压缩问题。这要求 backend 能可靠地将记录控制在上下文窗口范围内，并支持持久化可恢复会话。
+Claude Code 等后端在内部管理自己的会话记录压缩。如果 OpenClaw 的安全压缩器同时运行，两个独立的压缩机制可能产生冲突——导致数据丢失或不一致。通过声明 `ownsNativeCompaction: true`，后端告诉 OpenClaw："我自己处理压缩，你不要干预。"OpenClaw 的压缩路径返回空操作，避免了双重压缩问题。这要求后端能可靠地将记录控制在上下文窗口范围内，并支持持久化可恢复会话。
 
-### Session 连续性——为什么依赖 CLI 的 session id？
+### 会话连续性——为什么依赖 CLI 的会话 id？
 
-CLI backend 通过会话标识符维持对话连续性：每次调用时传递标识符，CLI 根据标识符在服务端找到对应的对话上下文。OpenClaw 将这些标识符持久化存储，后续交互时复用。Gateway 重启或进程空闲退出后，可以从存储的标识符恢复会话。但如果认证身份发生变化（如切换账户），旧的会话上下文可能与新身份不匹配，因此会丢弃存储的标识符。OAuth 令牌轮换不改变身份，所以不影响会话连续性。
+CLI 后端通过会话标识符维持对话连续性：每次调用时传递标识符，CLI 根据标识符在服务端找到对应的对话上下文。OpenClaw 将这些标识符持久化存储，后续交互时复用。Gateway 重启或进程空闲退出后，可以从存储的标识符恢复会话。但如果认证身份发生变化（如切换账户），旧的会话上下文可能与新身份不匹配，因此会丢弃存储的标识符。OAuth 令牌轮换不改变身份，所以不影响会话连续性。
 
 ---
 

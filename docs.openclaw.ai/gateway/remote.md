@@ -6,7 +6,7 @@
 
 ### 中心化 Gateway——为什么不是分布式？
 
-Gateway 是唯一的权威节点，持有所有 sessions、认证、channels 和 state。
+Gateway 是唯一的权威节点，持有所有会话、认证、频道和 state。
 Node 不运行 gateway service，只作为外设连接。
 这跟 Git remote 仓库类似——Gateway 是 remote（权威来源），笔记本和 node 是 local（工作副本）。
 区别在于 Git 是分布式的，Gateway 是中心化的：每台主机只运行一个 gateway 实例。
@@ -20,15 +20,15 @@ Gateway WebSocket 默认绑定 loopback（127.0.0.1:18789），不暴露到任�
 
 ### Node 与 Gateway 的角色分离——为什么 node 不跑 gateway？
 
-Gateway 负责 agent 逻辑、session 管理、认证和消息路由。
-Node 只执行 tool 调用并返回结果。
+Gateway 负责 agent 逻辑、会话管理、认证和消息路由。
+Node 只执行工具调用并返回结果。
 这种分工避免了分布式状态同步的复杂性——所有 state 集中在一处管理。
 每台主机只应运行一个 gateway（除非故意运行隔离配置文件）。
 
 ### 凭证安全链——为什么 URL 覆盖要隔离凭证？
 
-凭证解析遵循严格的优先级链：显式凭证（CLI flag）始终优先。
-CLI `--url` 覆盖 URL 时，强制不复用 config 或环境中的凭证，必须显式提供 `--token` 或 `--password`。
+凭证解析遵循严格的优先级链：显式凭证（CLI 标志）始终优先。
+CLI `--url` 覆盖 URL 时，强制不复用配置或环境中的凭证，必须显式提供 `--token` 或 `--password`。
 这防止了本地和远程凭证意外混用带来的安全风险。
 环境变量 `OPENCLAW_GATEWAY_URL` 覆盖时，也只能配合环境凭证使用。
 

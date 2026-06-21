@@ -47,6 +47,20 @@ def classify_lines(lines: list[str]):
     return result
 
 
+def find_architecture_section_range(lines: list[str]) -> tuple[int, int] | None:
+    """返回 (start_line, end_line) 1-based，end_line 为第一个 --- 所在行。
+    若未找到 ## 架构精读，返回 None（表示不限制）。
+    """
+    start = None
+    for i, raw in enumerate(lines):
+        s = raw.strip()
+        if s == "## 架构精读":
+            start = i + 1
+        elif start is not None and s == "---":
+            return (start, i + 1)
+    return (start, len(lines)) if start else None
+
+
 # ── 检查函数 ──────────────────────────────────────────────
 
 FORBIDDEN_ENGLISH = [
@@ -64,6 +78,13 @@ FORBIDDEN_ENGLISH = [
     "halt", "commit", "partial", "lockfile", "infrastructure", "severity",
     "chain", "negotiated", "hardening", "preload", "swap",
     "filesystem", "jail", "inode", "rollback", "uptime", "traversal",
+    # 2026-06-21 第二批：高频未翻译词
+    "proxy", "session", "token", "header", "client", "server", "caller",
+    "message", "payload", "command", "flag", "mode", "profile", "policy",
+    "endpoint", "route", "check", "downgrade", "auth", "tool", "channel",
+    "bot", "host", "container", "exec", "sandbox", "backend", "frontend",
+    "peer", "guild", "account", "owner", "operator", "admin", "binary",
+    "path traversal", "zip bomb",
 ]
 
 FORBIDDEN_PATTERN = re.compile(
@@ -94,10 +115,12 @@ def strip_inline_code(text: str) -> str:
     return text
 
 
-def check_forbidden_english(classified) -> list[str]:
+def check_forbidden_english(classified, arch_range=None) -> list[str]:
     errors = []
     for lineno, text, ltype in classified:
         if ltype != "cn":
+            continue
+        if arch_range and not (arch_range[0] <= lineno <= arch_range[1]):
             continue
         clean = strip_inline_code(text)
         matches = FORBIDDEN_PATTERN.findall(clean)
@@ -216,6 +239,7 @@ def main():
     path = sys.argv[1]
     lines = load_lines(path)
     classified = classify_lines(lines)
+    arch_range = find_architecture_section_range(lines)
 
     all_errors: dict[str, list[str]] = {}
 
@@ -223,7 +247,7 @@ def main():
         ("格式: 禁止标签前缀", check_label_format),
         ("格式: 禁止 HTML", check_html_tags),
         ("完整性: 英文块后缺翻译", check_missing_chinese_for_english),
-        ("术语: 禁止保留英文", check_forbidden_english),
+        ("术语: 禁止保留英文", lambda c: check_forbidden_english(c, arch_range)),
         ("翻译腔: 欧化句式", check_translation_ese),
         ("可读性: 超长句(>70字)", check_long_sentences),
         ("术语: 拥有滥用", check_yongyou),

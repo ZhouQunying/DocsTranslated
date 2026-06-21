@@ -4,47 +4,47 @@
 
 > 跳过不影响阅读翻译正文。
 
-### 直接 tool 调用——为什么不用完整 agent 循环？
+### 直接工具调用——为什么不用完整 agent 循环？
 
-Tools Invoke API 允许直接调用单个 tool，而不启动完整的 agent 推理循环：
+Tools Invoke API 允许直接调用单个工具，而不启动完整的 agent 推理循环：
 
 ```
 POST /tools/invoke → 单个 tool 执行 → 返回结果
 POST /v1/chat/completions → agent 推理 → 可能调用 tool → 继续推理 → 返回结果
 ```
 
-这跟 AWS Lambda 的 InvokeFunction API 是一个思路——不是启动整个 Lambda 函数（完整 agent 循环），而是直接调用特定函数（单个 tool）。适合自动化场景：你只需要 tool 执行，不需要 agent 决定"要不要调用"和"调用后做什么"。
+这跟 AWS Lambda 的 InvokeFunction API 是一个思路——不是启动整个 Lambda 函数（完整 agent 循环），而是直接调用特定函数（单个工具）。适合自动化场景：你只需要工具执行，不需要 agent 决定"要不要调用"和"调用后做什么"。
 
-关键设计是**最小执行单元**。完整 agent 循环包含推理、tool 调用、结果整合、再推理。Tools Invoke 跳过所有推理步骤，直接执行 tool 并返回结果。延迟更低、token 消耗为零、行为可预测。
+关键设计是**最小执行单元**。完整 agent 循环包含推理、工具调用、结果整合、再推理。Tools Invoke 跳过所有推理步骤，直接执行工具并返回结果。延迟更低、令牌消耗为零、行为可预测。
 
-### 完整 operator-access——为什么 bearer 就是 owner？
+### 完整操作员访问——为什么持有者就是所有者？
 
-`POST /tools/invoke` 的 bearer 认证不是窄的每用户作用域模型，有效凭证等同于 owner/operator 凭证：
+`POST /tools/invoke` 的持有者认证不是窄的每用户作用域模型，有效凭证等同于所有者/操作员凭证：
 
-- 共享密钥认证（token/password）：忽略 `x-openclaw-scopes`，恢复完整操作员默认值
-- 可信身份模式：尊重 `x-openclaw-scopes`，仅在显式缩小且省略 `operator.admin` 时失去 owner 语义
+- 共享密钥认证（令牌/密码）：忽略 `x-openclaw-scopes`，恢复完整操作员默认值
+- 可信身份模式：尊重 `x-openclaw-scopes`，仅在显式缩小且省略 `operator.admin` 时失去所有者语义
 
 这跟 AWS IAM 的完全访问密钥（root access key）是一个思路——持有它就等于掌握账户全部权限，不是某个特定用户的受限权限。所以关键约束是**网络边界**：只在回环、tailnet、私有入口使用，绝不暴露到公网。
 
 ### 策略链 + 硬拒绝列表——为什么需要双重防线？
 
-Tool 可用性经过两层过滤：
+工具可用性经过两层过滤：
 
-1. **策略链**（与 Gateway agent 相同）：`tools.profile` → `tools.allow` → `agents.<id>.tools.allow` → group policies → subagent policy
-2. **硬拒绝列表**：即使策略链允许，HTTP endpoint 仍然默认阻止 exec、shell、fs_write 等危险 tool
+1. **策略链**（与 Gateway agent 相同）：`tools.profile` → `tools.allow` → `agents.<id>.tools.allow` → 组策略 → 子代理策略
+2. **硬拒绝列表**：即使策略链允许，HTTP 端点仍然默认阻止执行、shell、fs_write 等危险工具
 
-这跟防火墙 + WAF 是一个思路——防火墙（策略链）控制哪些端口可达，WAF（硬拒绝列表）在应用层阻止已知危险模式。两层独立执行，一层通过不代表另一层也通过。即使你在 policy 中显式允许 `exec`，HTTP endpoint 的硬拒绝列表仍然会阻止它。
+这跟防火墙 + WAF 是一个思路——防火墙（策略链）控制哪些端口可达，WAF（硬拒绝列表）在应用层阻止已知危险模式。两层独立执行，一层通过不代表另一层也通过。即使你在策略中显式允许 `exec`，HTTP 端点的硬拒绝列表仍然会阻止它。
 
-### gateway.tools.allow——为什么是 exposure override 而非作用域升级？
+### gateway.tools.allow——为什么是暴露覆盖而非作用域升级？
 
-`gateway.tools.allow` 从默认拒绝列表中移除 tool，但不改变调用者的身份作用域：
+`gateway.tools.allow` 从默认拒绝列表中移除工具，但不改变调用者的身份作用域：
 
-- 共享密钥模式：完全遵循 trusted-operator 规则（allow 中的 tool 变为可达）
-- 身份模式：`cron`、`gateway`、`nodes` 对没有 `operator.admin` 的调用者仍然不可用，即使在 `allow` 中
+- 共享密钥模式：完全遵循可信操作员规则（允许中的工具变为可达）
+- 身份模式：`cron`、`gateway`、`nodes` 对没有 `operator.admin` 的调用者仍然不可用，即使在 `允许` 中
 
-这跟 Linux 文件权限 + ACL 是一个思路——修改权限（chmod/allow）让文件可读，但如果用户不在 ACL 的作用域内，修改权限也无法让该用户访问。allow 调整的是"什么被暴露"，而非"谁能访问"。
+这跟 Linux 文件权限 + ACL 是一个思路——修改权限（chmod/allow）让文件可读，但如果用户不在 ACL 的作用域内，修改权限也无法让该用户访问。允许调整的是"什么被暴露"，而非"谁能访问"。
 
-### Exec 可达 = mutating shell surface——为什么阻止 fs_write 不够？
+### 执行可达 = 可变更的命令行表面——为什么阻止 fs_write 不够？
 
 如果 `exec` 通过策略链变为可达（被加入 `gateway.tools.allow`），那么：
 
@@ -52,7 +52,7 @@ Tool 可用性经过两层过滤：
 - shell 命令可以读写任意文件
 - 阻止 `fs_write` 不会让 shell 执行变成只读
 
-这跟给一个人 sudo 权限却试图通过限制 `vi` 来防止文件修改是一个思路——绕过方式太多了。正确的做法是：如果需要信任分离，运行独立 Gateway，而不是试图在同一个 Gateway 中做精细的 tool 级别隔离。
+这跟给一个人 sudo 权限却试图通过限制 `vi` 来防止文件修改是一个思路——绕过方式太多了。正确的做法是：如果需要信任分离，运行独立 Gateway，而不是试图在同一个 Gateway 中做精细的工具级别隔离。
 
 ---
 
