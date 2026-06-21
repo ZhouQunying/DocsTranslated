@@ -25,26 +25,26 @@ another gateway instance is already listening on ws://127.0.0.1:<port>
 进程异常终止（如 `kill -9`）时，lock file 残留在磁盘上。Gateway 启动时检测 lock file 对应的 PID 是否仍然存活：
 
 - PID 存活 → 说明另一个实例正在运行，获取锁失败
-- PID 不存在 → 说明 lock file 是遗留的，自动 reclaim
+- PID 不存在 → 说明 lock file 是遗留的，自动回收
 
 这跟 PostgreSQL 的 `postmaster.pid` 是一个思路——启动时检查 PID file 对应的进程是否还在运行。如果没有 reclaim 机制，每次异常终止都会留下过期的 lock file，需要用户手动删除。
 
 ### Port probe——为什么 bind 之前先探测端口？
 
-Lock 机制的完整流程是：获取 config-specific lock file → probe port → reclaim abandoned lock → 独占 TCP 连接。
+Lock 机制的完整流程是：获取 config-specific lock file → 探测端口 → 回收遗留锁 → 独占 TCP 连接。
 
-port probe 区分两种场景：
+端口探测区分两种场景：
 
 - lock file 存在 + 端口被占用 → 真正的实例冲突
-- lock file 存在 + 端口空闲 → 过期的 lock（可安全 reclaim）
+- lock file 存在 + 端口空闲 → 过期的 lock（可安全回收）
 
-这跟 Redis 的 sentinel 故障检测是一个思路——先 probe 再决策。不做 port probe 的话，系统无法区分"真正冲突"和"过期的 lock"，只能笼统报"启动失败"。
+这跟 Redis 的 sentinel 故障检测是一个思路——先探测再决策。不做端口探测的话，系统无法区分"真正冲突"和"过期的 lock"，只能笼统报"启动失败"。
 
 ### Exit code 78——为什么用 EX_CONFIG？
 
-Gateway lock 失败时使用 exit code 78（`EX_CONFIG`），告诉 service manager 这是配置错误。
+Gateway lock 失败时使用退出码 78（`EX_CONFIG`），告诉 service manager 这是配置错误。
 
-这跟 systemd 的 `RestartPreventExitStatus` 是一个思路——特定退出码表示"不应自动重启"。如果用通用错误码（如 exit code 1），service manager 会反复重启 gateway，造成无限重启循环。
+这跟 systemd 的 `RestartPreventExitStatus` 是一个思路——特定退出码表示"不应自动重启"。如果用通用错误码（如退出码 1），service manager 会反复重启 gateway，造成无限重启循环。
 
 ---
 

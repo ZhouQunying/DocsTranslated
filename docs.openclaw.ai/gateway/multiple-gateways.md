@@ -11,14 +11,14 @@
 - config dir（配置文件目录）
 - data dir（数据目录）
 - port（监听端口）
-- auth credential（认证凭证）
+- 认证凭证（认证凭证）
 - channel token（频道令牌）
 
 这跟 K8s 多 cluster 隔离是一个思路——每个 cluster 有自己的 API endpoint、etcd 存储、RBAC 策略。`--profile` 参数是 namespace 边界，隔离每个实例的全部配置空间。
 
-### Rescue bot 独立实例——为什么应急系统不能共享资源？
+### 应急 bot 独立实例——为什么应急系统不能共享资源？
 
-主 gateway 挂掉时，备份系统必须完全独立才能正常工作。如果共享 config dir 或 auth credential，主实例的故障可能级联到备份实例。
+主 gateway 挂掉时，备份系统必须完全独立才能正常工作。如果共享配置目录或认证凭证，主实例的故障可能级联到备份实例。
 
 Rescue bot 用 `--profile rescue` 部署独立实例：
 
@@ -30,11 +30,11 @@ Rescue bot 用 `--profile rescue` 部署独立实例：
 
 关键设计是**故障隔离**。rescue 实例运行在隔离目录中，即使主实例崩溃，备份系统不受影响。
 
-### Port 派生规则——为什么 secondary port 自动计算？
+### 端口派生规则——为什么辅助端口自动计算？
 
-secondary port（web UI、canvas serve）从 primary port 自动派生，避免手动计算端口冲突。
+辅助端口（web UI、canvas serve）从主端口自动派生，避免手动计算端口冲突。
 
-比如 primary port 18789 → canvas port 18790。多实例并行时需要间隔端口：实例 A 用 18789/18790，实例 B 用 19789/19790。
+比如主端口 18789 → canvas 端口 18790。多实例并行时需要间隔端口：实例 A 用 18789/18790，实例 B 用 19789/19790。
 
 这跟 Prometheus 的端口约定是一个思路——Prometheus 默认 9090，Grafana 默认 3000，Alertmanager 默认 9093。约定俗成的端口偏移避免多服务端口冲突。
 
@@ -44,10 +44,10 @@ secondary port（web UI、canvas serve）从 primary port 自动派生，避免�
 
 | 配置项 | 隔离原因 |
 |--------|----------|
-| 环境变量 | 防止 write conflict |
+| 环境变量 | 防止写冲突 |
 | 配置文件路径 | 防止覆盖其他实例的配置 |
 | 状态目录 | 防止 session/auth 数据冲突 |
-| 端口 | 防止 port overlap |
+| 端口 | 防止端口重叠 |
 | Socket | 防止 Unix socket 冲突 |
 
 这跟 Docker 的 volume 隔离是一个思路——每个容器挂载独立的 volume，防止多个容器写同一个目录导致数据损坏。

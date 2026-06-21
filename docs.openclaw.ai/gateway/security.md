@@ -13,8 +13,8 @@ OpenClaw 的安全边界是"一个 gateway 对应一个受信任的操作员"。
 
 ### 分层防御——为什么假设 model 不可信？
 
-访问控制哲学：Identity first → 作用域 next → Model last。
-假设 model 输出可被操纵（prompt injection 未解决），所以设计为有限的 blast radius。
+访问控制哲学：身份优先 → 作用域其次 → 模型最后。
+假设模型输出可被操纵（提示注入未解决），所以设计为有限的影响范围。
 先验证身份（token/password/trusted-proxy），再限制作用域（tool deny list、workspace 限制），最后才信任 model 输出（exec approvals、sandboxing）。
 这跟银行金库是一个思路——先验身份，再限权限，最后监控行为。
 
@@ -26,8 +26,8 @@ OpenClaw 的安全边界是"一个 gateway 对应一个受信任的操作员"。
 
 ### Docker 端口发布——为什么绕过 host 防火墙？
 
-Docker 发布的 container 端口绕过 host `INPUT` chain 的 iptables 规则。
-必须在 `DOCKER-USER` chain 中添加过滤规则才能生效。
+Docker 发布的 container 端口绕过 host `INPUT` 链的 iptables 规则。
+必须在 `DOCKER-USER` 链中添加过滤规则才能生效。
 这是 Docker 网络架构的已知行为——很多用户在部署时忽略了这一点。
 
 ### 事件响应——四阶段流程是什么？

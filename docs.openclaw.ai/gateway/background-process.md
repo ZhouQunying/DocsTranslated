@@ -13,7 +13,7 @@ exec tool 提供配置选项和操作行为，分两种执行模式：
 
 这跟 `docker run` vs `docker run -d` 是一个思路——同步模式阻塞终端等结果（适合快速命令），异步模式立即返回容器 ID（适合长时间任务）。
 
-关键设计是**stdin/stdout 重定向**。background task 把 stdin/stdout 重定向到内部缓冲区，防止 terminal 关闭时任务被杀死。
+关键设计是**stdin/stdout 重定向**。后台任务把 stdin/stdout 重定向到内部缓冲区，防止终端关闭时任务被杀死。
 
 ### Child process bridging——为什么外部创建的子进程需要特殊处理？
 
@@ -28,7 +28,7 @@ exec tool 提供配置选项和操作行为，分两种执行模式：
 
 process tool 管理后台 session 的交互 action：
 
-- **poll status**：查询后台任务的执行状态和输出
+- **轮询状态**：查询后台任务的执行状态和输出
 - **send input**：向正在运行的任务发送 stdin（支持 terminal-specific 输入）
 - **terminate**：终止后台任务
 

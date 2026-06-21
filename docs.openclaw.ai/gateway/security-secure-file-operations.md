@@ -22,7 +22,7 @@
 
 ### Root-bounded reads
 
-**问题**: Agent 请求 `/etc/passwd`,如何防止 path traversal?
+**问题**: Agent 请求 `/etc/passwd`,如何防止路径遍历?
 
 **方案**: 把所有路径当**相对路径**(相对于根目录):
 - 请求 `/etc/passwd` → 解释为 `~/.openclaw/workspace/etc/passwd` (不存在)
@@ -31,10 +31,10 @@
 **洞察**: 根目录限定 = 即使请求绝对路径,也被解释为相对路径。
 
 **权衡**:
-- ✓ 安全: 防止 path traversal
+- ✓ 安全: 防止路径遍历
 - ✗ 限制: 不能访问根目录外的文件
 
-**模式**: Web 服务器 document root——只能访问 document root 下的文件。
+**模式**: Web 服务器文档根目录——只能访问文档根目录下的文件。
 
 ### Atomic replacement
 
@@ -55,12 +55,12 @@
 
 ### Archive extraction
 
-**问题**: 恶意归档(含 `../../etc/passwd`、zip bomb)?
+**问题**: 恶意归档(含 `../../etc/passwd`、压缩炸弹)?
 
 **方案**: 安全解压:
-- ✓ 检查路径,防止 path traversal
-- ✓ 限制解压后大小,防止 zip bomb
-- ✓ 限制文件数量,防止 inode 耗尽
+- ✓ 检查路径,防止路径遍历
+- ✓ 限制解压后大小,防止压缩炸弹
+- ✓ 限制文件数量,防止索引节点耗尽
 
 **洞察**: 归档解压 = 潜在的安全风险,需要检查。
 
@@ -76,7 +76,7 @@
 
 **方案**: **不是**。是 **library guardrail**(库级别防护):
 - Library guardrail: 代码层面限制(库函数检查路径)
-- Sandbox: 操作系统层面限制(Docker container、chroot)
+- Sandbox: 操作系统层面限制(Docker container、chroot 沙箱)
 
 **洞察**: 库只能限制"用这个库的代码",直接调用系统函数则管不了。
 
