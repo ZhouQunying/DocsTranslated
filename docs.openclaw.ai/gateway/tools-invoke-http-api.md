@@ -24,16 +24,16 @@ POST /v1/chat/completions → agent 推理 → 可能调用 tool → 继续推�
 - 共享密钥认证（token/password）：忽略 `x-openclaw-scopes`，恢复完整操作员默认值
 - 可信身份模式：尊重 `x-openclaw-scopes`，仅在显式缩小且省略 `operator.admin` 时失去 owner 语义
 
-这跟 AWS IAM root access key 是一个思路——持有它就等于掌握账户全部权限，不是某个特定用户的受限权限。所以关键约束是**网络边界**：只在回环、tailnet、私有入口使用，绝不暴露到公网。
+这跟 AWS IAM 的完全访问密钥（root access key）是一个思路——持有它就等于掌握账户全部权限，不是某个特定用户的受限权限。所以关键约束是**网络边界**：只在回环、tailnet、私有入口使用，绝不暴露到公网。
 
-### Policy chain + 硬拒绝列表——为什么需要双重防线？
+### 策略链 + 硬拒绝列表——为什么需要双重防线？
 
 Tool 可用性经过两层过滤：
 
-1. **Policy chain**（与 Gateway agent 相同）：`tools.profile` → `tools.allow` → `agents.<id>.tools.allow` → group policies → subagent policy
-2. **硬拒绝列表**：即使 policy chain 允许，HTTP endpoint 仍然默认阻止 exec、shell、fs_write 等危险 tool
+1. **策略链**（Policy chain，与 Gateway agent 相同）：`tools.profile` → `tools.allow` → `agents.<id>.tools.allow` → group policies → subagent policy
+2. **硬拒绝列表**：即使策略链允许，HTTP endpoint 仍然默认阻止 exec、shell、fs_write 等危险 tool
 
-这跟防火墙 + WAF 是一个思路——防火墙（policy chain）控制哪些端口可达，WAF（硬拒绝列表）在应用层阻止已知危险模式。两层独立执行，一层通过不代表另一层也通过。即使你在 policy 中显式允许 `exec`，HTTP endpoint 的硬拒绝列表仍然会阻止它。
+这跟防火墙 + WAF 是一个思路——防火墙（策略链）控制哪些端口可达，WAF（硬拒绝列表）在应用层阻止已知危险模式。两层独立执行，一层通过不代表另一层也通过。即使你在 policy 中显式允许 `exec`，HTTP endpoint 的硬拒绝列表仍然会阻止它。
 
 ### gateway.tools.allow——为什么是 exposure override 而非作用域升级？
 
@@ -42,11 +42,11 @@ Tool 可用性经过两层过滤：
 - 共享密钥模式：完全遵循 trusted-operator 规则（allow 中的 tool 变为可达）
 - 身份模式：`cron`、`gateway`、`nodes` 对没有 `operator.admin` 的调用者仍然不可用，即使在 `allow` 中
 
-这跟 Linux 文件权限 + ACL 是一个思路——chmod（allow）让文件可读，但如果用户不在 ACL 的作用域内，chmod 也无法让该用户访问。allow 调整的是"什么被暴露"，而非"谁能访问"。
+这跟 Linux 文件权限 + ACL 是一个思路——修改权限（chmod/allow）让文件可读，但如果用户不在 ACL 的作用域内，修改权限也无法让该用户访问。allow 调整的是"什么被暴露"，而非"谁能访问"。
 
 ### Exec 可达 = mutating shell surface——为什么阻止 fs_write 不够？
 
-如果 `exec` 通过 policy chain 变为可达（被加入 `gateway.tools.allow`），那么：
+如果 `exec` 通过策略链变为可达（被加入 `gateway.tools.allow`），那么：
 
 - `exec` 可以执行任意 shell 命令
 - shell 命令可以读写任意文件

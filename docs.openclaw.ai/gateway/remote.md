@@ -8,7 +8,7 @@
 
 Gateway 是唯一的权威节点，持有所有 sessions、认证、channels 和 state。
 Node 不运行 gateway service，只作为外设连接。
-这跟 Git remote 仓库类似——Gateway 是 remote（权威来源），laptop 和 node 是 local（工作副本）。
+这跟 Git remote 仓库类似——Gateway 是 remote（权威来源），笔记本和 node 是 local（工作副本）。
 区别在于 Git 是分布式的，Gateway 是中心化的：每台主机只运行一个 gateway 实例。
 
 ### Loopback-first 安全模型——为什么默认只绑本地？
@@ -23,7 +23,7 @@ Gateway WebSocket 默认绑定 loopback（127.0.0.1:18789），不暴露到任�
 Gateway 负责 agent 逻辑、session 管理、认证和消息路由。
 Node 只执行 tool 调用并返回结果。
 这种分工避免了分布式状态同步的复杂性——所有 state 集中在一处管理。
-每台主机只应运行一个 gateway（除非故意运行隔离 profiles）。
+每台主机只应运行一个 gateway（除非故意运行隔离配置文件）。
 
 ### 凭证安全链——为什么 URL 覆盖要隔离凭证？
 

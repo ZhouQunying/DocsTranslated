@@ -32,7 +32,7 @@ model: "openclaw/<agentId>"    → 特定 agent
 - 请求包含 OpenAI `user` 字符串时，Gateway 从中派生稳定 session key
 - 重复调用共享同一 agent session
 
-这跟 HTTP 的 cookie-less session 是一个思路——服务端从请求特征派生 session ID，客户端不需要显式管理 cookie。最佳实践：每个对话线程复用同一 `user` 值，避免用账户级 ID（除非你想多个对话共享一个 session）。
+这跟 HTTP 的无 cookie（小型跟踪标识）session 是一个思路——服务端从请求特征派生 session ID，客户端不需要显式管理 cookie（存储在浏览器中的小型跟踪标识）。最佳实践：每个对话线程复用同一 `user` 值，避免用账户级 ID（除非你想多个对话共享一个 session）。
 
 ### Wire mapping——为什么同一参数有不同字段名？
 
@@ -43,11 +43,11 @@ model: "openclaw/<agentId>"    → 特定 agent
 | max tokens | `max_completion_tokens` | `max_tokens` | `max_tokens` |
 | stop sequences | `stop` | `stop` | `stop_sequences` |
 
-这跟 ORM 的 dialect adapter 是一个思路——不同数据库驱动有不同 API，ORM 层统一映射。Responses API 没有 stop 参数，这是 OpenAI 和 Anthropic 协议差异的体现。
+这跟 ORM 的方言适配器（dialect adapter）是一个思路——不同数据库驱动有不同 API，ORM 层统一映射。Responses API 没有 `stop`（停止）参数，这是 OpenAI 和 Anthropic 协议差异的体现。
 
 ### 端点配置——为什么默认 disabled？
 
-启用后在 Gateway 的 multiplexed port（WS + HTTP）上提供：
+启用后在 Gateway 的多路复用端口（WS + HTTP）上提供：
 
 | Method | Endpoint |
 |--------|----------|

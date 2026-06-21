@@ -10,11 +10,11 @@
 
 这跟微服务里的 service mesh 是一个思路——sidecar proxy 负责所有网络发现，应用进程只关心业务逻辑。客户端不维护发现状态，减少状态不一致的可能。一个进程既是服务发现的广播源，又是请求路由的网关。
 
-### 双传输的互补设计——为什么需要 Direct WS 和 SSH？
+### 双传输的互补设计——为什么需要直连 WS 和 SSH？
 
-Direct WebSocket 和 SSH 不是二选一，而是互补：
+直连 WebSocket 和 SSH 不是二选一，而是互补：
 
-- **Direct WS**：本地或 tailnet 环境下体验最优，自动局域网发现，gateway 管理 ACL，不需要 shell 访问
+- **直连 WS**：本地或 tailnet 环境下体验最优，自动局域网发现，gateway 管理 ACL，不需要 shell 访问
 - **SSH**：万能备份，跨不同网络工作，绕过多播复杂性，不需要额外开放端口
 
 这跟 CDN 加回源策略是一个思路——CDN 优先提供低延迟服务，不可用时回源到 origin server。双传输保证了局域网的即插即用体验和跨网络的可靠连接。

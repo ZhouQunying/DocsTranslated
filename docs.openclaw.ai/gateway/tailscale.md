@@ -7,7 +7,7 @@
 ### Loopback + 反向代理——为什么不直接暴露端口？
 
 Gateway 保持 loopback 绑定，Tailscale 处理加密、路由和 header 注入。
-三种模式可选：serve（tailnet 内部）、funnel（公网暴露）、off（默认）。
+三种模式可选：serve（tailnet 内部）、Funnel（公网通道，公网暴露）、off（默认）。
 这跟 Nginx + Let's Encrypt 是一个思路——应用只监听本地，反向代理处理 TLS 和外部路由。
 区别在于 Tailscale Serve 完全自动化，不需要手动配置 `upstream` 和 SSL。
 
@@ -18,11 +18,11 @@ Tailscale Serve + `allowTailscale: true` 时，Control UI 和 WebSocket 可用 i
 此验证**仅适用于 loopback 流量**，且需要特定的 forwarded protocol 和 host headers。
 HTTP API endpoints 不使用此认证路径，仍依赖传统 gateway auth 方法。
 
-### Funnel 公网暴露——为什么强制密码保护？
+### 公网通道暴露——为什么强制密码保护？
 
-Funnel 把服务暴露到公网，系统强制要求密码保护。
+公网通道（Funnel）把服务暴露到公网，系统强制要求密码保护。
 缺少密码配置时，系统阻止启动。
-Funnel 严格限制 TLS 流量到端口 443、8443、10000。
+公网通道严格限制 TLS 流量到端口 443、8443、10000。
 这跟 ngrok 是一个思路——公网暴露需要认证保底，否则任何人都能访问你的 agent。
 
 ### Service name 路由——为什么按 service 而非 hostname 寻址？

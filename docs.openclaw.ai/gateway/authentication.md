@@ -34,11 +34,11 @@ OpenClaw 认证系统提供两条独立的凭证路径：
 
 `OPENAI_API_KEY` → `OPENAI_API_KEY_2` → ...
 
-override var 优先于默认 var。这跟 DNS round-robin 是一个思路——一个 endpoint 不可用时自动切换到下一个。轮换是自动的，不需要人工干预。
+override 变量优先于默认变量。这跟 DNS round-robin 是一个思路——一个 endpoint 不可用时自动切换到下一个。轮换是自动的，不需要人工干预。
 
-### Runtime credential 撤销——为什么 Control Plane 删除后 run 立即中止？
+### Runtime credential 撤销——为什么控制层面删除后 run 立即中止？
 
-Control Plane 删除凭证后，活跃的 run 以 `auth-revoked` stop code 立即中止。Provider 侧的凭证需要手动失效（OpenClaw 不代替你管理 provider 账户）。
+控制层面删除凭证后，活跃的 run 以 `auth-revoked` 停止码（stop code）立即中止。Provider 侧的凭证需要手动失效（OpenClaw 不代替你管理 provider 账户）。
 
 这跟 K8s ServiceAccount token 撤销是一个思路——token 被吊销后，使用该 token 的 pod 立即失去 API 访问权限。但 provider 侧的 key 仍然有效，直到你在 provider 控制台手动删除。
 
