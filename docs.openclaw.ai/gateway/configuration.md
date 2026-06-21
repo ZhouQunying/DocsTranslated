@@ -1,68 +1,7 @@
 # Configuration
 
-## 架构精读
+**总结：** OpenClaw 使用可选的 JSON5 配置文件 `~/.openclaw/openclaw.json` 控制 bot 行为——缺省时使用安全默认值。配置覆盖 channels、models、tools、sandbox、automation、sessions、media、networking 和 UI。
 
-> 跳过不影响阅读翻译正文。
-
-### JSON5 格式
-
-**问题**: 纯 JSON 不支持注释和末尾逗号,配置文件难以维护?
-
-**方案**: 用 JSON5 (JSON 超集):
-- ✓ 注释: `// 这是注释`
-- ✓ 末尾逗号: `{ a: 1, b: 2, }`
-- ✓ 无引号键: `{ model: "gpt-4" }`
-
-**洞察**: JSON5 = JSON 的简单 + YAML 的人性化,无 YAML 语法陷阱。
-
-**权衡**:
-- ✓ 易用: 注释解释配置,末尾逗号减少编辑错误
-- ✓ 兼容: 所有 JSON 都是合法 JSON5
-
-**模式**: TypeScript vs JavaScript——TS 是 JS 超集,加类型但保持兼容。
-
-### 四种配置方式
-
-**问题**: 不同用户群体 (新手/运维/普通用户/开发者) 偏好不同?
-
-**方案**: 四种方式:
-1. **交互式向导** (`openclaw configure`): 新手
-2. **CLI 单行命令** (`openclaw models set gpt-4`): 脚本
-3. **Control UI** (web 界面): 不喜欢命令行
-4. **直接编辑文件**: 高级用户
-
-**洞察**: 四种方式覆盖四种用户,不强迫任何人用不习惯的方式。
-
-**权衡**:
-- ✓ 灵活: 每个人用自己喜欢的方式
-- ✗ 复杂: 需要维护四种配置入口
-
-### 热更新 vs 重启
-
-**问题**: 配置修改后,哪些能即时生效?
-
-**方案**: 两类:
-- **热更新** (hot-apply): 策略类配置 (模型选择、tool 开关),改了立刻生效
-- **需要重启**: 基础设施类配置 (端口、TLS、数据库连接),启动时固定
-
-**洞察**: 策略类配置每次请求读取,可热更新。基础设施类配置启动时初始化,需重启。
-
-**权衡**:
-- ✓ 热更新: 不需要重启,无中断
-- ✗ 重启: 需要重启,有中断
-
-**模式**: nginx reload——`proxy_pass` 可 reload,`listen` 端口需 restart。
-
-### Symlink 不被支持
-
-**问题**: 配置文件路径可以是 symlink 吗?
-
-**方案**: **不能**。必须是真实文件 (regular file)。
-
-**洞察**: 文件监控工具 (如 inotify) 对 symlink 行为不一致,可能导致"改了配置但 Gateway 没检测到"。
-
-**权衡**:
-- ✓ 可靠: 真实文件监控行为一致
-- ✗ 不灵活: 不能用 symlink 共享配置
-
-**替代**: 用 `rsync` 或 `scp` 复制文件,不用 symlink。
+> **类比：K8s ConfigMap + Helm values + nginx reload。** ConfigMap 提供分层配置（default → namespace → pod），Helm values 用 YAML 覆盖模板参数，nginx reload 热更新不重启。OpenClaw 配置类似——JSON5 格式（支持注释和末尾逗号），四种编辑入口（交互向导 `openclaw configure`、CLI 单行命令、Control UI web 界面、直接编辑文件），严格 schema 校验（未知 key 或无效值阻止启动），文件监控热重载（策略类即时生效、基础设施类需重启），RPC 编程式更新（schema lookup → get → patch → apply，hash 冲突检测），环境变量支持（`.env` 文件、`${VAR_NAME}` 替换、secret reference）。
+>
+> **架构要点：** 配置格式：JSON5（JSON 超集，支持注释 `//`、末尾逗号、无引号键）；加载位置：`~/.openclaw/openclaw.json`（不支持 symlink，必须真实文件）；四种编辑方式：`openclaw configure`（向导）、`openclaw <sub> set`（CLI）、Control UI（web）、直接编辑；严格校验：启动时 schema 全量检查，未知 key 或类型错误阻止启动，给出具体修复建议，诊断命令可用于排查；热重载：文件监控自动 reload，四种模式（hybrid 默认/hot/restart/off），策略类（model/tool/agent/channel）即时生效，基础设施类（port/TLS/database）需重启；RPC：`config.schema.lookup`/`config.get`/`config.patch`/`config.apply`，hash 冲突检测，rate limit；环境变量：`.env` 文件加载、shell 环境导入、`${VAR_NAME}` 替换、secret reference（env/file/exec 三种 source）；`$include` 拆分配置（多文件合并，数组 deep-merge，最多嵌套 10 层）。
