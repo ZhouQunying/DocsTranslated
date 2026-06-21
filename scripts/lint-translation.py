@@ -85,6 +85,8 @@ FORBIDDEN_ENGLISH = [
     "bot", "host", "container", "exec", "sandbox", "backend", "frontend",
     "peer", "guild", "account", "owner", "operator", "admin", "binary",
     "path traversal", "zip bomb",
+    # 2026-06-21 第三批：高频未翻译词
+    "agent", "gateway", "shell", "plugin",
 ]
 
 FORBIDDEN_PATTERN = re.compile(

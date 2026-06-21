@@ -46,7 +46,7 @@ OpenClaw 支持 `$include` 把配置拆成多个文件：
 }
 ```
 
-这跟 K8s Secret + Vault Agent 是一个思路——配置和凭证分离，凭证由专门系统管理（环境变量、文件、CLI 命令如 `op read`/`vault kv get`）。
+这跟 K8s Secret + Vault 代理是一个思路——配置和凭证分离，凭证由专门系统管理（环境变量、文件、CLI 命令如 `op read`/`vault kv get`）。
 
 代价是配置稍复杂。但这防止了“配置文件提交到 Git 泄露 API 密钥”的事故。
 

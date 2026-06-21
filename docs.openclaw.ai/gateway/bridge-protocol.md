@@ -9,7 +9,7 @@
 Bridge 的核心安全边界是**函数白名单**而非完整 API 暴露：
 
 - 客户端只能调用预定义的小函数集合（chat、config、health、skills）
-- Gateway 侧有允许列表校验，未注册的函数直接拒绝
+- 网关侧有允许列表校验，未注册的函数直接拒绝
 
 这跟 gRPC 的 service definition 是一个思路——服务端声明可调用的 RPC 方法，客户端只能调用已声明的方法。但函数白名单粒度太粗，后来被 WebSocket 协议的角色/作用域分层取代。角色定义"你是谁"，作用域定义"你能做什么"，粒度更细。
 
@@ -25,11 +25,11 @@ Bridge 的 TLS 是**可选的**，发现记录包含 TLS 标志和 SHA-256 指�
 
 Bridge 的消息帧分为两个方向：
 
-**上行（客户端→Gateway）**：
+**上行（客户端→网关）**：
 - Request/Response：scoped RPC（chat、config、health、skills）
 - Event：节点信号（语音转录、执行生命周期）
 
-**下行（Gateway→客户端）**：
+**下行（网关→客户端）**：
 - Invoke：硬件命令（摄像头、屏幕、SMS）
 - Event：聊天更新
 - 心跳探测/响应：保活
@@ -55,7 +55,7 @@ Bridge 的执行生命周期通过三种事件管理：
 
 - `exec.finished`：命令完成（必须包含 会话 key）
 - `exec.started`：命令开始（旧版本）
-- `exec.denied`：命令被阻止（Gateway 视为终态，不触发后续 agent 任务）
+- `exec.denied`：命令被阻止（网关视为终态，不触发后续代理任务）
 
 这跟 Kubernetes Job 的 status condition 是一个思路——Job 有 `Complete`、`Failed`、`Active` 状态，执行 事件有 `started`、`finished`、`denied` 状态。拒绝 负载 包含原因字段，让调用方知道为什么被拒绝。
 

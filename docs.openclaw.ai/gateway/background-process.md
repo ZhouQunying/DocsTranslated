@@ -17,7 +17,7 @@
 
 ### Child process bridging——为什么外部创建的子进程需要特殊处理？
 
-当 执行工具 创建的任务又创建了子进程（比如 shell 脚本调用其他程序），bridging 机制确保 signal 正确转发：
+当执行工具创建的任务又创建了子进程（比如命令行脚本调用其他程序），bridging 机制确保 signal 正确转发：
 
 - 父进程收到 SIGTERM → signal 转发给所有子进程
 - 父进程异常退出 → 系统检测并清理孤儿进程
@@ -32,7 +32,7 @@
 - **send input**：向正在运行的任务发送 stdin（支持 terminal-specific 输入）
 - **terminate**：终止后台任务
 
-这跟 `kubectl exec` 进入运行中的 pod 是一个思路——无需重启即可与正在运行的任务交互。JSON 负载让 agent 能结构化地解析任务输出。
+这跟 `kubectl exec` 进入运行中的 pod 是一个思路——无需重启即可与正在运行的任务交互。JSON 负载让代理能结构化地解析任务输出。
 
 ---
 
