@@ -13,7 +13,7 @@
 - `config:write`: 写配置
 - `gateway:restart`: 重启 Gateway
 - `logs:read`: 查看日志
-- `session:read`: 查看 session
+- `session:read`: 查看会话
 
 **洞察**: 作用域 = 限制操作员权限,减少误操作风险。
 

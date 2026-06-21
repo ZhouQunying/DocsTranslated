@@ -8,22 +8,22 @@
 
 OpenResponses API 采用 item-based 输入模型，而非 Chat Completions 的简单 JSON 请求/响应：
 
-- `input` 接受字符串或 item 数组（message、image、file、function_call_output 等）
+- `input` 接受字符串或 item 数组（消息、image、file、function_call_output 等）
 - 每个 item 有独立的类型和结构
 - 支持多模态内容（图片、文件、PDF）直接作为输入项
 
 这跟 REST API 升级到多部分表单（multipart form）是一个思路——Chat Completions 只接受文本 messages，OpenResponses 可以同时携带文本、图片、文件和工具调用结果。每个 item 都是独立的处理单元，Gateway 按类型分别处理。
 
-关键设计是**类型驱动的多态输入**。message 走消息处理路径，image 走图片归一化路径，file 走文件解码路径，function_call_output 走工具结果回传路径。不同路径在 Gateway 内部汇聚到同一个 agent run。
+关键设计是**类型驱动的多态输入**。消息走消息处理路径，image 走图片归一化路径，file 走文件解码路径，function_call_output 走工具结果回传路径。不同路径在 Gateway 内部汇聚到同一个 agent run。
 
-### Stateless per request——为什么 session 是派生的？
+### 每次请求无状态——为什么会话是派生的？
 
-OpenResponses endpoint 默认无状态，每次请求生成新 session key。连续性通过两种方式维持：
+OpenResponses 端点默认无状态，每次请求生成新会话密钥。连续性通过两种方式维持：
 
-- `user` 字符串：Gateway 从中派生稳定 session key
-- `previous_response_id`：复用同一 agent/user/请求 session 作用域内更早 response 的 session
+- `user` 字符串：Gateway 从中派生稳定会话密钥
+- `previous_response_id`：复用同一 agent/user/请求会话作用域内更早 response 的会话
 
-这跟 HTTP 的 session cookie 是一个思路——协议本身无状态，session 通过客户端提供的标识符派生。好处是 Gateway 不需要维护服务端 session 状态（没有内存泄漏风险），坏处是客户端必须正确传递标识符才能维持对话连续性。
+这跟 HTTP 的会话 cookie 是一个思路——协议本身无状态，会话通过客户端提供的标识符派生。好处是 Gateway 不需要维护服务端会话状态（没有内存泄漏风险），坏处是客户端必须正确传递标识符才能维持对话连续性。
 
 ### 文件内容注入系统提示——为什么不放用户消息？
 
@@ -35,7 +35,7 @@ OpenResponses endpoint 默认无状态，每次请求生成新 session key。连
 <<<END_EXTERNAL_UNTRUSTED_CONTENT id="...">>>
 ```
 
-这跟 K8s 的 ConfigMap mount 是一个思路——文件内容作为配置（系统提示）挂载，而非用户输入（用户消息）。好处是 ephemeral（不持久化到 session 历史），安全（边界标记告知模型这是外部不可信数据）。故意省略长 `SECURITY NOTICE:` 横幅（banner）以节省 prompt 预算。
+这跟 K8s 的 ConfigMap mount 是一个思路——文件内容作为配置（系统提示）挂载，而非用户输入（用户消息）。好处是 ephemeral（不持久化到会话历史），安全（边界标记告知模型这是外部不可信数据）。故意省略长 `SECURITY NOTICE:` 横幅（banner）以节省 prompt 预算。
 
 PDF 走特殊路径：先尝试解析文本，文本过少则用 bundled `document-extract` 插件（内含 `clawpdf` 和 PDFium WASM runtime）将首页栅格化为图片传给模型。
 
@@ -51,7 +51,7 @@ URL fetch 有五层安全防线：
 
 关键洞察：hostname 允许列表**不绕过**私有 IP 阻止。即使 `cdn.example.com` 在白名单中，如果 DNS 解析到 10.x.x.x，请求仍然被阻止。这跟浏览器的同源策略 + CORS 是一个思路——两层检查独立执行，一层通过不代表另一层也通过。暴露到互联网的 Gateway 需要在应用层守卫之外加网络出口控制。
 
-### SSE streaming——为什么用 Server-Sent Events？
+### SSE streaming——为什么用服务器发送事件（SSE）？
 
 `stream: true` 启用 SSE，事件按固定顺序发射：
 
@@ -62,7 +62,7 @@ response.created → response.in_progress → response.output_item.added
 → response.output_item.done → response.completed
 ```
 
-这跟 WebSocket 的全双工相比更轻量——SSE 是单向推送（server → client），不需要客户端发送帧。好处是 HTTP 代理天然支持、断线重连简单、不需要帧解析。对于"生成文本并推送给客户端"这个场景，SSE 是最佳选择。
+这跟 WebSocket 的全双工相比更轻量——SSE 是单向推送（服务器 → 客户端），不需要客户端发送帧。好处是 HTTP 代理天然支持、断线重连简单、不需要帧解析。对于"生成文本并推送给客户端"这个场景，SSE 是最佳选择。
 
 ---
 
