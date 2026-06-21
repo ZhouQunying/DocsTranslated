@@ -6,7 +6,7 @@
 
 ### Heartbeat 的 response contract——为什么 idle 需要 SUCCESS token？
 
-Heartbeat 的核心设计是 response contract：
+Heartbeat 的核心设计是响应约定：
 
 - **idle**（无事发生）：返回 `HEARTBEAT_OK` success token，静默
 - **alert**（有事发生）：返回 alert text，通知用户
