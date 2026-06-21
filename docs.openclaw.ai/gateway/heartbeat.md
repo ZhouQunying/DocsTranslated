@@ -11,9 +11,9 @@
 - **空闲**（无事发生）：返回 `HEARTBEAT_OK` 成功令牌，静默
 - **告警**（有事发生）：返回告警文本，通知用户
 
-这跟 Prometheus Alertmanager 的 silence 是一个思路——正常情况下静默，异常时才通知。心跳用 `HEARTBEAT_OK` 令牌作为"一切正常"的信号，Gateway 识别后静默处理，不骚扰用户。
+这跟 Prometheus Alertmanager 的 silence 是一个思路——正常情况下静默，异常时才通知。心跳用 `HEARTBEAT_OK` 令牌作为"一切正常"的信号，网关识别后静默处理，不骚扰用户。
 
-如果代理返回任何非 `HEARTBEAT_OK` 的内容，Gateway 按告警处理（通知用户）。这防止了"代理返回无关内容但 Gateway 静默丢弃"的问题。
+如果代理返回任何非 `HEARTBEAT_OK` 的内容，网关按告警处理（通知用户）。这防止了"代理返回无关内容但网关静默丢弃"的问题。
 
 ### HEARTBEAT.md——为什么是工作区文件不是配置？
 
@@ -28,15 +28,15 @@
 
 这跟 CronJob 的脚本是一个思路——CronJob 执行的是脚本文件，心跳执行的是 Markdown 检查清单。好处是检查清单可以版本控制（Git）、可以协作编辑（PR 审查）、可以按间隔分组（被代理解析为 `every N min` block）。
 
-### 作用域层级——为什么 global → per-agent → per-频道？
+### 作用域层级——为什么 global → 每代理 → 每频道？
 
 Heartbeat 配置的作用域层级是：
 
 1. global（`heartbeat`）：全局默认
-2. per-agent（`agents.defaults.heartbeat`）：agent 级别覆盖
+2. 每代理（`agents.defaults.heartbeat`）：代理级别覆盖
 3. per-频道（`channels.<id>.heartbeat`）：频道级别覆盖
 
-这跟 CSS 的特异性是一个思路——global 是基准线，per-agent 覆盖 global，per-频道 覆盖 per-agent。越具体的配置优先级越高。
+这跟 CSS 的特异性是一个思路——global 是基准线，每代理覆盖 global，每频道覆盖每代理。越具体的配置优先级越高。
 
 ### 成本意识——为什么推荐隔离会话 + 轻量模型？
 

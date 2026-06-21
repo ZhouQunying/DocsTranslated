@@ -4,9 +4,9 @@
 
 > 跳过不影响阅读翻译正文。
 
-### Agent-first 与 OpenAI 兼容——为什么 model 字段不是 provider model ID？
+### 代理优先与 OpenAI 兼容——为什么 model 字段不是 provider model ID？
 
-OpenAI HTTP API 的核心架构差异是 `model` 字段映射到 **agent target** 而非 provider model ID：
+OpenAI HTTP API 的核心架构差异是 `model` 字段映射到**代理目标**而非 provider model ID：
 
 ```
 model: "openclaw"              → 配置的默认 agent
@@ -14,7 +14,7 @@ model: "openclaw/default"      → 配置的默认 agent（稳定别名）
 model: "openclaw/<agentId>"    → 特定 agent
 ```
 
-这跟 GraphQL 网关提供 REST 兼容端点是一个思路——让现有客户端（OpenAI SDK、Open WebUI、LobeChat）继续工作，但底层走的是 Gateway agent run codepath 而非直接 provider 调用。`model` 字段不是"用哪个模型"，而是"路由到哪个 agent"。
+这跟 GraphQL 网关提供 REST 兼容端点是一个思路——让现有客户端（OpenAI SDK、Open WebUI、LobeChat）继续工作，但底层走的是网关代理运行代码路径而非直接 provider 调用。`model` 字段不是"用哪个模型"，而是"路由到哪个代理"。
 
 ### 安全边界——为什么操作员访问等同于所有者机密？
 
@@ -23,14 +23,14 @@ model: "openclaw/<agentId>"    → 特定 agent
 - **共享密钥认证**：证明持有操作员机密，恢复全部操作员权限（管理员、approvals、pairing、read、talk.secrets、write）
 - **Identity-bearing modes**：认证外部可信身份，尊重 `x-openclaw-scopes`，仅在显式缩小作用域且省略 `operator.admin` 时失去所有者语义
 
-这跟 K8s 的 `cluster-admin` kubeconfig 是一个思路——持有管理员 kubeconfig 等同于集群完全控制权。只在 loopback、tailnet、private ingress 使用，**绝不暴露到公网**。对于信任分离，运行独立 Gateway。
+这跟 K8s 的 `cluster-admin` kubeconfig 是一个思路——持有管理员 kubeconfig 等同于集群完全控制权。只在 loopback、tailnet、private ingress 使用，**绝不暴露到公网**。对于信任分离，运行独立网关。
 
 ### 无状态会话派生——为什么用 user 字段而非 cookie？
 
 默认**无状态每次请求**，每次调用生成新会话密钥：
 
-- 请求包含 OpenAI `user` 字符串时，Gateway 从中派生稳定会话密钥
-- 重复调用共享同一 agent 会话
+- 请求包含 OpenAI `user` 字符串时，网关从中派生稳定会话密钥
+- 重复调用共享同一代理会话
 
 这跟 HTTP 的无 cookie（小型跟踪标识）会话是一个思路。服务端从请求特征派生会话 ID，客户端不需要显式管理 cookie（存储在浏览器中的小型跟踪标识）。最佳实践：每个对话线程复用同一 `user` 值，避免用账户级 ID（除非你想多个对话共享一个会话）。
 
@@ -47,7 +47,7 @@ model: "openclaw/<agentId>"    → 特定 agent
 
 ### 端点配置——为什么默认 disabled？
 
-启用后在 Gateway 的多路复用端口（WS + HTTP）上提供：
+启用后在网关的多路复用端口（WS + HTTP）上提供：
 
 | Method | Endpoint |
 |--------|----------|
@@ -69,7 +69,7 @@ model: "openclaw/<agentId>"    → 特定 agent
 }
 ```
 
-默认禁用是因为这是操作员访问面——显式启用确保管理员知道暴露了完整操作权限。所有请求通过标准 Gateway agent run codepath 执行，与 `openclaw agent` 走同一路径，继承路由、权限和配置。
+默认禁用是因为这是操作员访问面——显式启用确保管理员知道暴露了完整操作权限。所有请求通过标准网关代理运行代码路径执行，与 `openclaw agent` 走同一路径，继承路由、权限和配置。
 
 ---
 
