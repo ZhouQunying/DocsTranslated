@@ -23,7 +23,7 @@
 
 **模式**: 代码静态检查——自动检查代码风格。
 
-### Structured findings
+### 结构化发现
 
 **问题**: 审计结果如何被工具处理?
 
@@ -47,7 +47,7 @@
 
 **方案**: 每个检查项有唯一检查 ID:
 - `auth-no-authentication`: 没有启用认证
-- `network-public-exposure`: Gateway 暴露在公网
+- `network-public-exposure`: 网关暴露在公网
 - `tools-exec-unrestricted`: 执行工具没有限制
 
 **洞察**: 检查 ID = 可以针对性配置例外、跟踪修复进度。

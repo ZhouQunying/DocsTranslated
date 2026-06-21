@@ -6,10 +6,10 @@
 
 ### "个人助手"信任模型——为什么不是多租户？
 
-OpenClaw 的安全边界是"一个 gateway 对应一个受信任的操作员"。
+OpenClaw 的安全边界是"一个网关对应一个受信任的操作员"。
 它明确不是对抗性的多租户安全边界。
 这跟 SSH 的信任模型类似——你信任持有密钥的人，而不是在同一个 SSH 服务器上隔离多个互不信任的用户。
-对于对抗性用户，指导是拆分信任边界：独立的 gateway、独立的凭证，最好是独立的 OS 用户或主机。
+对于对抗性用户，指导是拆分信任边界：独立的网关、独立的凭证，最好是独立的 OS 用户或主机。
 
 ### 分层防御——为什么假设模型不可信？
 
@@ -22,7 +22,7 @@ OpenClaw 的安全边界是"一个 gateway 对应一个受信任的操作员"。
 
 `dmScope: "per-channel-peer"` 配置让每个频道与对端的组合有独立的会话。
 这防止跨用户上下文泄漏，同时保持群聊隔离。
-不同用户的对话不会互相污染——即使他们在同一个 gateway 上。
+不同用户的对话不会互相污染——即使他们在同一个网关上。
 
 ### Docker 端口发布——为什么绕过宿主机防火墙？
 
@@ -39,13 +39,13 @@ Contain（遏制）→ Rotate（轮换）→ Audit（审计）→ Collect（收�
 
 OpenClaw uses a **"personal assistant"** trust model: one trusted operator per gateway, explicitly **not an adversarial multi-tenant security boundary**. For adversarial users, the guidance is to **split trust boundaries** (separate gateways + credentials, ideally separate OS users or hosts). The security audit tool (`openclaw security audit`) can automatically check and fix common configuration issues.
 
-OpenClaw 采用 **"个人助手"** 信任模型：每个 gateway 一个受信任的操作员，明确**不是对抗性的多租户安全边界**。对于对抗性用户，指导是**拆分信任边界**（独立的 gateway + 凭证，最好是独立的 OS 用户或主机）。安全审计工具（`openclaw security audit`）可自动检查和修复常见配置问题。
+OpenClaw 采用 **"个人助手"** 信任模型：每个 网关 一个受信任的操作员，明确**不是对抗性的多租户安全边界**。对于对抗性用户，指导是**拆分信任边界**（独立的 网关 + 凭证，最好是独立的 OS 用户或主机）。安全审计工具（`openclaw security audit`）可自动检查和修复常见配置问题。
 
 ## 信任模型
 
 OpenClaw operates under a **"personal assistant"** model: one trusted operator per gateway. It is explicitly **not an adversarial multi-tenant security boundary**. For adversarial users, the guidance is to **split trust boundaries** (separate gateways + credentials, ideally separate OS users or hosts).
 
-OpenClaw 在 **"个人助手"** 模型下运行：每个 gateway 一个受信任的操作员。它明确**不是对抗性的多租户安全边界**。对于对抗性用户，指导是**拆分信任边界**（独立的 gateway + 凭证，最好是独立的 OS 用户或主机）。
+OpenClaw 在 **"个人助手"** 模型下运行：每个 网关 一个受信任的操作员。它明确**不是对抗性的多租户安全边界**。对于对抗性用户，指导是**拆分信任边界**（独立的 网关 + 凭证，最好是独立的 OS 用户或主机）。
 
 ### 访问控制哲学
 
@@ -139,7 +139,7 @@ This configuration:
 这个配置：
 
 - Gateway binds to loopback only — no network exposure
-- Gateway 只绑定 loopback，不暴露到网络
+- Gateway binds loopback，不暴露到网络
 - Enforces token authentication
 - 强制 token 认证
 - Sessions isolated by channel + peer
@@ -297,7 +297,7 @@ The documentation outlines four phases:
 1. **Contain**: Stop processes, close exposure, freeze access
 1. **Contain**（遏制）：停止进程，关闭暴露，冻结访问
 2. **Rotate**: Gateway auth, remote secrets, provider credentials
-2. **Rotate**（轮换）：gateway auth、remote secrets、provider credentials
+2. **Rotate**（轮换）：Gateway auth、remote secrets、provider credentials
 3. **Audit**: Logs, transcripts, config changes
 3. **Audit**（审计）：logs、transcripts、config changes
 4. **Collect**: Timestamps, transcripts, attacker input

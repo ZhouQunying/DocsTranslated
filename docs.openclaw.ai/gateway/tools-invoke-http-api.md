@@ -4,18 +4,18 @@
 
 > 跳过不影响阅读翻译正文。
 
-### 直接工具调用——为什么不用完整 agent 循环？
+### 直接工具调用——为什么不用完整代理循环？
 
-Tools Invoke API 允许直接调用单个工具，而不启动完整的 agent 推理循环：
+Tools Invoke API 允许直接调用单个工具，而不启动完整的 代理 推理循环：
 
 ```
 POST /tools/invoke → 单个 tool 执行 → 返回结果
-POST /v1/chat/completions → agent 推理 → 可能调用 tool → 继续推理 → 返回结果
+POST /v1/chat/completions → 代理 推理 → 可能调用 tool → 继续推理 → 返回结果
 ```
 
-这跟 AWS Lambda 的 InvokeFunction API 是一个思路——不是启动整个 Lambda 函数（完整 agent 循环），而是直接调用特定函数（单个工具）。适合自动化场景：你只需要工具执行，不需要 agent 决定"要不要调用"和"调用后做什么"。
+这跟 AWS Lambda 的 InvokeFunction API 是一个思路——不是启动整个 Lambda 函数（完整代理循环），而是直接调用特定函数（单个工具）。适合自动化场景：你只需要工具执行，不需要代理决定"要不要调用"和"调用后做什么"。
 
-关键设计是**最小执行单元**。完整 agent 循环包含推理、工具调用、结果整合、再推理。Tools Invoke 跳过所有推理步骤，直接执行工具并返回结果。延迟更低、令牌消耗为零、行为可预测。
+关键设计是**最小执行单元**。完整代理循环包含推理、工具调用、结果整合、再推理。Tools Invoke 跳过所有推理步骤，直接执行工具并返回结果。延迟更低、令牌消耗为零、行为可预测。
 
 ### 完整操作员访问——为什么持有者就是所有者？
 
@@ -30,12 +30,12 @@ POST /v1/chat/completions → agent 推理 → 可能调用 tool → 继续推�
 
 工具可用性经过两层过滤：
 
-1. **策略链**（与 Gateway agent 相同）：`tools.profile` → `tools.allow` → `agents.<id>.tools.allow` → 组策略 → 子代理策略
-2. **硬拒绝列表**：即使策略链允许，HTTP 端点仍然默认阻止执行、shell、fs_write 等危险工具
+1. **策略链**（与网关代理相同）：`tools.profile` → `tools.allow` → `agents.<id>.tools.allow` → 组策略 → 子代理策略
+2. **硬拒绝列表**：即使策略链允许，HTTP 端点仍然默认阻止执行、命令行、fs_write 等危险工具
 
 这跟防火墙 + WAF 是一个思路——防火墙（策略链）控制哪些端口可达，WAF（硬拒绝列表）在应用层阻止已知危险模式。两层独立执行，一层通过不代表另一层也通过。即使你在策略中显式允许 `exec`，HTTP 端点的硬拒绝列表仍然会阻止它。
 
-### gateway.tools.allow——为什么是暴露覆盖而非作用域升级？
+### `gateway.tools.allow`——为什么是暴露覆盖而非作用域升级？
 
 `gateway.tools.allow` 从默认拒绝列表中移除工具，但不改变调用者的身份作用域：
 
@@ -48,24 +48,24 @@ POST /v1/chat/completions → agent 推理 → 可能调用 tool → 继续推�
 
 如果 `exec` 通过策略链变为可达（被加入 `gateway.tools.allow`），那么：
 
-- `exec` 可以执行任意 shell 命令
-- shell 命令可以读写任意文件
-- 阻止 `fs_write` 不会让 shell 执行变成只读
+- `exec` 可以执行任意 命令行 命令
+- 命令行 命令可以读写任意文件
+- 阻止 `fs_write` 不会让 命令行 执行变成只读
 
-这跟给一个人 sudo 权限却试图通过限制 `vi` 来防止文件修改是一个思路——绕过方式太多了。正确的做法是：如果需要信任分离，运行独立 Gateway，而不是试图在同一个 Gateway 中做精细的工具级别隔离。
+这跟给一个人 sudo 权限却试图通过限制 `vi` 来防止文件修改是一个思路——绕过方式太多了。正确的做法是：如果需要信任分离，运行独立网关，而不是试图在同一个网关中做精细的工具级别隔离。
 
 ---
 
-OpenClaw's Gateway exposes a simple HTTP endpoint for invoking a single tool directly. It is always enabled and uses Gateway auth plus tool policy. Like the OpenAI-compatible `/v1/*` surface, shared-secret bearer auth is treated as trusted operator access for the whole gateway.
+OpenClaw's 网关 exposes a simple HTTP endpoint for invoking a single tool directly. It is always enabled and uses Gateway auth plus tool policy. Like the OpenAI-compatible `/v1/*` surface, shared-secret bearer auth is treated as trusted operator access for the whole gateway.
 
-OpenClaw 的 Gateway 暴露了一个简单的 HTTP endpoint，用于直接调用单个 tool。它始终处于启用状态，使用 Gateway 认证加工具策略。与 OpenAI 兼容的 `/v1/*` surface 一样，共享密钥 bearer 认证被视为对整个 gateway 的可信操作员访问。
+OpenClaw 的 网关 暴露了一个简单的 HTTP endpoint，用于直接调用单个 tool。它始终处于启用状态，使用 网关 认证加工具策略。与 OpenAI 兼容的 `/v1/*` surface 一样，共享密钥 bearer 认证被视为对整个 网关 的可信操作员访问。
 
 - `POST /tools/invoke`
-- Same port as the Gateway (WS + HTTP multiplex): `http://<host>:<port>/tools/invoke`
+- Same port as the 网关 (WS + HTTP multiplex): `http://<host>:<port>/tools/invoke`
 - Default max payload size is 2 MB.
 
 - `POST /tools/invoke`
-- 与 Gateway 共享端口（WS + HTTP 复用）：`http://<host>:<port>/tools/invoke`
+- 与 网关 共享端口（WS + HTTP 复用）：`http://<host>:<port>/tools/invoke`
 - 默认最大 payload 大小为 2 MB。
 
 ## Authentication
@@ -74,7 +74,7 @@ OpenClaw 的 Gateway 暴露了一个简单的 HTTP endpoint，用于直接调用
 
 Uses the Gateway auth configuration. Common HTTP auth paths:
 
-使用 Gateway 认证配置。常见 HTTP 认证路径：
+使用 网关 认证配置。常见 HTTP 认证路径：
 
 - Shared-secret auth (`gateway.auth.mode="token"` or `"password"`): `Authorization: Bearer <token>`
 - Trusted identity-bearing HTTP auth (`gateway.auth.mode="trusted-proxy"`): route through the configured identity-aware proxy and let it set the required identity headers
@@ -104,9 +104,9 @@ Notes:
 
 ## 安全边界（重要）
 
-Treat this endpoint as a **full operator-access** surface for the gateway instance.
+Treat this endpoint as a **full operator-access** surface for the Gateway 实例.
 
-将此 endpoint 视为 gateway 实例的**完整操作员访问** surface。
+将此 endpoint 视为 网关 实例的**完整操作员访问** surface。
 
 - HTTP bearer auth here is not a narrow per-user scope model.
 - A valid Gateway token/password for this endpoint should be treated like an owner/operator credential.
@@ -127,7 +127,7 @@ Auth matrix:
 认证矩阵：
 
 - `gateway.auth.mode="token"` or `"password"` + `Authorization: Bearer ...`
-  - Proves possession of the shared gateway operator secret
+  - Proves possession of the shared Gateway operator secret
   - Ignores narrower `x-openclaw-scopes`
   - Restores the full default operator scope set: `operator.admin`, `operator.approvals`, `operator.pairing`, `operator.read`, `operator.talk.secrets`, `operator.write`
   - Treats direct tool invokes on this endpoint as owner-sender turns
@@ -139,7 +139,7 @@ Auth matrix:
   - Only lose owner semantics when the caller explicitly narrows scopes and omits `operator.admin`
 
 - `gateway.auth.mode="token"` 或 `"password"` + `Authorization: Bearer ...`
-  - 证明持有共享 gateway 操作员密钥
+  - 证明持有共享 网关 操作员密钥
   - 忽略更窄的 `x-openclaw-scopes`
   - 恢复完整默认操作员作用域集：`operator.admin`、`operator.approvals`、`operator.pairing`、`operator.read`、`operator.talk.secrets`、`operator.write`
   - 将此 endpoint 上的直接 tool 调用视为 owner-sender turns
@@ -198,15 +198,15 @@ To help group policies resolve context, you can optionally set:
 
 ## 策略 + 路由行为
 
-Tool availability is filtered through the same policy chain used by Gateway agents:
+Tool availability is filtered through the same policy chain used by 网关 agents:
 
-tool 可用性通过与 Gateway agent 相同的策略链过滤：
+tool 可用性通过与网关代理相同的策略链过滤：
 
 1. `tools.profile` / `tools.byProvider.profile`
 2. `tools.allow` / `tools.byProvider.allow`
 3. `agents.<id>.tools.allow` / `agents.<id>.tools.byProvider.allow`
 4. Group policies (if the session key maps to a group or channel)
-5. Subagent policy (when invoking with a subagent session key)
+5. Sub代理 policy (when invoking with a sub代理 session key)
 
 If a tool is not allowed by policy, the endpoint returns **404**.
 
@@ -217,20 +217,20 @@ Important boundary notes:
 重要边界说明：
 
 - Exec approvals are operator guardrails, not a separate authorization boundary for this HTTP endpoint. If a tool is reachable here via Gateway auth + tool policy, `/tools/invoke` does not add an extra per-call approval prompt.
-- If `exec` is reachable here, treat it as a mutating shell surface. Denying `write`, `edit`, `apply_patch`, or HTTP filesystem-write tools does not make shell execution read-only.
-- Do not share Gateway bearer credentials with untrusted callers. If you need separation across trust boundaries, run separate gateways (and ideally separate OS users/hosts).
+- If `exec` is reachable here, treat it as a mutating 命令行 surface. Denying `write`, `edit`, `apply_patch`, or HTTP filesystem-write tools does not make 命令行 execution read-only.
+- Do not share gateway bearer credentials with untrusted callers. If you need separation across trust boundaries, run separate gateways (and ideally separate OS users/hosts).
 
-- exec approvals 是操作员防护栏，不是此 HTTP endpoint 的独立授权边界。如果 tool 通过 Gateway 认证 + 工具策略在此可达，`/tools/invoke` 不会添加额外的逐次调用审批提示。
-- 如果 `exec` 在此可达，将其视为**可变更的 shell surface**。阻止 `write`、`edit`、`apply_patch` 或 HTTP 文件系统写入工具不会让 shell 执行变成只读。
-- 不要与不可信调用者共享 Gateway bearer 凭证。如果需要跨信任边界分离，运行独立 Gateway（理想情况下使用独立操作系统用户/主机）。
+- exec approvals 是操作员防护栏，不是此 HTTP endpoint 的独立授权边界。如果 tool 通过 网关 认证 + 工具策略在此可达，`/tools/invoke` 不会添加额外的逐次调用审批提示。
+- 如果 `exec` 在此可达，将其视为**可变更的 命令行 surface**。阻止 `write`、`edit`、`apply_patch` 或 HTTP 文件系统写入工具不会让 命令行 执行变成只读。
+- 不要与不可信调用者共享 gateway bearer 凭证。如果需要跨信任边界分离，运行独立 网关（理想情况下使用独立操作系统用户/主机）。
 
 ## Default hard deny list
 
 ## 默认硬拒绝列表
 
-Gateway HTTP also applies a hard deny list by default (even if session policy allows the tool):
+gateway HTTP also applies a hard deny list by default (even if session policy allows the tool):
 
-Gateway HTTP 还默认应用硬拒绝列表（即使 session 策略允许该 tool）：
+gateway HTTP 还默认应用硬拒绝列表（即使 session 策略允许该 tool）：
 
 | Tool | Reason |
 |------|--------|
@@ -244,7 +244,7 @@ Gateway HTTP 还默认应用硬拒绝列表（即使 session 策略允许该 too
 | `sessions_spawn` | Session orchestration; creating agents remotely is RCE |
 | `sessions_send` | Cross-session message delivery |
 | `cron` | Persistent automation control plane |
-| `gateway` | Gateway control plane; prevents reconfiguration via HTTP |
+| `gateway` | gateway control plane; prevents reconfiguration via HTTP |
 | `nodes` | Node command relay can reach system.run on paired hosts |
 | `whatsapp_login` | Interactive setup requiring terminal QR scan; hangs on HTTP |
 
@@ -257,10 +257,10 @@ Gateway HTTP 还默认应用硬拒绝列表（即使 session 策略允许该 too
 | `fs_delete` | 主机上任意文件删除 |
 | `fs_move` | 主机上任意文件移动/重命名 |
 | `apply_patch` | 补丁应用可重写任意文件 |
-| `sessions_spawn` | session 编排；远程创建 agent 等同于 RCE |
+| `sessions_spawn` | session 编排；远程创建 代理 等同于 RCE |
 | `sessions_send` | 跨 session 消息投递 |
 | `cron` | 持久化自动化控制平面 |
-| `gateway` | gateway 控制平面；防止通过 HTTP 重配置 |
+| `gateway` | 网关 控制平面；防止通过 HTTP 重配置 |
 | `nodes` | 节点命令中继可到达已配对主机上的 system.run |
 | `whatsapp_login` | 需要终端 QR 扫描的交互式设置；在 HTTP 上会挂起 |
 
@@ -279,7 +279,7 @@ You can customize this deny list via `gateway.tools`:
       // Additional tools to block over HTTP /tools/invoke
       deny: ["browser"],
       // Remove tools from the default deny list for owner/admin callers
-      allow: ["gateway"]
+      allow: ["网关"]
     }
   }
 }
@@ -323,5 +323,5 @@ curl -sS http://127.0.0.1:18789/tools/invoke \
 - Gateway protocol — `/gateway/protocol`
 - Tools and plugins — `/tools`
 
-- Gateway 协议 — `/gateway/protocol`
+- 网关 协议 — `/gateway/protocol`
 - 工具与插件 — `/tools`

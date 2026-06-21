@@ -6,7 +6,7 @@
 
 ### Loopback + 反向代理——为什么不直接暴露端口？
 
-Gateway 保持 loopback 绑定，Tailscale 处理加密、路由和请求头注入。
+网关保持 loopback 绑定，Tailscale 处理加密、路由和请求头注入。
 三种模式可选：serve（tailnet 内部）、Funnel（公网通道，公网暴露）、off（默认）。
 这跟 Nginx + Let's Encrypt 是一个思路——应用只监听本地，反向代理处理 TLS 和外部路由。
 区别在于 Tailscale Serve 完全自动化，不需要手动配置 `upstream` 和 SSL。
@@ -16,14 +16,14 @@ Gateway 保持 loopback 绑定，Tailscale 处理加密、路由和请求头注�
 Tailscale Serve + `allowTailscale: true` 时，Control UI 和 WebSocket 可用身份请求头免令牌认证。
 系统通过检查 forwarded IP 与本地 daemon 来验证用户身份。
 此验证**仅适用于 loopback 流量**，且需要特定的转发协议和主机请求头。
-HTTP API 端点不使用此认证路径，仍依赖传统 gateway 认证方法。
+HTTP API 端点不使用此认证路径，仍依赖传统网关认证方法。
 
 ### 公网通道暴露——为什么强制密码保护？
 
 公网通道（Funnel）把服务暴露到公网，系统强制要求密码保护。
 缺少密码配置时，系统阻止启动。
 公网通道严格限制 TLS 流量到端口 443、8443、10000。
-这跟 ngrok 是一个思路——公网暴露需要认证保底，否则任何人都能访问你的 agent。
+这跟 ngrok 是一个思路——公网暴露需要认证保底，否则任何人都能访问你的代理。
 
 ### Service name 路由——为什么按服务而非主机名寻址？
 
@@ -35,7 +35,7 @@ Serve 模式下可用 `svc:<dns-label>` 格式指定 Tailscale 服务名称，�
 
 OpenClaw automatically configures Tailscale Serve for private tailnet traffic, or Funnel for public web exposure, specifically for the dashboard and WebSocket connections. The system keeps Gateway bound to the local loopback address, letting Tailscale handle encryption, traffic routing, and header injection.
 
-OpenClaw 自动为私有 tailnet 流量配置 Tailscale Serve，或为公开 web 暴露配置 Funnel，专门针对 dashboard 和 WebSocket 连接。系统保持 Gateway 限制在本地 loopback 地址，让 Tailscale 处理加密、流量导向和 header 注入。
+OpenClaw 自动为私有 tailnet 流量配置 Tailscale Serve，或为公开 web 暴露配置 Funnel，专门针对 dashboard 和 WebSocket 连接。系统保持 网关 限制在本地 loopback 地址，让 Tailscale 处理加密、流量导向和 header 注入。
 
 ## 操作模式
 
@@ -44,7 +44,7 @@ Three states:
 三种状态：
 
 - **serve**: Restrict visibility to internal tailnet. Gateway stays on localhost address
-- **serve**：限制可见性到内部 tailnet。Gateway 保持在 localhost 地址
+- **serve**：限制可见性到内部 tailnet。网关 保持在 localhost 地址
 - **funnel**: Publicly broadcast the service over encrypted tunnel, requiring a shared secret
 - **funnel**：通过加密通道公开广播服务，强制要求 shared secret
 - **off**: Default behavior; OpenClaw ignores these features, but the background daemon may stay active
@@ -62,7 +62,7 @@ With Serve + Tailscale auth allowed, the Control UI and WebSocket can use identi
 
 This validation path **bypasses the device pairing step for browser sessions that already have device identity**, while still rejecting clients lacking device credentials. Standard HTTP API routes **completely ignore these identity headers** and rely on traditional gateway auth methods.
 
-此验证路径**绕过已有 device identity 的浏览器 session 的设备配对步骤**，但继续拒绝缺少 device credentials 的客户端。标准 HTTP API 路由**完全忽略这些 identity headers**，依赖传统 gateway 认证方法。
+此验证路径**绕过已有 device identity 的浏览器 session 的设备配对步骤**，但继续拒绝缺少 device credentials 的客户端。标准 HTTP API 路由**完全忽略这些 identity headers**，依赖传统网关认证方法。
 
 **Security consideration**: This token-free approach assumes a secure host environment. If unauthorized local processes might execute, admins must disable Tailscale auth allow and require explicit token or password.
 
@@ -133,7 +133,7 @@ Set mode to funnel and enforce password authentication. **Strongly recommended t
 
 When controlling a remote browser, run a node host on the target machine within the same tailnet. The gateway proxies commands to this node. **Funnel does not handle this scenario** — treat node pairing as equivalent to operator access.
 
-控制远程浏览器时，在同一 tailnet 内的目标机器上运行 node host。Gateway 把命令代理到此 node。**不应用 Funnel 处理此场景**；把 node pairing 等同于 operator access。
+控制远程浏览器时，在同一 tailnet 内的目标机器上运行 node host。网关 把命令代理到此 node。**不应用 Funnel 处理此场景**；把 node pairing 等同于 operator access。
 
 ## 前提条件和限制
 

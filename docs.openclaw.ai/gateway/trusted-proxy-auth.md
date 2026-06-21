@@ -6,7 +6,7 @@
 
 ### 身份感知代理委托——为什么不自己认证？
 
-可信代理认证把认证责任交给外部身份感知代理（Pomerium/Cloudflare Access/Okta Access Gate），Gateway 只验证来源 IP + 提取身份请求头：
+可信代理认证把认证责任交给外部身份感知代理（Pomerium/Cloudflare Access/Okta Access Gate），网关 只验证来源 IP + 提取身份请求头：
 
 ```json5
 {
@@ -21,15 +21,15 @@
 }
 ```
 
-这跟 Cloudflare Access + 后端服务是一个思路——Access 在边缘做认证，后端信任 Access 传来的 `Cf-Access-Jwt-Assertion` 请求头而不再自己认证。好处是认证逻辑集中在代理（可以统一用 SSO/MFA），Gateway 代码更简单。
+这跟 Cloudflare Access + 后端服务是一个思路——Access 在边缘做认证，后端信任 Access 传来的 `Cf-Access-Jwt-Assertion` 请求头而不再自己认证。好处是认证逻辑集中在代理（可以统一用 SSO/MFA），网关 代码更简单。
 
 代价是配置错误风险——如果 `trustedProxies` 配太宽（如 `0.0.0.0/0`），任何人都能伪造身份请求头。
 
 ### 何时不使用——为什么不能"代理只做 TLS 终结"？
 
-如果代理只做 TLS 终结（不解密身份请求头），或者有网络路径绕过代理直达 Gateway，不能用可信代理认证。
+如果代理只做 TLS 终结（不解密身份请求头），或者有网络路径绕过代理直达 网关，不能用可信代理认证。
 
-这跟 OAuth2 代理的限制是一个思路——代理必须能验证身份并注入身份请求头，仅做 TLS 终结不够。如果有直接访问路径（如 localhost 直接连 Gateway），攻击者可以绕过代理伪造身份。
+这跟 OAuth2 代理的限制是一个思路——代理必须能验证身份并注入身份请求头，仅做 TLS 终结不够。如果有直接访问路径（如 localhost 直接连 网关），攻击者可以绕过代理伪造身份。
 
 ### 混合令牌配置阻止——为什么不能同时开两种认证？
 
@@ -45,9 +45,9 @@
 
 ### TLS 终结位置——为什么推荐在代理终结？
 
-推荐在代理层集中终结 TLS + HSTS，而非 Gateway 直接终结。
+推荐在代理层集中终结 TLS + HSTS，而非 网关 直接终结。
 
-这跟 CDN 的 TLS 策略是一个思路——CDN（代理）终结 TLS 可以集中管理证书（Let's Encrypt 自动续期）、HTTP 加固（HSTS 预加载）、限流。Gateway 终结 TLS 需要自己管理证书（更复杂，容易过期）。
+这跟 CDN 的 TLS 策略是一个思路——CDN（代理）终结 TLS 可以集中管理证书（Let's Encrypt 自动续期）、HTTP 加固（HSTS 预加载）、限流。网关 终结 TLS 需要自己管理证书（更复杂，容易过期）。
 
 上线建议：先短 `max-age`（如 1 天）观察，再延长（如 1 年）。子域名和预加载列表只在整个基础设施都支持 HTTPS 时加。
 
