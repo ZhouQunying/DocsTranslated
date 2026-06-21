@@ -1,7 +1,43 @@
 # Doctor
 
-**总结：** `openclaw doctor` 是 OpenClaw 的修复和迁移工具——修复过期 config/state、检查健康、提供可操作的修复步骤。
+## 架构精读
 
-> **类比：brew doctor + terraform validate + kubectl debug。** brew doctor 检查 Homebrew 环境并建议修复，terraform validate 校验 HCL 语法和 provider 兼容性，kubectl debug 诊断 pod 问题。OpenClaw doctor 类似——19 项检查（config normalize/legacy migration/state repair/OAuth 处理/service audit），支持 headless 模式（`--yes`/`--fix`/`--lint`/`--non-interactive`，CI/preflight 可用），read-only lint 模式不修改任何状态。
->
-> **架构要点：** Quick start：基本命令 + 自动化模式（`--yes` 自动确认、`--fix` 自动修复、`--lint` 只检查、`--non-interactive` 无交互）；Read-only lint mode：CI/preflight 友好，结构化健康检查，不提示/不修复/不修改状态；What it does：分类概览（health check/config migration/state integrity/gateway service/auth+security/workspace operation）；Dreams UI backfill + reset：Control UI 的 grounded dreaming workflow action（gateway RPC method，与 CLI doctor 独立）；Detailed behavior：19 项 doctor 操作的详细说明和理由（config normalize/legacy migration/state repair/OAuth handle/service audit 等）。
+> 跳过不影响阅读翻译正文。
+
+### 19 项检查的分类——为什么分成 6 大类？
+
+`openclaw doctor` 执行 19 项检查，分成 6 大类：
+
+1. **Health check**：gateway 连通性、channel 状态
+2. **Config migration**：旧格式迁移、新字段补全
+3. **State integrity**：session 文件一致性、auth profile 完整性
+4. **Gateway service**：daemon 状态、port 冲突检测
+5. **Auth/security**：credential 有效性、OAuth token 过期
+6. **Workspace**：目录权限、初始化文件完整性
+
+这跟 `brew doctor` 的 diagnostic checklist 是一个思路——每次检查是独立的，发现问题时给出具体的修复建议（"Run `openclaw doctor --fix` to resolve"）。
+
+关键设计是**可操作性**。每个检查输出"OK / WARNING / ERROR"三级状态，ERROR 附带修复命令（不是笼统的"check your config"）。
+
+### Headless mode——为什么需要四种自动化模式？
+
+`openclaw doctor` 支持四种自动化模式：
+
+- `--yes`：自动确认所有提示（适合 CI）
+- `--fix`：自动修复可修复的问题（适合脚本）
+- `--lint`：只读模式，不修改任何状态（适合预检）
+- `--non-interactive`：无交互，fail on error（适合 CI）
+
+这跟 Ansible 的 check mode 是一个思路——`--check` 只读不执行（`--lint`），`--diff` 显示变更（`--fix` 的预演），`--yes` 自动确认。分层满足不同自动化场景。
+
+### Read-only lint mode——为什么 CI 需要只读？
+
+Read-only lint mode 是 CI/预检友好的模式——结构化健康检查，不提示、不修复、不修改状态。输出 JSON 格式供 CI 解析。
+
+这跟 `terraform validate` 是一个思路——校验配置但不 apply。CI 需要确保"当前配置是健康的"，但不想在 CI pipeline 中修改任何东西。
+
+---
+
+`openclaw doctor` is the repair and migration tool for OpenClaw that fixes stale config/state, checks health, and provides actionable repair steps.
+
+`openclaw doctor` 是 OpenClaw 的修复和迁移工具——修复过期 config/state、检查健康、提供可操作的修复步骤。

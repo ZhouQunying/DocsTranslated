@@ -1,7 +1,48 @@
 # Logging
 
-**总结：** Gateway 两个日志 output surface——终端显示和 JSON 格式 gateway 文件。
+## 架构精读
 
-> **类比：ELK Stack + logrotate + 敏感数据 redact。** ELK（Elasticsearch + Logstash + Kibana）收集/索引/可视化 log，logrotate 按大小/日期滚动 log 文件，敏感数据 redact 自动脱敏。OpenClaw logging 类似——file-based logger（daily rolling + size limit + 独立 severity level）、console capture（CLI 记录 stdout/stderr 到存储）、redaction（default/custom regex 脱敏 API key/token/secret）、WebSocket log（standard/detailed 两种 inspection mode）、console formatting（颜色/组件标签/raw output）。
->
-> **架构要点：** File-based logger：daily rolling log 文件、size limit、配置路径（`logging.file.path`）、终端 verbosity 和 file severity 独立控制；Console capture：CLI 记录终端消息到存储，verbosity 独立调整；Redaction：跨 output 脱敏机密信息（default regex + custom pattern），某些安全边界始终适用（如 secret reference 不会被 redact）；Gateway WebSocket log：standard mode（摘要）vs detailed inspection mode（完整 payload）；WS log style：CLI flag 控制网络流量日志的显示格式；Console formatting：终端感知文本样式（颜色编码、组件标签、raw output 选项）。
+> 跳过不影响阅读翻译正文。
+
+### File-based logger vs console capture——为什么两个 output surface？
+
+OpenClaw 有两个日志 output surface：
+
+- **File-based logger**：daily rolling 文件（JSON 格式），独立 severity level
+- **Console capture**：CLI 记录终端消息到存储，verbosity 独立调整
+
+这跟 ELK Stack 的 log shipper 是一个思路——file-based logger 是结构化日志（供机器消费），console capture 是人类可读日志（供运维消费）。两者 severity level 独立配置（file 可以 DEBUG 级别记录所有内容，console 可以 INFO 级别只显示关键信息）。
+
+关键设计是**分离关注点**。生产环境 file 全量记录（供审计/排查），console 精简显示（供实时监控）。
+
+### Redaction——为什么需要两层策略？
+
+Log redaction 有默认 regex + 自定义 pattern 两层：
+
+```json5
+{
+  logging: {
+    redact: {
+      defaults: true,  // 默认脱敏 API key/token/secret
+      customPatterns: ["\\bmy-custom-pattern\\b"]  // 自定义脱敏
+    }
+  }
+}
+```
+
+这跟 AWS CloudWatch Logs 的 data protection 是一个思路——默认脱敏常见敏感字段（API key/token/secret），自定义 pattern 脱敏业务特定敏感字段。某些安全边界始终适用（如 secret reference 不会被 redact，因为已经是引用而非明文）。
+
+### WebSocket log——为什么需要 standard 和 detailed 两种模式？
+
+Gateway WebSocket 日志有两种 inspection mode：
+
+- **standard**：摘要（连接/断开/消息类型/error code）
+- **detailed**：完整 payload（包括 body/header）
+
+这跟 Chrome DevTools Network 面板的 "预览" vs "Response" 是一个思路——standard 快速查看"发生了什么"，detailed 深入排查"具体内容是什么"。默认 standard 减少日志量，调试时切 detailed。
+
+---
+
+The platform utilizes two distinct output surfaces: terminal displays and JSON-formatted gateway files.
+
+平台使用两个独立的输出 surface：终端显示和 JSON 格式的 gateway 文件。
