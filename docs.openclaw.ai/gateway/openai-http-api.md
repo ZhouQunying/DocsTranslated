@@ -1,14 +1,53 @@
 # OpenAI Chat Completions
 
-> **类比:K8s 的 kubectl proxy。** kubectl proxy 把 Kubernetes API server 暴露为标准 HTTP,让现有工具可以直接访问。OpenAI HTTP API 把 OpenClaw Gateway 包装成标准 OpenAI Chat Completions 接口,让 OpenAI SDK、Open WebUI、LobeChat 等现有工具无缝接入。底层走的是同一套 agent run codepath。
->
-> **类比:GraphQL 网关的 REST 兼容层。** 就像 GraphQL 网关提供 REST 兼容 endpoint 让旧客户端继续工作,OpenAI HTTP API 让 OpenClaw 的 agent-first 架构对 OpenAI 协议兼容。`model` 字段不是 provider model ID,而是 agent target——这是最关键的架构差异。
->
-> **架构要点:** 默认 disabled(需要显式启用);完整 operator-access surface(不是 per-user scope);agent-first model routing(`model` 字段映射到 agent);stateless per request(通过 `user` 字段派生稳定 session key);与 `/v1/responses` 共享 auth 和 security 模型。
+## 架构精读
 
-## 端点与配置
+> 跳过不影响阅读翻译正文。
 
-启用后在 Gateway 的 multiplexed port (WS + HTTP) 上提供:
+### Agent-first 与 OpenAI 兼容——为什么 model 字段不是 provider model ID？
+
+OpenAI HTTP API 的核心架构差异是 `model` 字段映射到 **agent target** 而非 provider model ID：
+
+```
+model: "openclaw"              → 配置的默认 agent
+model: "openclaw/default"      → 配置的默认 agent（稳定别名）
+model: "openclaw/<agentId>"    → 特定 agent
+```
+
+这跟 GraphQL 网关提供 REST 兼容 endpoint 是一个思路——让现有客户端（OpenAI SDK、Open WebUI、LobeChat）继续工作，但底层走的是 Gateway agent run codepath 而非直接 provider 调用。`model` 字段不是"用哪个模型"，而是"路由到哪个 agent"。
+
+### 安全边界——为什么 operator-access 等同于 owner secret？
+
+这是一个**完整的 operator-access surface**，不是窄的每用户作用域：
+
+- **Shared-secret auth**：证明持有 operator secret，恢复全部 operator 权限（admin、approvals、pairing、read、talk.secrets、write）
+- **Identity-bearing modes**：认证外部可信身份，尊重 `x-openclaw-scopes`，仅在显式缩小作用域且省略 `operator.admin` 时失去 owner 语义
+
+这跟 K8s 的 cluster-admin kubeconfig 是一个思路——持有 admin kubeconfig 等同于集群完全控制权。只在 loopback、tailnet、private ingress 使用，**绝不暴露到公网**。对于信任分离，运行独立 Gateway。
+
+### 无状态 session 派生——为什么用 user 字段而非 cookie？
+
+默认**无状态每次请求**，每次调用生成新 session key：
+
+- 请求包含 OpenAI `user` 字符串时，Gateway 从中派生稳定 session key
+- 重复调用共享同一 agent session
+
+这跟 HTTP 的 cookie-less session 是一个思路——服务端从请求特征派生 session ID，客户端不需要显式管理 cookie。最佳实践：每个对话线程复用同一 `user` 值，避免用账户级 ID（除非你想多个对话共享一个 session）。
+
+### Wire mapping——为什么同一参数有不同字段名？
+
+同一逻辑参数在不同 provider 协议中有不同字段名：
+
+| 逻辑参数 | OpenAI 协议 | Mistral/Chutes 协议 | Anthropic 协议 |
+|---------|------------|-------------------|--------------|
+| max tokens | `max_completion_tokens` | `max_tokens` | `max_tokens` |
+| stop sequences | `stop` | `stop` | `stop_sequences` |
+
+这跟 ORM 的 dialect adapter 是一个思路——不同数据库驱动有不同 API，ORM 层统一映射。Responses API 没有 stop 参数，这是 OpenAI 和 Anthropic 协议差异的体现。
+
+### 端点配置——为什么默认 disabled？
+
+启用后在 Gateway 的 multiplexed port（WS + HTTP）上提供：
 
 | Method | Endpoint |
 |--------|----------|
@@ -30,91 +69,22 @@
 }
 ```
 
-所有请求通过标准 Gateway agent run codepath 执行,与 `openclaw agent` 走同一路径,继承路由、权限和配置。
+默认 disabled 是因为这是 operator-access surface——显式启用确保管理员知道暴露了完整操作权限。所有请求通过标准 Gateway agent run codepath 执行，与 `openclaw agent` 走同一路径，继承路由、权限和配置。
 
-## 安全边界
+---
 
-**这是一个完整 operator-access surface**,不是窄的每用户作用域。有效凭证等同于 owner/operator secret。
+The OpenAI HTTP API wraps OpenClaw Gateway as a standard OpenAI Chat Completions endpoint, allowing existing tools like OpenAI SDK, Open WebUI, and LobeChat to connect directly. Under the hood, requests follow the same agent run codepath. It is disabled by default (requiring explicit enablement), the `model` field maps to agent targets rather than provider model IDs, and it shares auth and security with `/v1/responses`.
 
-**Shared-secret auth** (`token`/`password`):
-- 证明持有 operator secret
-- 忽略更窄的 `x-openclaw-scopes` header
-- 恢复完整 operator scopes: `operator.admin`、`operator.approvals`、`operator.pairing`、`operator.read`、`operator.talk.secrets`、`operator.write`
-- Chat turns 被视为 owner-sender turns
+OpenAI HTTP API 把 OpenClaw Gateway 包装成标准 OpenAI Chat Completions 接口，让 OpenAI SDK、Open WebUI、LobeChat 等现有工具直接接入。底层走的是同一套 agent run codepath。默认 disabled（需要显式启用），`model` 字段映射到 agent target 而非 provider model ID，与 `/v1/responses` 共享 auth 和安全模型。
 
-**Identity-bearing modes** (trusted-proxy/`none`):
-- 认证外部可信身份
-- 尊重 `x-openclaw-scopes`
-- 仅在显式缩小 scopes 且省略 `operator.admin` 时失去 owner 语义
-- `x-openclaw-model` 需要 `operator.admin`
+This is a full operator-access surface — valid credentials are equivalent to owner/operator secrets. Shared-secret auth proves possession of the operator secret and restores full operator scopes; identity-bearing modes authenticate external trusted identities and respect `x-openclaw-scopes`. It should only be used on loopback, tailnet, or private ingress — never exposed to the public internet. For trust separation, run a separate Gateway.
 
-**关键**: 只在 loopback、tailnet、private ingress 使用,绝不暴露到公网。对于信任分离,运行独立 Gateway。
+这是一个完整的操作员访问接口——有效凭证等同于 owner/operator secret。共享密钥认证证明持有 operator secret 并恢复全部 operator 作用域；身份承载模式认证外部可信身份并尊重 `x-openclaw-scopes`。只在 loopback、tailnet、private ingress 使用，绝不暴露到公网。对于信任分离，运行独立 Gateway。
 
-## Agent-first model routing
+The OpenAI `model` field is interpreted as an agent target: `openclaw` and `openclaw/default` both route to the configured default agent, while `openclaw/<agentId>` routes to a specific agent. Compatible aliases include `openclaw:<agentId>` and `agent:<agentId>`. Optional headers allow overriding the backend provider/model, session routing, and synthesized ingress channel context.
 
-OpenAI `model` 字段被解释为 **agent target**,不是 raw provider model ID:
+OpenAI `model` 字段被解释为 agent target：`openclaw` 和 `openclaw/default` 都路由到配置的默认 agent，`openclaw/<agentId>` 路由到特定 agent。兼容别名包括 `openclaw:<agentId>` 和 `agent:<agentId>`。可选 headers 允许覆盖后端 provider/model、session 路由和合成的 ingress channel context。
 
-| Model Value | Routes To |
-|-------------|-----------|
-| `openclaw` | 配置的默认 agent |
-| `openclaw/default` | 配置的默认 agent(稳定别名) |
-| `openclaw/<agentId>` | 特定 agent |
+By default the API is stateless per request, generating a new session key each time. If the request includes an OpenAI `user` string, the Gateway derives a stable session key from it, allowing repeated calls to share the same agent session. Best practice: reuse the same `user` value per conversation thread, avoid account-level IDs unless you want multiple conversations to share a session.
 
-兼容别名: `openclaw:<agentId>` 和 `agent:<agentId>`。
-
-### 可选 headers
-
-- **`x-openclaw-model`**: 覆盖 backend provider/model。Shared-secret 可自由使用,identity-bearing 需要 `operator.admin`
-- **`x-openclaw-agent-id`**: agent 路由兼容覆盖
-- **`x-openclaw-session-key`**: 显式 session 路由。不能用保留命名空间(`subagent:`、`cron:`、`acp:`),否则返回 `400`
-- **`x-openclaw-message-channel`**: 合成 ingress channel context
-
-## Session behavior
-
-**默认 stateless per request**,每次调用生成新 session key。
-
-如果请求包含 OpenAI `user` 字符串,Gateway 从中派生稳定 session key,允许重复调用共享 agent session。最佳实践: 每个对话线程复用同一 `user` 值,避免用账户级 ID(除非你想多个对话共享一个 session)。
-
-## Streaming (SSE)
-
-`stream: true` 启用 Server-Sent Events:
-- `Content-Type: text/event-stream`
-- 每行: `data: <json>`
-- 终止: `data: [DONE]`
-
-## Chat tool contract
-
-支持 OpenAI function-tool 子集:
-
-- `tools`: `{ type: "function", function: { ... } }` 数组
-- `tool_choice`: `"auto"`、`"none"`、`"required"`、或 `{ type: "function", function: { name: "..." } }`
-- `max_completion_tokens`: per-call cap(优先于 `max_tokens`)
-- `temperature`、`top_p`、`frequency_penalty`、`presence_penalty`、`seed`、`stop`: best-effort 转发
-
-验证: `frequency_penalty` 和 `presence_penalty` 在 -2.0 到 2.0;`seed` 必须是整数;`stop` 最多 4 个非空字符串。超出范围返回 `400`。
-
-Wire mapping: `max_completion_tokens` 发给 OpenAI-family;`max_tokens` 发给 Mistral/Chutes。`stop` 映射到 Chat Completions 的 `stop` 和 Anthropic 的 `stop_sequences`。Responses API 没有 stop 参数。
-
-`tool_choice: "required"` 或 function-pinned 时,缩小暴露的 function-tool 集,要求 runtime 在响应前调用客户端 tool,不匹配则报错。
-
-## `/v1/models` 和 `/v1/embeddings`
-
-`/v1/models` 返回 OpenClaw agent-target 列表(`openclaw`、`openclaw/default`、`openclaw/<agentId>`),不是 raw provider catalog。Sub-agent 是内部执行拓扑,不作为伪模型出现。
-
-`/v1/embeddings` 使用相同的 agent-target model IDs。用 `x-openclaw-model` 指定特定 embedding model(需要 shared-secret 或 `operator.admin`),否则走 agent 正常 embedding 配置。
-
-## Open WebUI 快速设置
-
-| Setting | Value |
-|---------|-------|
-| Base URL | `http://127.0.0.1:18789/v1` |
-| Docker on macOS | `http://host.docker.internal:18789/v1` |
-| API Key | Gateway bearer token |
-| Model | `openclaw/default` |
-
-## 何时使用
-
-- 集成工具或可信后端,能安全持有 operator 凭证
-- 你的集成是同一 Gateway 的另一个 operator/client surface
-- **不适合**: 原生移动客户端直连远程 Gateway(用 WebChat 或 Gateway Protocol + device-token flow)
-- **不适合**: 有自己用户/房间的外部消息网络(构建 channel plugin)
+默认无状态每次请求，每次调用生成新 session key。如果请求包含 OpenAI `user` 字符串，Gateway 从中派生稳定 session key，允许重复调用共享同一 agent session。最佳实践：每个对话线程复用同一 `user` 值，避免用账户级 ID（除非你想多个对话共享一个 session）。
