@@ -1,7 +1,57 @@
 # Configuration Reference
 
-**总结：** `~/.openclaw/openclaw.json` 核心配置参考——JSON5 格式（注释 + 末尾逗号），所有字段可选，缺省有安全默认值。
+## 架构精读
 
-> **类比：AWS CloudFormation Resource Specification + OpenAPI schema。** CloudFormation 文档列出每个 resource type 的每个 property（类型/必需/默认/更新行为），OpenAPI schema 描述 API 每个字段的约束。OpenClaw 配置参考类似——按域分组（channels/agents/tools/models/MCP/skills/plugins/browser/gateway/hooks/logging/diagnostics/cron/secrets 等），每个字段标注类型、默认值、是否支持热重载，JSON Schema 驱动 IDE 自动补全和启动校验。
->
-> **架构要点：** 顶层域：`channels`（per-channel 配置→config-channels 页）、`agents`（defaults/multi-agent/session/messages/talk→config-agents 页）、`tools`（profile/group/sandbox/custom provider→config-tools 页）、`models`（provider 定义/allowlist/本地服务/定价目录）、`mcp`（stdio/remote server 定义、timeout/OAuth/TLS/tool filter/session idle TTL）、`skills`（内置 allowlist/额外加载目录/symlink/API key/启用禁用）、`plugins`（扩展目录加载/allow-deny/per-plugin API key/env/hook 权限/subagent model 覆盖）、`browser`（evaluate 权限/默认 profile/SSRF 策略/tab 清理/Chrome/Brave/Edge CDP）、`gateway`（mode/port/bind/auth/rate limit/TLS/reload/remote/proxy/pairing/tool HTTP policy）、`hooks`（webhook 入口/token auth/path/session key/agent 路由/mapping template/Gmail preset）、`secrets`（SecretRef env/file/exec source）、`auth storage`（`auth-profiles.json`/API key/OAuth/ordering/cooldown/backoff）、`logging`（level/path/console style/rotation/redaction/OTLP/transcript）、`diagnostics`（instrumentation/stuck session/memory pressure/OTEL/cache trace）、`cron`（并发限制/session 保留/retry backoff/failure alert）、`commitments`（follow-up memory/heartbeat 投递）、`discovery`（mDNS/Bonjour/DNS-SD/Tailscale split DNS）、`canvas`（agent 可编辑 HTML/CSS/JS over HTTP/live-reload）、`$include`（配置拆分/合并规则/路径解析）；Bridge 已移除（`bridge.*` key 校验失败，应删除）。
+> 跳过不影响阅读翻译正文。
+
+### 配置域的分治——为什么拆成多页？
+
+Configuration Reference 把配置域拆成多个独立页面：
+
+- **channels** → config-channels 页
+- **agents/sessions/messages/talk** → config-agents 页
+- **tools/custom providers** → config-tools 页
+- **models/MCP/skills/plugins/browser/gateway/hooks/secrets/logging/diagnostics/cron** → 本页
+
+这跟 K8s API reference 的分组是一个思路——resource 太多时按 group/version 分页，不然一个页面 69KB 根本读不动。
+
+关键设计是**关注点分离**。运维者配 channel 时不需要看 agent 字段，开发者配 tool 时不需要看 gateway 字段。拆页后每页只聚焦一个域。
+
+### `$include` 配置拆分——为什么支持多文件？
+
+OpenClaw 支持 `$include` 把配置拆成多个文件：
+
+```json5
+{
+  $include: ["channels.json5", "agents.json5"],
+  gateway: { port: 18789 }
+}
+```
+
+这跟 Helm 的 `values-*.yaml` 多文件覆盖是一个思路——大团队按职责分文件（运维管 gateway，开发管 agent），合并时 deep-merge（数组 append，object 递归合并）。
+
+限制是最多嵌套 10 层（防无限递归），路径相对于主配置文件。
+
+### SecretRef——为什么不让配置直接存明文？
+
+`secrets` 域支持 SecretRef（env/file/exec 三种 source），把 API key 从配置明文中抽离：
+
+```json5
+{
+  providers: {
+    openai: {
+      apiKey: { $env: "OPENAI_API_KEY" }
+    }
+  }
+}
+```
+
+这跟 K8s Secret + Vault Agent 是一个思路——配置和凭证分离，凭证由专门系统管理（环境变量、文件、CLI 命令如 `op read`/`vault kv get`）。
+
+代价是配置稍复杂。但这防止了"配置文件提交到 Git 泄露 API key"的事故。
+
+---
+
+Core config reference for `~/.openclaw/openclaw.json`. The config format is JSON5 (comments + trailing commas allowed), and all fields are optional with safe defaults when omitted.
+
+`~/.openclaw/openclaw.json` 核心配置参考。配置格式是 JSON5（允许注释 + 末尾逗号），所有字段可选，省略时使用安全默认值。

@@ -56,29 +56,28 @@ OpenClaw 提供四种配置入口：
 
 OpenClaw reads an optional JSON5 config from `~/.openclaw/openclaw.json`. The active config path must be a regular file. Symlinked `openclaw.json` layouts are unsupported for OpenClaw-owned writes; an atomic write may replace the path instead of preserving the symlink. If you keep config outside the default state directory, point `OPENCLAW_CONFIG_PATH` directly at the real file.
 
-OpenClaw 从 `~/.openclaw/openclaw.json` 读取可选的 JSON5 配置。活动配置路径必须是真实文件。Symlink 的 `openclaw.json` 布局不支持 OpenClaw 的写入操作；原子写入可能会替换路径而不是保留 symlink。如果你把配置放在默认状态目录之外，把 `OPENCLAW_CONFIG_PATH` 直接指向真实文件。
-
 If the file is missing, OpenClaw uses safe defaults. Common reasons to add a config:
 
-如果文件缺失，OpenClaw 使用安全默认值。添加配置的常见原因：
-
 - Connect channels and control who can message the bot
-- 连接 channel 并控制谁能给 bot 发消息
-
 - Set models, tools, sandboxing, or automation (cron, hooks)
-- 设置模型、工具、沙箱或自动化（cron、hooks）
-
 - Tune sessions, media, networking, or UI
-- 调整 session、media、网络或 UI
 
 See the full reference for every available field.
 
-完整字段见完整参考文档。
-
 Agents and automation should use `config.schema.lookup` for exact field-level docs before editing config. Use this page for task-oriented guidance and Configuration reference for the broader field map and defaults.
+
+> **Tip**: New to configuration? Start with `openclaw onboard` for interactive setup, or check out the Configuration Examples guide for complete copy-paste configs.
+
+OpenClaw 从 `~/.openclaw/openclaw.json` 读取可选的 JSON5 配置。活动配置路径必须是真实文件。Symlink 的 `openclaw.json` 布局不支持 OpenClaw 的写入操作；原子写入可能会替换路径而不是保留 symlink。如果你把配置放在默认状态目录之外，把 `OPENCLAW_CONFIG_PATH` 直接指向真实文件。
+
+如果文件缺失，OpenClaw 使用安全默认值。添加配置的常见原因：
+
+- 连接 channel 并控制谁能给 bot 发消息
+- 设置模型、工具、沙箱或自动化（cron、hooks）
+- 调整 session、media、网络或 UI
+
+完整字段见完整参考文档。
 
 Agent 和自动化在编辑配置前应该用 `config.schema.lookup` 查询精确的字段级文档。本页用于任务导向的指导，Configuration reference 用于更广泛的字段映射和默认值。
 
-> **Tip**: New to configuration? Start with `openclaw onboard` for interactive setup, or check out the Configuration Examples guide for complete copy-paste configs.
->
 > **提示**：刚接触配置？用 `openclaw onboard` 做交互式设置，或查看 Configuration Examples 指南获取完整的可复制粘贴配置。
