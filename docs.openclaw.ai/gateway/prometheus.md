@@ -9,7 +9,7 @@
 OpenClaw 同时提供 Prometheus（pull-based）和 OTEL（push-based）两种遥测方式：
 
 - **Prometheus**：`/metrics` endpoint 被 scraper 定期拉取，适合自建监控
-- **OTEL**：主动推送到 backend，适合托管监控（Datadog/Grafana Cloud）
+- **OTEL**：主动推送到后端，适合托管监控（Datadog/Grafana Cloud）
 
 这跟 K8s 的 metrics pipeline 是一个思路——Prometheus 是 pull-based（适合内部监控），OTEL 是 push-based（适合外部 SaaS）。两者不互斥，可以同时启用。
 
@@ -32,7 +32,7 @@ Prometheus metric 的 label 策略是：
 - Latency percentile：`histogram_quantile(0.95, rate(openclaw_request_duration_seconds_bucket[5m]))`
 - Queue delay：`avg(openclaw_queue_delay_seconds)`
 
-这跟 Grafana Dashboard 的预置 panel 是一个思路——不需要用户自己写 PromQL，直接 copy 可用。降低入门门槛。
+这跟 Grafana Dashboard 的预置 panel 是一个思路——不需要用户自己写 PromQL，直接复制可用。降低入门门槛。
 
 ---
 
