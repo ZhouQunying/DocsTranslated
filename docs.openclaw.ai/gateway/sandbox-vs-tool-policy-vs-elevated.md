@@ -33,7 +33,7 @@ openclaw sandbox explain --json
 
 输出:
 - Effective sandbox mode/scope/workspace access
-- Session 是否被 sandboxed (main vs non-main)
+- 会话是否被 sandboxed (main vs non-main)
 - Effective sandbox tool allow/deny
 - Elevated gates 和 fix-it key paths
 
@@ -85,7 +85,7 @@ openclaw sandbox explain --json
 - **Provider tool profile**: `tools.byProvider[provider].profile`
 - **Global/per-agent tool policy**: `tools.allow`/`tools.deny`
 - **Provider tool policy**: `tools.byProvider[provider].allow/deny`
-- **Sandbox tool policy**: `tools.sandbox.tools.allow/deny` (只适用于被沙箱化的)
+- **沙箱工具策略**: `tools.sandbox.tools.allow/deny` (只适用于被沙箱化的)
 
 **规则**:
 - `deny` 总是赢

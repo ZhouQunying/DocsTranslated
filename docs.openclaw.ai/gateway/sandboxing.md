@@ -12,7 +12,7 @@
 - Agent 请求 `ls` → Docker 容器内执行,不在宿主机上
 - Agent 请求写文件 → Docker 容器内写,不在宿主机上
 
-**洞察**: Sandbox = 把 agent 的工具限制在沙箱内,不影响宿主机。
+**洞察**: 沙箱 = 把 agent 的工具限制在沙箱内,不影响宿主机。
 
 **权衡**:
 - ✓ 安全: 危险操作被限制在沙箱内
@@ -37,7 +37,7 @@
 - ✓ all: 最安全
 - ✗ all: 性能最差
 
-**模式**: CORS same-origin policy——同源信任,cross-origin 需要检查。
+**模式**: CORS same-origin 策略——同源信任,cross-origin 需要检查。
 
 ### Sandbox backends
 
@@ -59,17 +59,17 @@
 
 ### Not a perfect security boundary
 
-**问题**: Sandbox 是完美的安全边界吗?
+**问题**: 沙箱是完美的安全边界吗?
 
 **方案**: **不是**:
 - Docker 有逃逸漏洞 (如 CVE-2019-5736)
 - SSH 服务器可能被入侵
-- Sandbox 增加攻击成本,但不能完全阻止
+- 沙箱增加攻击成本,但不能完全阻止
 
-**洞察**: Sandbox 是深度防御 (defense in depth),不是银弹。
+**洞察**: 沙箱是深度防御 (defense in depth),不是银弹。
 
 **权衡**:
-- ✓ 增加成本: 攻击者需要利用 sandbox 漏洞
+- ✓ 增加成本: 攻击者需要利用沙箱漏洞
 - ✗ 不完美: 不能阻止所有攻击
 
 **模式**: 防火墙——能阻止大部分攻击,不能阻止所有。
