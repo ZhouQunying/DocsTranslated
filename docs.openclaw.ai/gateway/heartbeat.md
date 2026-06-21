@@ -28,15 +28,15 @@
 
 这跟 CronJob 的脚本是一个思路——CronJob 执行的是脚本文件，心跳执行的是 Markdown 检查清单。好处是检查清单可以版本控制（Git）、可以协作编辑（PR 审查）、可以按间隔分组（被代理解析为 `every N min` block）。
 
-### 作用域层级——为什么 global → per-agent → per-channel？
+### 作用域层级——为什么 global → per-agent → per-频道？
 
 Heartbeat 配置的作用域层级是：
 
 1. global（`heartbeat`）：全局默认
 2. per-agent（`agents.defaults.heartbeat`）：agent 级别覆盖
-3. per-channel（`channels.<id>.heartbeat`）：channel 级别覆盖
+3. per-频道（`channels.<id>.heartbeat`）：频道级别覆盖
 
-这跟 CSS 的特异性是一个思路——global 是基准线，per-agent 覆盖 global，per-channel 覆盖 per-agent。越具体的配置优先级越高。
+这跟 CSS 的特异性是一个思路——global 是基准线，per-agent 覆盖 global，per-频道 覆盖 per-agent。越具体的配置优先级越高。
 
 ### 成本意识——为什么推荐隔离会话 + 轻量模型？
 
