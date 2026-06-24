@@ -1,29 +1,45 @@
-# Sandbox vs tool policy vs elevated
+# Sandbox vs Tool Policy vs Elevated——三层控制分离
 
 ## 架构精读
 
 > 跳过不影响阅读翻译正文。
 
-### 三个相关但不同的控制
+### 三层控制——为什么需要分离运行位置、工具可用性和执行特权？
 
-**问题**: 沙箱、工具策略、elevated 有什么区别?
+OpenClaw 有三层独立控制：沙箱决定工具在哪里运行（宿主机 vs 容器），工具策略决定哪些工具可用，elevated 作为沙箱外的执行应急出口。这跟网络安全的三层防御是一个思路——网络隔离 + 应用权限 + 紧急通道，三层独立不互相替代。
 
-**方案**: 三个控制:
-1. **沙箱** (`agents.defaults.sandbox.*`): **在哪里运行** (沙箱后端 vs 宿主机)
-2. **工具策略** (`tools.*`): **哪些工具可用/允许**
-3. **Elevated** (`tools.elevated.*`): **仅执行应急出口**,在沙箱外运行
+混淆这三层是常见的配置错误来源。比如"工具 X 被阻止"可能是沙箱工具策略的问题，也可能是 elevated 没启用。`openclaw sandbox explain` 可以看到实际生效的配置。
 
-**洞察**: 三个控制分别控制: 运行位置、工具可用性、执行特权。
+### Deny 总是赢——为什么工具策略是硬限制？
 
-**权衡**:
-- ✓ 分离: 三个控制独立,不混淆
-- ✗ 复杂: 需要理解三个控制的区别
+工具策略多层叠加（base profile + provider profile + global/agent policy + sandbox policy），但 `deny` 总是赢。如果 `allow` 非空，未列出的都被阻止。工具策略按名字过滤，不检查 `exec` 内的副作用。这跟防火墙规则是一个思路——deny 规则优先于 allow，按名字匹配而非内容检查。
 
-### Quick debug
+`/exec` 命令不能覆盖被 deny 的工具，工具策略是硬限制。
 
-**问题**: 如何调试沙箱和工具策略?
+### Elevated 作为应急出口——为什么只影响执行？
 
-**方案**: `openclaw sandbox explain`:
+Elevated 只让 `exec` 在沙箱外运行，不授予额外工具权限，不覆盖工具的 allow/deny 规则。这跟 sudo 的应急模式是一个思路——临时提权执行特定命令，不改变用户的整体权限。如果已经是直连模式（无沙箱），elevated 是空操作。
+
+### 沙箱监牢的常见修复——怎么排查"工具被阻止"？
+
+"工具 X 被沙箱工具策略阻止"：禁用沙箱（`sandbox.mode=off`），或从 `sandbox.tools.deny` 移除，或添加到 `sandbox.tools.allow`。查看 `openclaw logs` 的 `agents/tool-policy` 条目定位具体规则。
+
+"以为是 main 但被沙箱化了"：non-main 模式下，群组/频道会话不是 main。使用主会话 key，或把模式切换为 off。
+
+---
+
+### 概述 / Overview
+
+OpenClaw utilizes three distinct management mechanisms. First, isolation determines the execution environment for utilities. Second, utility rules dictate availability. Third, host execution serves as an external escape mechanism for restricted environments.
+
+OpenClaw 使用三层独立控制。第一层隔离决定工具执行环境。第二层工具策略决定可用性。第三层宿主机执行作为受限环境的应急出口。
+
+### 快速排查 / Rapid Troubleshooting
+
+To inspect actual system behavior, utilize the explanation command.
+
+查看系统实际行为使用 explain 命令：
+
 ```bash
 openclaw sandbox explain
 openclaw sandbox explain --session agent:main:main
@@ -31,79 +47,54 @@ openclaw sandbox explain --agent work
 openclaw sandbox explain --json
 ```
 
-输出:
-- Effective sandbox mode/scope/workspace access
-- 会话是否被 sandboxed (main vs non-main)
-- Effective sandbox tool allow/deny
-- Elevated gates 和 fix-it key paths
+You can append flags for specific sessions, agents, or JSON output. This reveals the active mode, session status, effective permissions, and configuration paths for fixes.
 
-**洞察**: 查看 OpenClaw **实际**在做什么。
+可以附加特定 session、agent 或 JSON 输出的标志。显示活跃模式、session 状态、生效权限和修复的配置路径。
 
-**权衡**:
-- ✓ 透明: 看到实际配置
-- ✓ 诊断: 快速定位问题
+### 隔离：执行环境 / Isolation: Execution Environments
 
-### Sandbox: where tools run
+The execution location is managed via the default mode configuration. Settings include turning it completely off, restricting only non-primary sessions, or isolating everything.
 
-**问题**: 工具在哪里运行 (宿主机 vs 沙箱)?
+执行位置通过默认模式配置管理。选项：完全关闭、只隔离非主会话、全部隔离。
 
-**方案**: `agents.defaults.sandbox.mode`:
-- `"off"`: 所有工具在宿主机运行
-- `"non-main"`: 只有 non-main 会话被沙箱化
-- `"all"`: 所有工具在沙箱运行
+#### 目录挂载和安全 / Directory Bindings and Security
 
-**洞察**: `"non-main"` 模式下,组/频道密钥不是 main,会被沙箱化。
+Docker bindings bypass filesystem restrictions, exposing host directories to containers. Omitting access modes defaults to read-write, though read-only is safer for sensitive data. Shared scopes disregard agent-specific bindings. The system validates sources multiple times to prevent symlink-based directory escapes, rejecting invalid leaf paths. Exposing the Docker socket grants extensive host control and requires deliberate intent. Workspace access settings operate independently from binding modes.
 
-**权衡**:
-- ✓ Off: 简单,无沙箱开销
-- ✓ Non-main: 只沙箱化不信任的会话
-- ✓ All: 最安全,所有工具都在沙箱
+Docker 挂载绕过文件系统限制，把宿主机目录暴露给容器。省略访问模式默认 read-write，敏感数据建议 read-only。Shared 作用域忽略 agent 特定挂载。系统多次验证来源防止基于 symlink 的目录逃逸，拒绝无效的叶路径。暴露 Docker socket 授予广泛的宿主机控制，需要刻意为之。Workspace 访问设置独立于挂载模式运行。
 
-### Bind mounts
+### 工具策略：可用性和调用 / Utility Rules: Availability and Invocation
 
-**问题**: Bind mounts 如何影响沙箱安全?
+Availability depends on multiple configuration layers, including base profiles, provider-specific profiles, and global or agent-level allowances. Isolation-specific rules apply only when restrictions are active.
 
-**方案**: `docker.binds` **穿透**沙箱文件系统:
-- 挂载的内容在容器内可见
-- 默认 read-write,建议 `:ro` for source/secrets
-- `scope: "shared"` 忽略 per-代理 挂载
-- OpenClaw 验证 bind sources 两次 (normalized path + resolved path)
-- 绑定 `/var/run/docker.sock` 等于把宿主机控制权交给沙箱
+可用性取决于多层配置：base profile、provider 特定 profile、全局/agent 级 allow/deny。隔离特定规则只在限制活跃时生效。
 
-**洞察**: Bind mounts 是安全关键点,需要谨慎配置。
+Key principles include:
 
-**权衡**:
-- ✓ 灵活: 可以挂载宿主机目录
-- ✗ 风险: 可能泄露敏感文件
+- Denials always take precedence.
+- Non-empty allowlists block unlisted items.
+- Policies act as hard limits that execution commands cannot bypass.
+- Filtering occurs by utility name, ignoring internal command side effects.
+- Session defaults modified via execution commands do not grant new access.
+- Provider configurations accept specific model identifiers.
+- Audit logs record policy enforcement details.
 
-### Tool policy: which tools exist/are callable
+关键原则：
 
-**问题**: 哪些工具可用/允许?
+- Deny 总是优先。
+- 非空 allowlist 阻止未列出的项。
+- 策略是硬限制，执行命令不能绕过。
+- 按工具名过滤，不检查内部命令副作用。
+- 通过执行命令修改的 session 默认值不授予新访问。
+- Provider 配置接受特定模型标识。
+- 审计日志记录策略执行详情。
 
-**方案**: 多层:
-- **Tool profile**: `tools.profile` (base allowlist)
-- **Provider tool profile**: `tools.byProvider[provider].profile`
-- **Global/per-agent tool policy**: `tools.allow`/`tools.deny`
-- **Provider tool policy**: `tools.byProvider[provider].allow/deny`
-- **沙箱工具策略**: `tools.sandbox.tools.allow/deny` (只适用于被沙箱化的)
+#### 工具分组和快捷方式 / Utility Categories and Shortcuts
 
-**规则**:
-- `deny` 总是赢
-- 如果 `allow` 非空,其他都被视为被阻止
-- 工具策略是硬限制: `/exec` 不能覆盖被拒绝的 `exec` 工具
-- 工具策略按名字过滤,不检查 `exec` 内的副作用
+Policies support grouped expansions for multiple utilities.
 
-**洞察**: 工具策略是工具可用性的硬限制。
+策略支持工具分组扩展：
 
-**权衡**:
-- ✓ 安全: deny 总是赢
-- ✗ 复杂: 多层策略需要理解优先级
-
-### Tool groups
-
-**问题**: 如何批量管理工具?
-
-**方案**: 工具组(简写):
 ```json5
 {
   tools: {
@@ -116,63 +107,40 @@ openclaw sandbox explain --json
 }
 ```
 
-可用 groups:
-- `group:runtime`: `exec`, `process`, `code_execution`
-- `group:fs`: `read`, `write`, `edit`, `apply_patch`
-- `group:sessions`: `sessions_list`, `sessions_history`, `sessions_send`
-- `group:memory`: `memory_search`, `memory_get`
-- `group:web`: `web_search`, `x_search`, `web_fetch`
-- `group:ui`: `browser`, `canvas`
-- `group:automation`: `heartbeat_respond`, `cron`, `gateway`
-- `group:messaging`: `message`
-- `group:nodes`: `nodes`
-- `group:agents`: `agents_list`, `update_plan`
-- `group:media`: `image`, `image_generate`, `music_generate`, `video_generate`, `tts`
-- `group:openclaw`: 所有内置 OpenClaw 工具
-- `group:plugins`: 所有加载的插件工具
+Categories include runtime execution, filesystem operations, session management, memory, web access, UI elements, automation, messaging, nodes, agents, media, core built-ins, and plugins.
 
-**洞察**: 用工具组批量管理,而不是逐个列出工具。
+分组包括：运行时执行、文件系统操作、session 管理、记忆、Web 访问、UI 元素、自动化、消息、节点、agent、媒体、核心内置和插件。
 
-**权衡**:
-- ✓ 简单: 一个工具组包含多个工具
-- ✓ 灵活: 可以组合多个工具组
+For isolated external servers, the policy acts as a secondary gate. If configured servers only display built-in utilities, add the specific plugin group or server-prefixed names to the additional allowlist, then reload the gateway.
 
-### Elevated: exec-only "run on host"
+对隔离的外部服务器，策略作为第二道门。如果配置的服务器只显示内置工具，把特定插件组或服务器前缀名称添加到额外 allowlist，然后重新加载网关。
 
-**问题**: 如何在被沙箱化的模式下在宿主机运行执行?
+### 宿主机执行：外部命令运行 / Host Execution: External Command Running
 
-**方案**: **Elevated**——仅执行应急出口:
-- `/elevated on` 或 `exec` with `elevated: true`: 在沙箱外运行
-- `/elevated full`: 跳过执行审批
-- 如果已经是直连,elevated 是空操作
-- Elevated **不授予额外工具**,只影响 `exec`
-- Elevated **不覆盖工具的允许/拒绝**
+This feature solely impacts execution commands without providing additional utilities. When isolated, activating this mode runs commands externally, though approvals might still be necessary. Using the full variant skips session approvals. It remains inactive if already running directly and cannot override existing allow or deny rules. It adheres to standard target rules without granting arbitrary cross-host capabilities.
 
-**洞察**: Elevated 只影响执行,不授予额外权限。
+此功能只影响执行命令，不提供额外工具。隔离时激活此模式在沙箱外运行命令，但审批可能仍然必要。full 变体跳过 session 审批。如果已经是直连模式则不活跃，不能覆盖现有 allow/deny 规则。遵循标准目标规则，不授予任意跨主机能力。
 
-**权衡**:
-- ✓ 灵活: 可以在沙箱外运行执行
-- ✗ 限制: 只影响执行,不影响其他工具
+Configuration gates involve global or agent-specific enablement and sender allowlists per provider.
 
-**Gates**:
-- Enablement: `tools.elevated.enabled`
-- Sender allowlists: `tools.elevated.allowFrom.<provider>`
+配置门控涉及全局/agent 级启用和每个 provider 的发送者 allowlist。
 
-### 常见"沙箱监牢"修复
+### 标准隔离修复 / Standard Isolation Corrections
 
-**问题**: "工具 X 被沙箱工具策略阻止" 如何修复?
+#### 解决工具被阻止 / Resolving Blocked Utility Errors
 
-**方案**: Fix-it keys:
-- 禁用沙箱: `agents.defaults.sandbox.mode=off`
-- 在沙箱内允许工具: 从 `tools.sandbox.tools.deny` 移除,或添加到 `tools.sandbox.tools.allow`
-- 检查 `openclaw logs` 的 `agents/tool-policy` 条目
+Resolve this by disabling isolation globally or per-agent. Alternatively, remove the utility from the deny list or add it to the allow list. Review audit logs to identify the specific blocking rule.
 
-**问题**: "我以为这是 main,为什么它被沙箱化了?"
+全局或 per-agent 禁用隔离来解决。或从 deny 列表移除工具，或添加到 allow 列表。查看审计日志定位具体的阻止规则。
 
-**方案**: `"non-main"` 模式下,组/频道密钥不是 main。使用主会话密钥,或将模式切换为 `"off"`。
+#### 主会话意外被隔离 / Unexpected Isolation in Primary Sessions
 
-**洞察**: 常见错误: 以为会话是 main,实际上是 non-main。
+When configured for non-primary sessions, group or channel keys are treated as isolated. Utilize the primary session key or disable the mode entirely.
 
-**权衡**:
-- ✓ 修复: 可以修复沙箱监牢
-- ✗ 复杂: 需要理解沙箱模式和会话密钥
+配置为非主会话隔离时，群组/频道会话被视为隔离的。使用主会话 key 或完全禁用模式。
+
+### 相关文档 / Associated Documentation
+
+Consult documentation for comprehensive isolation references, multi-agent overrides, and elevated execution modes.
+
+参考文档获取完整的隔离参考、多 agent 覆盖和 elevated 执行模式。
